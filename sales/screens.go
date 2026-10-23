@@ -88,7 +88,11 @@ func (screens *Screens) drawList(context *ui.Context) {
 			screens.StartOrder()
 		}
 	})
-	context.Tabs("view", &screens.view, views...)
+	tabs := make([]look.Tab, len(views))
+	for index, words := range views {
+		tabs[index] = look.Tab{Label: words}
+	}
+	look.PillTabs(context, "view", &screens.view, tabs)
 	switch {
 	case screens.loadErr != nil:
 		look.Empty(context, "triangle-alert", "No se pudieron leer los pedidos", screens.loadErr.Error(), "")

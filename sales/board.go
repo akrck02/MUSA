@@ -6,6 +6,7 @@ import (
 	"github.com/akrck02/go-renderer/draw2d"
 	ui "github.com/akrck02/go-ui"
 
+	"github.com/Itros97/MUSA/catalogue"
 	"github.com/Itros97/MUSA/look"
 	"github.com/Itros97/MUSA/money"
 )
@@ -30,16 +31,14 @@ func boardWords(onTheWay []Sale) string {
 
 // drawBoard is the orders still to deliver, in one column per status.
 func (screens *Screens) drawBoard(context *ui.Context, onTheWay []Sale) {
-	if len(onTheWay) == 0 {
-		look.Empty(context, "package-check", "Nada por enviar",
-			"Los pedidos entregados y las ventas locales están en el historial.", "")
-		return
-	}
 	context.Grid(look.Columns(context, len(boardColumns)), func() {
 		for _, status := range boardColumns {
 			screens.drawColumn(context, status, onTheWay)
 		}
 	})
+	context.Box(ui.Layout{Height: ui.Fixed(context.Theme.Padding)}, nil)
+	context.Text("Al marcar «Entregado», el pedido pasa al historial. Las ventas locales (ferias y en mano) van directas al historial.",
+		ui.TextStyle{Size: context.Theme.SmallTextSize, Color: context.Theme.InkSoft})
 }
 
 func (screens *Screens) drawColumn(context *ui.Context, status Status, onTheWay []Sale) {
@@ -66,13 +65,18 @@ func (screens *Screens) drawColumn(context *ui.Context, status Status, onTheWay 
 	})
 }
 
-// boardRow is one order on the board: who and what on the left, the button that moves it on the right.
+// boardRow is one order on the board: a swatch per product, who and what on the left, the button
+// that moves it on the right.
 func (screens *Screens) boardRow(context *ui.Context, sale Sale) {
 	theme := context.Theme
 	context.Box(ui.Layout{Width: ui.Grow(), Gap: 12, AlignY: ui.Center}, func() {
+		swatches(context, sale)
 		context.Frame(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Gap: 2}, ui.Look{Clip: true}, func() {
-			context.Text(whoOrdered(sale), ui.TextStyle{Weight: draw2d.Bold})
-			context.Text(fmt.Sprintf("%s · %s", screens.headline(sale), money.Format(sale.Total())),
+			context.Box(ui.Layout{Gap: 8, AlignY: ui.Center}, func() {
+				context.Text(whoOrdered(sale), ui.TextStyle{Weight: draw2d.Bold})
+				look.Pill(context, sourceWords(sale), sourceTone(theme, sale.Channel))
+			})
+			context.Text(fmt.Sprintf("%s · %s", piecesWords(sale), money.Format(sale.Total())),
 				ui.TextStyle{Size: theme.SmallTextSize, Color: theme.InkSoft})
 		})
 		if context.Button(actionWords[sale.Status]) {
@@ -80,6 +84,46 @@ func (screens *Screens) boardRow(context *ui.Context, sale Sale) {
 			screens.afterAdvance(sale.Status, problems, err)
 		}
 	})
+}
+
+// Measures of an order's swatches, in pixels.
+const (
+	swatchSide  = 34
+	swatchesMax = 2
+)
+
+// swatches are a small square of each product's colour, for the first two products of a sale.
+func swatches(context *ui.Context, sale Sale) {
+	theme := context.Theme
+	context.Box(ui.Layout{Width: ui.Fixed(swatchSide*swatchesMax + 4), Gap: 4}, func() {
+		for index, line := range sale.Lines {
+			if index == swatchesMax {
+				break
+			}
+			side := ui.Fixed(swatchSide)
+			context.Frame(ui.Layout{Width: side, Height: side}, ui.Look{Fill: catalogue.PictureFill(theme, line.ProductName), Radius: theme.ControlRadius}, nil)
+		}
+	})
+}
+
+// piecesWords counts the units of a sale: "1 pieza", "3 piezas".
+func piecesWords(sale Sale) string {
+	count := 0
+	for _, line := range sale.Lines {
+		count += line.Quantity
+	}
+	if count == 1 {
+		return "1 pieza"
+	}
+	return fmt.Sprintf("%d piezas", count)
+}
+
+// sourceTone is warm for a shop's orders and quiet for the rest.
+func sourceTone(theme ui.Theme, channel Channel) look.Tone {
+	if channel == Marketplace || channel == OnlineShop {
+		return look.Tone{Fill: theme.Warning.WithAlpha(0.18), Ink: theme.Danger}
+	}
+	return look.Neutral(theme)
 }
 
 // whoOrdered is the customer's name, or the channel when the order has none.
