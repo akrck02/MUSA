@@ -20,8 +20,8 @@ var tagTones = map[TagColor][2]look.Tone{
 	Coral:  {{Fill: draw2d.MustHex("#FFDAD3"), Ink: draw2d.MustHex("#5A1A0D")}, {Fill: draw2d.MustHex("#73301F"), Ink: draw2d.MustHex("#FFDAD3")}},
 }
 
-// tagTone is the tone of a tag colour in the theme being drawn.
-func tagTone(theme ui.Theme, color TagColor) look.Tone {
+// TagTone is the tone of a tag colour in the theme being drawn.
+func TagTone(theme ui.Theme, color TagColor) look.Tone {
 	tones, found := tagTones[color]
 	if !found {
 		return look.Neutral(theme)

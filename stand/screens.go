@@ -173,14 +173,13 @@ func (screens *Screens) drawRegister(context *ui.Context) {
 		context.Tabs("tag", &screens.tag, append([]string{"Todo"}, tags...)...)
 	}
 	width, _ := context.Size()
-	context.Grid(max(2, int(width/tileWidth)-1), func() {
+	context.Grid(max(2, int(width/tileWidth)), func() {
 		for _, item := range screens.shown(tags) {
 			context.Push(item.VariantID)
 			screens.tile(context, item)
 			context.Pop()
 		}
 	})
-	screens.basketBar(context)
 }
 
 // tags is every tag of the stand's items, in the order they first appear.
@@ -210,46 +209,16 @@ func (screens *Screens) shown(tags []string) []Item {
 	return shown
 }
 
-// tile is one product: tapping it adds one to the basket; once chosen, it shows how many and a
-// button to take one back.
-func (screens *Screens) tile(context *ui.Context, item Item) {
-	theme := context.Theme
-	chosen := screens.basket.Quantity(item.VariantID)
-	label := fmt.Sprintf("%s · %s", item.Label, money.Format(item.Price))
-	if look.ClickableCard(context, label, ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(14), Gap: 6}, func() {
-		context.Frame(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Gap: 2}, ui.Look{Clip: true}, func() {
-			look.Paragraph(context, item.Label, ui.TextStyle{Weight: draw2d.Bold})
-			context.Text(money.Format(item.Price), ui.TextStyle{Color: theme.InkSoft})
-		})
-		left := item.Left - chosen
-		context.Text(fmt.Sprintf("Quedan %d", left), ui.TextStyle{Size: theme.SmallTextSize, Color: theme.InkSoft})
-		if chosen > 0 {
-			screens.chosenRow(context, item, chosen)
-		}
-	}) && !screens.basket.Add(item) {
-		screens.tell(true, "No quedan más")
+// DrawBasketBar is the bottom of the stand, fixed over the app's bar while the products scroll:
+// what the basket holds, its total and «Cobrar». It draws nothing while no stand is chosen.
+func (screens *Screens) DrawBasketBar(context *ui.Context) {
+	if screens.source == nil || screens.loadErr != nil || len(screens.items) == 0 {
+		return
 	}
-}
-
-// chosenRow is the slate band of a chosen tile: how many are in the basket, and «−».
-func (screens *Screens) chosenRow(context *ui.Context, item Item, chosen int) {
-	theme := context.Theme
-	context.Frame(ui.Layout{Width: ui.Grow(), Padding: ui.Pad(6), Gap: 8, AlignY: ui.Center},
-		ui.Look{Fill: theme.Primary, Radius: theme.ControlRadius}, func() {
-			context.Box(ui.Layout{Width: ui.Grow()}, func() {
-				context.Text(fmt.Sprintf("× %d", chosen), ui.TextStyle{Weight: draw2d.Bold, Color: theme.OnPrimary})
-			})
-			if context.IconButton("minus", "##Quitar uno") {
-				screens.basket.Remove(item.VariantID)
-			}
-		})
-}
-
-// basketBar is the bottom of the stand: what the basket holds, its total and «Cobrar».
-func (screens *Screens) basketBar(context *ui.Context) {
 	theme := context.Theme
 	count := screens.basket.Count()
-	look.Card(context, ui.Layout{Width: ui.Grow(), Padding: ui.Pad(16), Gap: 16, AlignY: ui.Center}, func() {
+	context.Separator()
+	context.Frame(ui.Layout{Width: ui.Grow(), Padding: ui.PadXY(theme.Padding*1.6, 12), Gap: 16, AlignY: ui.Center}, ui.Look{Fill: theme.Surface}, func() {
 		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Gap: 2}, func() {
 			context.Text(piecesWords(count), ui.TextStyle{Color: theme.InkSoft})
 			context.Text(money.Format(screens.basket.Total()), ui.TextStyle{Size: theme.TextSize * 1.6, Weight: draw2d.Bold})
@@ -276,14 +245,21 @@ func piecesWords(count int) string {
 	return fmt.Sprintf("%d piezas", count)
 }
 
-// ShowCashPayment opens the cash dialog with the first item twice in the basket and 20 € handed
-// over, for captures of the stand.
-func (screens *Screens) ShowCashPayment() {
-	if len(screens.items) == 0 {
-		return
+// ShowBasket puts the first item twice and the second once in the basket, for captures of the stand.
+func (screens *Screens) ShowBasket() {
+	for index, times := range []int{2, 1} {
+		for range times {
+			if index < len(screens.items) {
+				screens.basket.Add(screens.items[index])
+			}
+		}
 	}
-	screens.basket.Add(screens.items[0])
-	screens.basket.Add(screens.items[0])
+}
+
+// ShowCashPayment opens the cash dialog over ShowBasket's basket with 20 € handed over, for
+// captures of the stand.
+func (screens *Screens) ShowCashPayment() {
+	screens.ShowBasket()
 	screens.received.Clear()
 	screens.received.Add(2000)
 	screens.step = payingCash

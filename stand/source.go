@@ -17,9 +17,12 @@ import (
 type Item struct {
 	VariantID string
 	Label     string
-	Price     money.Money
-	Left      int
-	Tags      []string
+	// Color paints the item's picture until products have photos: the same for every variant of
+	// a product, so the artist learns it.
+	Color catalogue.TagColor
+	Price money.Money
+	Left  int
+	Tags  []string
 }
 
 // Source is where a stand takes what it sells from, and where it records a sale. Refusal is the
@@ -53,6 +56,7 @@ func (fair Fair) Items() ([]Item, error) {
 			return nil, err
 		}
 		items = append(items, Item{VariantID: line.VariantID, Label: sales.ItemLabel(line.ProductName, line.VariantName),
+			Color: catalogue.TagColorFor(line.ProductName),
 			Price: line.Price, Left: line.Remaining(), Tags: tagNames(product.Tags)})
 	}
 	return items, nil
@@ -91,6 +95,7 @@ func (stock WholeStock) Items() ([]Item, error) {
 		for _, variant := range product.Variants {
 			if variant.Stock > 0 {
 				items = append(items, Item{VariantID: variant.ID, Label: sales.ItemLabel(product.Name, variant.Name),
+					Color: catalogue.TagColorFor(product.Name),
 					Price: variant.Price, Left: variant.Stock, Tags: tagNames(product.Tags)})
 			}
 		}

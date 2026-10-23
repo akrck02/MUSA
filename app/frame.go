@@ -37,6 +37,9 @@ func (program *App) frame(context *ui.Context) {
 	insets := context.Insets()
 	context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Grow(), Padding: ui.Padding{Top: insets.Top}}, func() {
 		program.scrollingPage(context)
+		if program.place == Stand {
+			program.stand.DrawBasketBar(context)
+		}
 		context.Separator()
 		bar := ui.Layout{Width: ui.Grow(), Height: ui.Fixed(barHeight + insets.Bottom), Padding: ui.Padding{Bottom: insets.Bottom}, AlignX: ui.Center}
 		context.Frame(bar, ui.Look{Fill: theme.Surface}, func() {

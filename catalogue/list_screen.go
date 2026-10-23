@@ -81,7 +81,7 @@ func (screens *Screens) filterBar(context *ui.Context) {
 		for _, tag := range screens.tags {
 			context.Push(tag.ID)
 			chosen := slices.Contains(query.TagIDs, tag.ID)
-			tone := tagTone(theme, tag.Color)
+			tone := TagTone(theme, tag.Color)
 			if !chosen {
 				tone = look.Neutral(theme)
 			}
@@ -166,7 +166,7 @@ func tagRow(context *ui.Context, product Product) {
 				look.Pill(context, fmt.Sprintf("+%d", len(product.Tags)-shownTags), look.Neutral(theme))
 				break
 			}
-			look.Pill(context, tag.Name, tagTone(theme, tag.Color))
+			look.Pill(context, tag.Name, TagTone(theme, tag.Color))
 		}
 	})
 }

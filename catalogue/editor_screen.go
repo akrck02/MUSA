@@ -141,7 +141,7 @@ func (screens *Screens) tagSection(context *ui.Context) {
 			context.Box(ui.Layout{Width: ui.Grow(), Gap: 6, Wrap: true}, func() {
 				for index, name := range edited.tags {
 					context.Push(name)
-					tone := tagTone(theme, TagColorFor(TagKey(name)))
+					tone := TagTone(theme, TagColorFor(TagKey(name)))
 					if _, removed := context.RemovableChip("tag", name, chipLook(tone)); removed {
 						edited.tags = append(edited.tags[:index:index], edited.tags[index+1:]...)
 					}

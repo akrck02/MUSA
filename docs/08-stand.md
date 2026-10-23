@@ -15,11 +15,15 @@ This page is for whoever sells with MUSA: by the end you know how to charge a cu
 
 ## Fill the basket
 
-Tap a product to add one to the basket; tap again for another. A chosen product turns slate and
-shows how many are in the basket, with «−» to take one back. The basket never holds more than is
-left. The tabs on top show the products of one tag.
+Each product is a tile: a coloured picture with its first letter (until products have photos),
+its name, price and how many are left, amber when three or fewer, «Agotado» when none.
 
-The bar at the bottom shows the pieces and the total, «Vaciar» and «Cobrar».
+Tap a tile to add one to the basket; tap again for another. A chosen tile turns slate below, says
+«en la cesta» with «−» to take one back, and its picture carries how many. The basket never holds
+more than is left. The tabs on top show the products of one tag.
+
+The bar at the bottom stays in place while the products scroll: the pieces and the total,
+«Vaciar» and «Cobrar».
 
 ## Charge
 

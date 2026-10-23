@@ -47,3 +47,11 @@ func TestRemovingTheLastOfAnItemTakesItOutOfTheBasket(t *testing.T) {
 		t.Error("a cleared basket still holds something")
 	}
 }
+
+func TestATilesLetterSkipsQuotes(t *testing.T) {
+	for label, want := range map[string]string{"Lámina «Gato»": "G", "Luna": "L", "«luna»": "L", "3D": "3", "": "�"} {
+		if got := initial(label); got != want {
+			t.Errorf("initial(%q) = %q, want %q", label, got, want)
+		}
+	}
+}
