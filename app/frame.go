@@ -10,7 +10,7 @@ import (
 // Measures of the frame, in pixels, as in Bubble's showcase.
 const (
 	barHeight   = 88
-	barWidth    = 760 // the places' width on a wide window
+	barWidth    = 900 // the places' width on a wide window
 	pillWidth   = 64  // the soft pill behind the chosen place's icon
 	pillHeight  = 32
 	brandLetter = 0.14 // the brand's letter spacing, in ems
@@ -24,9 +24,10 @@ type destination struct {
 
 var destinations = []destination{
 	{Home, "house", "Inicio"},
-	{Fairs, "store", "Ferias"},
+	{Stand, "store", "Puesto"},
 	{Catalogue, "palette", "Mis productos"},
-	{Sales, "receipt", "Mis ventas"},
+	{Fairs, "tent", "Ferias"},
+	{Sales, "package", "Pedidos"},
 }
 
 // frame is the page above and the places in a bar along the bottom, on every size, as on an

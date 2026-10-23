@@ -1,6 +1,5 @@
-// Package app is MUSA as a whole: the theme, the places a person moves between (home, catalogue,
-// fairs, sales) and the frame around them, an index on the left on a wide window and a bar at the
-// bottom on a phone. Each place's screens live in its own package.
+// Package app is MUSA as a whole: the theme, the places a person moves between (home, the stand,
+// catalogue, fairs, orders) and the frame around them, a bar along the bottom. Each place's screens live in its own package.
 package app
 
 import (
@@ -15,6 +14,7 @@ import (
 	"github.com/Itros97/MUSA/events"
 	"github.com/Itros97/MUSA/look"
 	"github.com/Itros97/MUSA/sales"
+	"github.com/Itros97/MUSA/stand"
 	"github.com/Itros97/MUSA/storage"
 )
 
@@ -30,6 +30,7 @@ const (
 	Catalogue
 	Fairs
 	Sales
+	Stand
 )
 
 // Options are how the program was started.
@@ -50,6 +51,7 @@ type App struct {
 	catalogue *catalogue.Screens
 	fairs     *events.Screens
 	sales     *sales.Screens
+	stand     *stand.Screens
 	home      homeState
 	today     today
 }
@@ -80,6 +82,7 @@ func New(database *storage.Database, options Options) (*App, error) {
 	program.catalogue = catalogue.NewScreens(products, storage.NewID)
 	program.fairs = events.NewScreens(fairs, products, storage.NewID, now)
 	program.sales = sales.NewScreens(sold, products, storage.NewID, now)
+	program.stand = stand.NewScreens(fairs, products, sold, storage.NewID, now)
 	program.Open(Home)
 	return program, nil
 }
@@ -97,6 +100,8 @@ func (program *App) Open(place Place) {
 		program.fairs.Reload()
 	case Sales:
 		program.sales.Reload()
+	case Stand:
+		program.stand.Reload()
 	}
 }
 
@@ -121,6 +126,8 @@ func (program *App) back() bool {
 		return program.fairs.Back()
 	case Sales:
 		return program.sales.Back()
+	case Stand:
+		return program.stand.Back()
 	}
 	return false
 }
@@ -133,6 +140,8 @@ func (program *App) page(context *ui.Context) {
 		program.fairs.Draw(context)
 	case Sales:
 		program.sales.Draw(context)
+	case Stand:
+		program.stand.Draw(context)
 	default:
 		program.drawHome(context)
 	}
@@ -142,7 +151,8 @@ func (program *App) page(context *ui.Context) {
 func (program *App) Stores() demo.Stores { return program.stores }
 
 // Show opens one of the pages inside a place, for captures and tests: "product" (the first
-// product's editor), "fair" (the open fair's detail) or "order" (a new order).
+// product's editor), "fair" (the open fair's detail), "order" (a new order), "stand" (selling
+// from the whole stock) or "stand-cash" (its cash dialog).
 func (program *App) Show(page string) {
 	switch page {
 	case "product":
@@ -154,5 +164,11 @@ func (program *App) Show(page string) {
 	case "order":
 		program.Open(Sales)
 		program.sales.StartOrder()
+	case "stand", "stand-cash":
+		program.Open(Stand)
+		program.stand.Choose(stand.WholeStock{Sales: program.stores.Sales, Products: program.stores.Products, Now: program.stores.Now})
+		if page == "stand-cash" {
+			program.stand.ShowCashPayment()
+		}
 	}
 }

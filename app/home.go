@@ -32,9 +32,10 @@ type section struct {
 }
 
 var sections = []section{
-	{Fairs, "store", "Vender en una feria", "Lo que llevas y lo que ganas"},
+	{Stand, "store", "Abrir el puesto", "Cobra en una feria o en casa"},
 	{Catalogue, "palette", "Mis productos", "Tus láminas, pegatinas y demás"},
-	{Sales, "receipt", "Mis ventas", "Todo lo que has vendido"},
+	{Fairs, "tent", "Ferias", "Lo que llevas y lo que ganas"},
+	{Sales, "package", "Pedidos", "Lo que tienes que enviar, y lo vendido"},
 }
 
 func (program *App) drawHome(context *ui.Context) {

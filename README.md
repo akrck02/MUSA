@@ -58,6 +58,7 @@ go test ./...             # the tests
 | [Inventory](docs/04-inventory.md) | Products, variants, validation rules, filters and duplication. |
 | [Events](docs/06-events.md) | Stock taken to a fair, sales, expenses, profit and closing. |
 | [Sales](docs/07-sales.md) | Orders, their status, the board and the sales history. |
+| [The stand](docs/08-stand.md) | Selling from a fair or the whole stock, and charging in cash or by card. |
 | [Roadmap](docs/05-roadmap.md) | The modules still to come and the plan for sync. |
 
 [Read the docs online →](https://itros97.github.io/MUSA/)

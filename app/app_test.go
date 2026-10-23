@@ -11,6 +11,7 @@ import (
 	"github.com/Itros97/MUSA/demo"
 	"github.com/Itros97/MUSA/money"
 	"github.com/Itros97/MUSA/sales"
+	"github.com/Itros97/MUSA/stand"
 	"github.com/Itros97/MUSA/storage"
 )
 
@@ -166,5 +167,33 @@ func clickIn(window *uitest.Window, scope, label string) func() error {
 		window.ClickAt(element.Rect.X+element.Rect.Width/2, element.Rect.Y+element.Rect.Height/2)
 		window.Frame()
 		return nil
+	}
+}
+
+func TestPayingInCashAtTheStandRecordsALocalSaleAndTakesTheStock(t *testing.T) {
+	program, window := openApp(t, true)
+	program.Show("stand")
+	window.Frame()
+	before, _ := program.stores.Sales.All()
+	items, err := stand.WholeStock{Products: program.stores.Products}.Items()
+	if err != nil || len(items) == 0 {
+		t.Fatalf("no product on the stand (%v)", err)
+	}
+	item := items[0]
+	steps(t, window, clickIn(window, item.VariantID, item.Label+" · "+money.Format(item.Price)), click(window, "Cobrar"), click(window, "Pagar en efectivo"),
+		click(window, money.Format(5000)), click(window, "Confirmar"))
+	if _, err := window.Element("Siguiente cliente"); err != nil {
+		t.Fatal("the sale did not close:", err)
+	}
+	after, _ := program.stores.Sales.All()
+	if len(after) != len(before)+1 {
+		t.Fatalf("%d sales, then %d", len(before), len(after))
+	}
+	sold := after[0]
+	if sold.Channel != sales.InPerson || sold.Status != sales.Delivered || sold.PaidWith != sales.Cash || sold.Units() != 1 {
+		t.Errorf("recorded %+v", sold)
+	}
+	if stock, _, _ := program.stores.Products.Stock(item.VariantID); stock != item.Left-1 {
+		t.Errorf("stock %d after selling 1 of %d", stock, item.Left)
 	}
 }
