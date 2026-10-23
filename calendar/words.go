@@ -12,6 +12,9 @@ var monthNames = [...]string{"ene", "feb", "mar", "abr", "may", "jun", "jul", "a
 // Words writes the date the Spanish way, with a short month: "18 abr 2026".
 func Words(date Date) string { return fmt.Sprintf("%d %s %d", date.Day, monthName(date), date.Year) }
 
+// DayWords is a day without its year, for lists that are all of one year: "24 oct".
+func DayWords(date Date) string { return fmt.Sprintf("%d %s", date.Day, monthName(date)) }
+
 // RangeWords writes two dates repeating only what changes: "18–19 abr 2026", "30 abr – 2 may 2026".
 func RangeWords(start, end Date) string {
 	switch {

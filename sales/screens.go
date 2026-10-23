@@ -28,17 +28,16 @@ type Screens struct {
 	loadErr error
 	view    int // 0 the board of orders on the way, 1 the sales history
 	period  int // index in Periods
-	channel int // 0 every channel, then 1 + index in channelChoices
-	opened  string
-	editor  *orderEditor
+	kind    int // index in historyKinds
+	// eventName names a fair by its id, empty when unknown; sales cannot read fairs themselves.
+	eventName func(id string) string
+	opened    string
+	editor    *orderEditor
 
 	note        string
 	noteWarning bool
 	noteUntil   time.Time
 }
-
-// channelChoices are the channels the list filters by: every one, fairs included.
-var channelChoices = append([]Channel{AtEvent}, SelectableChannels...)
 
 // NewScreens draws the sales kept in store, picking what they sell from products.
 func NewScreens(store *Store, products *catalogue.Store, newID func() string, now func() time.Time) *Screens {
@@ -79,14 +78,6 @@ func (screens *Screens) tell(warning bool, words string) {
 	screens.Reload()
 }
 
-func (screens *Screens) query() Query {
-	query := Query{Period: Periods[screens.period]}
-	if screens.channel > 0 {
-		query.Channel = channelChoices[screens.channel-1]
-	}
-	return query
-}
-
 // views are the two tabs of the orders page.
 var views = []string{"Por enviar", "Historial de ventas"}
 
@@ -109,63 +100,6 @@ func (screens *Screens) drawList(context *ui.Context) {
 	if screens.opened != "" {
 		screens.detailSheet(context)
 	}
-}
-
-// drawHistory is the delivered orders, local sales among them, of a period and a channel.
-func (screens *Screens) drawHistory(context *ui.Context) {
-	theme := context.Theme
-	now := screens.now()
-	shown := Filter(Done(screens.sales), screens.query(), calendar.Of(now), now.Location())
-	context.Box(ui.Layout{Width: ui.Grow(), Gap: theme.Gap, AlignY: ui.Center}, func() {
-		var periods []string
-		for _, period := range Periods {
-			periods = append(periods, periodWords[period])
-		}
-		context.Box(ui.Layout{Width: ui.Grow()}, func() { context.Tabs("period", &screens.period, periods...) })
-		channels := []string{"Todos los canales"}
-		for _, channel := range channelChoices {
-			channels = append(channels, channelWords[channel])
-		}
-		context.Select("channel", &screens.channel, channels)
-	})
-	summary := Summarise(shown)
-	look.Figures(context, 4, func() {
-		look.Figure(context, "Ventas", fmt.Sprint(summary.Count), false)
-		look.Figure(context, "Ingresos", money.Format(summary.Revenue), false)
-		look.Figure(context, "Coste", money.Format(summary.Cost), false)
-		look.Figure(context, "Te queda", money.Format(summary.Margin()), summary.Margin() < 0)
-	})
-	if len(shown) == 0 {
-		look.Empty(context, "receipt", "Sin ventas en este periodo", "Mira otro periodo, u otro canal.", "")
-		return
-	}
-	for _, sale := range shown {
-		context.Push(sale.ID)
-		if screens.row(context, sale) {
-			screens.opened = sale.ID
-		}
-		context.Pop()
-	}
-}
-
-// row is one sale in the list; it returns true on the frame it is clicked.
-func (screens *Screens) row(context *ui.Context, sale Sale) bool {
-	theme := context.Theme
-	return look.ClickableCard(context, screens.headline(sale), ui.Layout{Width: ui.Grow(), Padding: ui.Pad(12), Gap: 12, AlignY: ui.Center}, func() {
-		context.Frame(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Gap: 2}, ui.Look{Clip: true}, func() {
-			context.Text(screens.headline(sale), ui.TextStyle{Weight: draw2d.Bold})
-			context.Text(calendar.Words(calendar.Of(sale.SoldAt))+" · "+channelWords[sale.Channel]+customerWords(sale),
-				ui.TextStyle{Size: theme.SmallTextSize, Color: theme.InkSoft})
-		})
-		context.Box(ui.Layout{Direction: ui.Vertical, Gap: 2, AlignX: ui.End}, func() {
-			context.Text(money.Format(sale.Total()), ui.TextStyle{Weight: draw2d.Bold})
-			colour := theme.InkSoft
-			if sale.Margin() < 0 {
-				colour = theme.Danger
-			}
-			context.Text("margen "+money.Format(sale.Margin()), ui.TextStyle{Size: theme.SmallTextSize, Color: colour})
-		})
-	})
 }
 
 // headline is the first line of a sale, or "first line +2" when it has more.
@@ -266,3 +200,9 @@ func (screens *Screens) StartOrder() {
 	editing := newOrderEditor(screens.newID, calendar.Of(screens.now()))
 	screens.editor = &editing
 }
+
+// ShowHistory opens the sales history tab, for captures.
+func (screens *Screens) ShowHistory() { screens.view = 1 }
+
+// NameEvents tells the screens how to name a fair by its id, so a fair's sales show its name.
+func (screens *Screens) NameEvents(name func(id string) string) { screens.eventName = name }

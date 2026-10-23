@@ -277,3 +277,12 @@ func TestEveryProblemCodeHasWordsForTheArtist(t *testing.T) {
 		}
 	}
 }
+
+func TestTheHistorySeparatesLocalSalesFromOrdersThatTravelled(t *testing.T) {
+	all := []Sale{{ID: "fair", Channel: AtEvent}, {ID: "hand", Channel: InPerson}, {ID: "shop", Channel: OnlineShop}}
+	local := OfKind(all, IsLocal)
+	sent := OfKind(all, func(channel Channel) bool { return !IsLocal(channel) })
+	if len(local) != 2 || local[0].ID != "fair" || local[1].ID != "hand" || len(sent) != 1 || sent[0].ID != "shop" {
+		t.Errorf("local %v, sent %v", local, sent)
+	}
+}

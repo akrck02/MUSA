@@ -62,7 +62,11 @@ The page has two tabs:
 
 ## The sales history
 
-The history shows the sales of a period (this month, last month, this year or all) and, optionally, of one channel, newest first. On top, a summary of what is shown: number of sales, units, revenue, cost and margin. Tapping a sale opens its lines, shipping and totals.
+The history lists the delivered sales of a period (this month by default), newest first, in one
+card: the day, who it went to (the fair's name for a fair's sales), a pill saying where it came
+from, what was sold and the amount. Three tabs filter it: **Todo**, **Ventas locales** (fairs and
+sales by hand) and **Envíos** (orders that travelled). On top: revenue, cost and what is left.
+Tapping a sale opens its lines, shipping and totals.
 
 ## Shipping
 

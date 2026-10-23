@@ -82,6 +82,10 @@ func New(database *storage.Database, options Options) (*App, error) {
 	program.catalogue = catalogue.NewScreens(products, storage.NewID)
 	program.fairs = events.NewScreens(fairs, products, storage.NewID, now)
 	program.sales = sales.NewScreens(sold, products, storage.NewID, now)
+	program.sales.NameEvents(func(id string) string {
+		event, _, _ := fairs.Find(id) // a fair that cannot be read is named by its channel instead
+		return event.Name
+	})
 	program.stand = stand.NewScreens(fairs, products, sold, storage.NewID, now)
 	program.Open(Home)
 	return program, nil
@@ -151,7 +155,7 @@ func (program *App) page(context *ui.Context) {
 func (program *App) Stores() demo.Stores { return program.stores }
 
 // Show opens one of the pages inside a place, for captures and tests: "product" (the first
-// product's editor), "fair" (the open fair's detail), "order" (a new order), "stand" (selling
+// product's editor), "fair" (the open fair's detail), "order" (a new order), "history" (the sales history), "stand" (selling
 // from the whole stock) or "stand-cash" (its cash dialog).
 func (program *App) Show(page string) {
 	switch page {
@@ -164,6 +168,9 @@ func (program *App) Show(page string) {
 	case "order":
 		program.Open(Sales)
 		program.sales.StartOrder()
+	case "history":
+		program.Open(Sales)
+		program.sales.ShowHistory()
 	case "stand", "stand-cash":
 		program.Open(Stand)
 		program.stand.Choose(stand.WholeStock{Sales: program.stores.Sales, Products: program.stores.Products, Now: program.stores.Now})

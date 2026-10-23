@@ -59,3 +59,9 @@ func TestADateIsWrittenOutAsPeopleSayIt(t *testing.T) {
 		t.Errorf("got %q", words)
 	}
 }
+
+func TestADayWithoutItsYearReadsShort(t *testing.T) {
+	if words := DayWords(Date{Year: 2026, Month: time.October, Day: 24}); words != "24 oct" {
+		t.Errorf("DayWords = %q", words)
+	}
+}
