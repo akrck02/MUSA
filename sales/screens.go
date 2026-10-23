@@ -16,8 +16,8 @@ import (
 // noteTime is how long a note about what an action did stays on screen.
 const noteTime = 3 * time.Second
 
-// Screens are the sales pages: the list with its filters and totals, an order's detail over it,
-// and the order editor.
+// Screens are the orders pages: the board of orders on the way, the sales history with its
+// filters and totals, an order's detail over them, and the order editor.
 type Screens struct {
 	store    *Store
 	products *catalogue.Store
@@ -26,6 +26,7 @@ type Screens struct {
 
 	sales   []Sale
 	loadErr error
+	view    int // 0 the board of orders on the way, 1 the sales history
 	period  int // index in Periods
 	channel int // 0 every channel, then 1 + index in channelChoices
 	opened  string
@@ -86,16 +87,35 @@ func (screens *Screens) query() Query {
 	return query
 }
 
+// views are the two tabs of the orders page.
+var views = []string{"Por enviar", "Historial de ventas"}
+
 func (screens *Screens) drawList(context *ui.Context) {
-	theme := context.Theme
-	now := screens.now()
-	shown := Filter(screens.sales, screens.query(), calendar.Of(now), now.Location())
-	look.PageHeader(context, "Ventas", "Pedidos de todos los canales", func() {
-		if context.PrimaryIconButton("plus", "Nueva venta") {
-			editing := newOrderEditor(screens.newID, calendar.Of(now))
-			screens.editor = &editing
+	onTheWay := OnTheWay(screens.sales)
+	look.PageHeader(context, "Pedidos", boardWords(onTheWay), func() {
+		if context.PrimaryIconButton("plus", "Nuevo pedido") {
+			screens.StartOrder()
 		}
 	})
+	context.Tabs("view", &screens.view, views...)
+	switch {
+	case screens.loadErr != nil:
+		look.Empty(context, "triangle-alert", "No se pudieron leer los pedidos", screens.loadErr.Error(), "")
+	case screens.view == 0:
+		screens.drawBoard(context, onTheWay)
+	default:
+		screens.drawHistory(context)
+	}
+	if screens.opened != "" {
+		screens.detailSheet(context)
+	}
+}
+
+// drawHistory is the delivered orders, local sales among them, of a period and a channel.
+func (screens *Screens) drawHistory(context *ui.Context) {
+	theme := context.Theme
+	now := screens.now()
+	shown := Filter(Done(screens.sales), screens.query(), calendar.Of(now), now.Location())
 	context.Box(ui.Layout{Width: ui.Grow(), Gap: theme.Gap, AlignY: ui.Center}, func() {
 		var periods []string
 		for _, period := range Periods {
@@ -110,27 +130,21 @@ func (screens *Screens) drawList(context *ui.Context) {
 	})
 	summary := Summarise(shown)
 	look.Figures(context, 4, func() {
-		look.Figure(context, "Pedidos", fmt.Sprint(summary.Count), false)
+		look.Figure(context, "Ventas", fmt.Sprint(summary.Count), false)
 		look.Figure(context, "Ingresos", money.Format(summary.Revenue), false)
 		look.Figure(context, "Coste", money.Format(summary.Cost), false)
-		look.Figure(context, "Margen", money.Format(summary.Margin()), summary.Margin() < 0)
+		look.Figure(context, "Te queda", money.Format(summary.Margin()), summary.Margin() < 0)
 	})
-	switch {
-	case screens.loadErr != nil:
-		look.Empty(context, "triangle-alert", "No se pudieron leer las ventas", screens.loadErr.Error(), "")
-	case len(shown) == 0:
-		look.Empty(context, "receipt", "Sin ventas en este periodo", "Apunta un pedido con «Nueva venta», o mira otro periodo.", "")
-	default:
-		for _, sale := range shown {
-			context.Push(sale.ID)
-			if screens.row(context, sale) {
-				screens.opened = sale.ID
-			}
-			context.Pop()
-		}
+	if len(shown) == 0 {
+		look.Empty(context, "receipt", "Sin ventas en este periodo", "Mira otro periodo, u otro canal.", "")
+		return
 	}
-	if screens.opened != "" {
-		screens.detailSheet(context)
+	for _, sale := range shown {
+		context.Push(sale.ID)
+		if screens.row(context, sale) {
+			screens.opened = sale.ID
+		}
+		context.Pop()
 	}
 }
 

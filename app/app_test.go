@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/Itros97/MUSA/money"
+	"slices"
 	"strings"
 	"testing"
 
@@ -9,6 +9,7 @@ import (
 
 	"github.com/Itros97/MUSA/catalogue"
 	"github.com/Itros97/MUSA/demo"
+	"github.com/Itros97/MUSA/money"
 	"github.com/Itros97/MUSA/sales"
 	"github.com/Itros97/MUSA/storage"
 )
@@ -117,7 +118,7 @@ func TestRecordingAnOrderTakesItsStockFromTheCatalogue(t *testing.T) {
 	before, _ := program.stores.Sales.All()
 	program.Open(Sales)
 	window.Frame()
-	steps(t, window, click(window, "Nueva venta"), typeInto(window, "Opcional", "Ana"), click(window, "Guardar"))
+	steps(t, window, click(window, "Nuevo pedido"), typeInto(window, "Opcional", "Ana"), click(window, "Guardar"))
 	after, _ := program.stores.Sales.All()
 	if len(after) != len(before)+1 {
 		t.Fatalf("%d sales, then %d", len(before), len(after))
@@ -130,5 +131,40 @@ func TestRecordingAnOrderTakesItsStockFromTheCatalogue(t *testing.T) {
 	}
 	if recorded.Channel != sales.OnlineShop || len(recorded.Lines) != 1 || !strings.Contains(recorded.Lines[0].ProductName, "Chapa") {
 		t.Errorf("recorded %+v", recorded)
+	}
+}
+
+func TestAnOrderMovesAlongTheBoardAndThenToTheHistory(t *testing.T) {
+	program, window := openApp(t, true)
+	program.Open(Sales)
+	window.Frame()
+	before, _ := program.stores.Sales.All()
+	onTheWay := sales.OnTheWay(before)
+	index := slices.IndexFunc(onTheWay, func(sale sales.Sale) bool { return sale.Customer != "" })
+	if index < 0 {
+		t.Fatal("the demo has no order with a customer on the way")
+	}
+	order := onTheWay[index]
+	steps(t, window, clickIn(window, order.ID, "Preparado"), clickIn(window, order.ID, "Entregado"))
+	after, found, err := program.stores.Sales.Find(order.ID)
+	if err != nil || !found || after.Status != sales.Delivered {
+		t.Fatalf("the order is %q (%v)", after.Status, err)
+	}
+	steps(t, window, click(window, "Historial de ventas"))
+	if !slices.ContainsFunc(window.Texts(), func(text string) bool { return strings.Contains(text, order.Customer) }) {
+		t.Errorf("the history does not show %s's order: %q", order.Customer, window.Texts())
+	}
+}
+
+// clickIn clicks the control with label inside the scope pushed with name, for labels a list repeats.
+func clickIn(window *uitest.Window, scope, label string) func() error {
+	return func() error {
+		element, err := window.ElementIn(scope, label)
+		if err != nil {
+			return err
+		}
+		window.ClickAt(element.Rect.X+element.Rect.Width/2, element.Rect.Y+element.Rect.Height/2)
+		window.Frame()
+		return nil
 	}
 }

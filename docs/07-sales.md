@@ -39,7 +39,7 @@ The margin is negative when the sale lost money.
 
 ## Recording a sale
 
-**New sale** opens an editor: pick the channel, the date (today by default), the customer and a note, then add products from the catalogue. Each line starts at one unit and the variant's price; both can be changed for discounts or bundles. Totals update while typing.
+**Nuevo pedido** opens an editor: pick the channel, the date (today by default), the customer and a note, then add products from the catalogue. Each line starts at one unit and the variant's price; both can be changed for discounts or bundles. Totals update while typing.
 
 Physical variants leave the catalogue when the sale is saved. A sale cannot take more units than the catalogue has, counting every line of the same variant. Digital variants, such as commissions, have no stock.
 
@@ -51,9 +51,18 @@ Deleting a sale gives its physical units back to the catalogue.
 
 Sales made at an event are orders of one line with the Evento channel. They show in the sales list too, but they are undone from their event: their units belong to the event's stock, not to the catalogue.
 
-## The sales list
+## The orders page
 
-The list shows the sales of a period (this month, last month, this year or all) and, optionally, of one channel, newest first. On top, a summary of what is shown: number of sales, units, revenue, cost and margin. Tapping a sale opens its lines, shipping and totals.
+The page has two tabs:
+
+- **Por enviar** is a board with a column for each status still on the way, Por preparar and
+  Enviado. Each order has one button that moves it on: «Preparado», then «Entregado». A delivered
+  order leaves the board.
+- **Historial de ventas** lists the delivered orders, local sales among them.
+
+## The sales history
+
+The history shows the sales of a period (this month, last month, this year or all) and, optionally, of one channel, newest first. On top, a summary of what is shown: number of sales, units, revenue, cost and margin. Tapping a sale opens its lines, shipping and totals.
 
 ## Shipping
 
