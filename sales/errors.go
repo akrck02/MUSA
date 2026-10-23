@@ -12,6 +12,7 @@ const (
 	CodeEventChannel     Code = "sales.event-channel"
 	CodeNegativeShipping Code = "sales.negative-shipping"
 	CodeManagedByEvent   Code = "sales.managed-by-event"
+	CodeAlreadyDelivered Code = "sales.already-delivered"
 	CodeInvalidQuantity  Code = "sales.invalid-quantity"
 	CodeNegativePrice    Code = "sales.negative-price"
 	CodeNotEnoughStock   Code = "sales.not-enough-stock"

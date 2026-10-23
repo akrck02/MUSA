@@ -117,3 +117,26 @@ func ItemLabel(productName, variantName string) string {
 	}
 	return productName + " · " + variantName
 }
+
+// OnTheWay keeps the orders still to be delivered, oldest first: the next to prepare leads.
+func OnTheWay(sales []Sale) []Sale {
+	var kept []Sale
+	for _, sale := range sales {
+		if sale.Status != Delivered {
+			kept = append(kept, sale)
+		}
+	}
+	slices.SortStableFunc(kept, func(first, second Sale) int { return first.SoldAt.Compare(second.SoldAt) })
+	return kept
+}
+
+// Done keeps the delivered orders, local sales among them: the sales history.
+func Done(sales []Sale) []Sale {
+	var kept []Sale
+	for _, sale := range sales {
+		if sale.Status == Delivered {
+			kept = append(kept, sale)
+		}
+	}
+	return kept
+}

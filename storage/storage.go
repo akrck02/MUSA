@@ -30,7 +30,8 @@ type Querier interface {
 	QueryRowContext(context context.Context, query string, arguments ...any) *sql.Row
 }
 
-// Open opens the database file at path, making it and its tables when missing.
+// Open opens the database file at path, making it and its tables when missing and bringing an
+// older one up to date.
 func Open(path string) (*Database, error) {
 	connection, err := sql.Open("sqlite", path+"?_pragma=foreign_keys(1)&_pragma=busy_timeout(5000)")
 	if err != nil {
@@ -40,6 +41,10 @@ func Open(path string) (*Database, error) {
 	connection.SetMaxOpenConns(1)
 	if _, err := connection.Exec(schema); err != nil {
 		connection.Close() // the schema error is the one worth telling
+		return nil, openFailed(path, err)
+	}
+	if err := migrate(connection); err != nil {
+		connection.Close() // the migration error is the one worth telling
 		return nil, openFailed(path, err)
 	}
 	return &Database{connection: connection}, nil

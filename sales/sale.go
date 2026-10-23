@@ -27,10 +27,44 @@ const (
 // SelectableChannels are the channels the order editor offers: every one but AtEvent.
 var SelectableChannels = []Channel{OnlineShop, Social, Marketplace, InPerson, Other}
 
+// Status is how far an order has travelled. It only moves forward.
+type Status string
+
+// The statuses, in order. The words are the ones stored in the database.
+const (
+	ToPrepare Status = "TO_PREPARE"
+	Sent      Status = "SENT"
+	Delivered Status = "DELIVERED"
+)
+
+// IsLocal tells whether a channel hands the goods over on the spot, at a fair or in person: its
+// sales never travel, so they are delivered as they are made.
+func IsLocal(channel Channel) bool { return channel == AtEvent || channel == InPerson }
+
+// StatusOfNew is the status an order starts with: delivered when it is local, to prepare otherwise.
+func StatusOfNew(channel Channel) Status {
+	if IsLocal(channel) {
+		return Delivered
+	}
+	return ToPrepare
+}
+
+// Next is the status after this one; found is false for a delivered order, which has none.
+func (status Status) Next() (next Status, found bool) {
+	switch status {
+	case ToPrepare:
+		return Sent, true
+	case Sent:
+		return Delivered, true
+	}
+	return "", false
+}
+
 // Sale is an order: one or more lines sold together through a channel.
 type Sale struct {
 	ID       string
 	Channel  Channel
+	Status   Status
 	EventID  string // empty outside fairs
 	Customer string
 	Note     string

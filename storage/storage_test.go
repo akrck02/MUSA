@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"database/sql"
 	"errors"
 	"path/filepath"
 	"testing"
@@ -65,5 +66,46 @@ func TestEachErrorCarriesItsOwnCode(t *testing.T) {
 		if !errors.As(err, &failure) || failure.Code != code {
 			t.Errorf("%v does not carry %s", err, code)
 		}
+	}
+}
+
+func TestAnOlderDatabaseGainsTheOrderStatusAndKeepsItsSales(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "musa.db")
+	older, err := sql.Open("sqlite", path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := older.Exec(schema); err != nil {
+		t.Fatal(err)
+	}
+	_, err = older.Exec(`INSERT INTO sale(id, channel, customer, note, shipping_charged_cents, shipping_cost_cents,
+		sold_at, updated_at) VALUES ('s1', 'ONLINE_SHOP', '', '', 0, 0, 0, 0)`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	older.Close()
+
+	database, err := Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer database.Close()
+	var status string
+	if err := database.Rows().QueryRowContext(t.Context(), "SELECT status FROM sale WHERE id = 's1'").Scan(&status); err != nil {
+		t.Fatal(err)
+	}
+	if status != "DELIVERED" {
+		t.Errorf("an old sale is %q, not delivered", status)
+	}
+}
+
+func TestOpeningTwiceTakesEachMigrationOnce(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "musa.db")
+	for range 2 {
+		database, err := Open(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		database.Close()
 	}
 }

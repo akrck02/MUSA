@@ -58,7 +58,7 @@ func (store *Store) Record(draft Draft) (Sale, []Problem, error) {
 	if problems := stockProblems(draft.Lines, products); len(problems) > 0 {
 		return Sale{}, problems, nil
 	}
-	sale := Sale{ID: store.newID(), Channel: draft.Channel, Customer: strings.TrimSpace(draft.Customer),
+	sale := Sale{ID: store.newID(), Channel: draft.Channel, Status: StatusOfNew(draft.Channel), Customer: strings.TrimSpace(draft.Customer),
 		Note: strings.TrimSpace(draft.Note), ShippingCharged: draft.ShippingCharged, ShippingCost: draft.ShippingCost, SoldAt: draft.SoldAt}
 	for _, line := range draft.Lines {
 		product := products[line.VariantID]
@@ -86,13 +86,38 @@ func (store *Store) Delete(id string) ([]Problem, error) {
 	return nil, store.database.InTransaction(func(rows storage.Querier) error { return DeleteIn(rows, sale, store.now()) })
 }
 
+// Advance moves an order to its next status: to prepare, sent, delivered.
+func (store *Store) Advance(id string) ([]Problem, error) {
+	sale, found, err := store.Find(id)
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		return nil, saleNotFound(id)
+	}
+	next, found := sale.Status.Next()
+	if !found {
+		return []Problem{{Code: CodeAlreadyDelivered}}, nil
+	}
+	at := storage.Milliseconds(store.now())
+	_, err = store.database.Rows().ExecContext(context.Background(), "UPDATE sale SET status = ?, updated_at = ? WHERE id = ?",
+		next, at, id)
+	if err != nil {
+		return nil, storageFailed("advance order", err)
+	}
+	return nil, nil
+}
+
 // InsertIn writes a sale and its lines inside a transaction; outside fairs its physical units
-// leave the catalogue.
+// leave the catalogue. A sale with no status takes the one a new order of its channel starts with.
 func InsertIn(rows storage.Querier, sale Sale) error {
+	if sale.Status == "" {
+		sale.Status = StatusOfNew(sale.Channel)
+	}
 	at := storage.Milliseconds(sale.SoldAt)
-	_, err := rows.ExecContext(context.Background(), `INSERT INTO sale(id, channel, event_id, customer, note,
-		shipping_charged_cents, shipping_cost_cents, sold_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		sale.ID, sale.Channel, emptyIsNull(sale.EventID), sale.Customer, sale.Note, sale.ShippingCharged, sale.ShippingCost, at, at)
+	_, err := rows.ExecContext(context.Background(), `INSERT INTO sale(id, channel, status, event_id, customer, note,
+		shipping_charged_cents, shipping_cost_cents, sold_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		sale.ID, sale.Channel, sale.Status, emptyIsNull(sale.EventID), sale.Customer, sale.Note, sale.ShippingCharged, sale.ShippingCost, at, at)
 	if err != nil {
 		return storageFailed("record sale", err)
 	}
@@ -177,7 +202,7 @@ func stockProblems(lines []LineDraft, products map[string]catalogue.Product) []P
 
 func readSales(rows storage.Querier, eventID, onlyID string) ([]Sale, error) {
 	result, err := rows.QueryContext(context.Background(), `
-		SELECT id, channel, coalesce(event_id, ''), customer, note, shipping_charged_cents, shipping_cost_cents, sold_at
+		SELECT id, channel, status, coalesce(event_id, ''), customer, note, shipping_charged_cents, shipping_cost_cents, sold_at
 		FROM sale WHERE deleted_at IS NULL AND (?1 = '' OR event_id = ?1) AND (?2 = '' OR id = ?2)
 		ORDER BY sold_at DESC`, eventID, onlyID)
 	if err != nil {
@@ -187,7 +212,7 @@ func readSales(rows storage.Querier, eventID, onlyID string) ([]Sale, error) {
 	for result.Next() {
 		var sale Sale
 		var soldAt int64
-		err := result.Scan(&sale.ID, &sale.Channel, &sale.EventID, &sale.Customer, &sale.Note,
+		err := result.Scan(&sale.ID, &sale.Channel, &sale.Status, &sale.EventID, &sale.Customer, &sale.Note,
 			&sale.ShippingCharged, &sale.ShippingCost, &soldAt)
 		if err != nil {
 			result.Close() // the scan error is the one worth telling

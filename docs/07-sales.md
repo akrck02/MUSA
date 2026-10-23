@@ -7,12 +7,25 @@ The sales module records every sale, whatever the channel, with its products, sh
 
 A sale is an order. It has:
 
-- A **channel**: Evento, Tienda online, Redes y mensajes, Marketplace, En persona or Otro.
+- A **channel**: Evento, Tienda online, Redes y mensajes, Marketplace, Venta local or Otro.
 - A date, and an optional customer and note (an order number, the shop it came from…).
 - One or more **lines**. Each line is a product variant with a quantity, a unit price and a unit cost.
 - What shipping was **charged** to the customer and what it **cost**.
 
 Names, prices and costs are copied when the sale is made, so editing or deleting a product later does not change past sales.
+
+## How far it has travelled
+
+An order that has to be sent has a **status**, and the status only moves forward:
+
+| Status | Means |
+|--------|-------|
+| Por preparar | the order came in; the parcel is still to be made |
+| Enviado | the parcel left |
+| Entregado | the customer has it |
+
+A **local sale** (Venta local, or a sale at an event) hands the goods over on the spot, so it is
+delivered the moment it is made. Sales recorded before statuses existed are taken as delivered.
 
 ## Figures
 

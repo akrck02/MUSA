@@ -221,3 +221,59 @@ func TestEachErrorConstructorCarriesItsOwnCode(t *testing.T) {
 		}
 	}
 }
+
+func TestAnOrderToSendStartsToPrepareAndALocalSaleIsDeliveredAtOnce(t *testing.T) {
+	store, _ := testStores(t)
+	online, _, _ := store.Record(Draft{Channel: OnlineShop, Lines: []LineDraft{{ID: "l1", VariantID: "v1", Quantity: 1, UnitPrice: 900}}})
+	local, _, _ := store.Record(Draft{Channel: InPerson, Lines: []LineDraft{{ID: "l2", VariantID: "v1", Quantity: 1, UnitPrice: 900}}})
+	if online.Status != ToPrepare || local.Status != Delivered {
+		t.Errorf("online %q, local %q", online.Status, local.Status)
+	}
+	all, _ := store.All()
+	if onTheWay := OnTheWay(all); len(onTheWay) != 1 || onTheWay[0].ID != online.ID {
+		t.Errorf("on the way: %+v", onTheWay)
+	}
+	if done := Done(all); len(done) != 1 || done[0].ID != local.ID {
+		t.Errorf("in the history: %+v", done)
+	}
+}
+
+func TestADeliveredOrderLeavesTheBoardAndCannotMoveFurther(t *testing.T) {
+	store, _ := testStores(t)
+	order, _, _ := store.Record(Draft{Channel: OnlineShop, Lines: []LineDraft{{ID: "l1", VariantID: "v1", Quantity: 1, UnitPrice: 900}}})
+	for _, want := range []Status{Sent, Delivered} {
+		if problems, err := store.Advance(order.ID); err != nil || problems != nil {
+			t.Fatal(problems, err)
+		}
+		if stored, _, _ := store.Find(order.ID); stored.Status != want {
+			t.Fatalf("status %q, want %q", stored.Status, want)
+		}
+	}
+	if problems, _ := store.Advance(order.ID); !slices.Equal(problems, []Problem{{Code: CodeAlreadyDelivered}}) {
+		t.Errorf("advancing a delivered order: %v", problems)
+	}
+	if all, _ := store.All(); len(OnTheWay(all)) != 0 || len(Done(all)) != 1 {
+		t.Error("a delivered order is still on the board")
+	}
+}
+
+func TestAFairsSaleIsDelivered(t *testing.T) {
+	store, _ := testStores(t)
+	fair := Sale{ID: "fair", Channel: AtEvent, EventID: "e1", Lines: []Line{{ID: "fl", VariantID: "v1", Quantity: 1}}}
+	if err := store.database.InTransaction(func(rows storage.Querier) error { return InsertIn(rows, fair) }); err != nil {
+		t.Fatal(err)
+	}
+	if stored, _, _ := store.Find("fair"); stored.Status != Delivered {
+		t.Errorf("a fair's sale is %q", stored.Status)
+	}
+}
+
+func TestEveryProblemCodeHasWordsForTheArtist(t *testing.T) {
+	problems := []Code{CodeNoLines, CodeEventChannel, CodeNegativeShipping, CodeManagedByEvent, CodeInvalidQuantity,
+		CodeNegativePrice, CodeAlreadyDelivered}
+	for _, code := range problems {
+		if ProblemWords(Problem{Code: code}) == string(code) {
+			t.Errorf("%s has no words", code)
+		}
+	}
+}
