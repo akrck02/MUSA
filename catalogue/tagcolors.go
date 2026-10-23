@@ -33,3 +33,24 @@ func TagTone(theme ui.Theme, color TagColor) look.Tone {
 }
 
 func chipLook(tone look.Tone) ui.ChipLook { return ui.ChipLook{Fill: tone.Fill, Ink: tone.Ink} }
+
+// pictureFills are the quiet colours of the pictures that stand for a work until it has a photo:
+// earthy pastels, softer than the tags', so a wall of them reads calm, as in the author's design.
+var pictureFills = map[TagColor]draw2d.Color{
+	Rose: draw2d.MustHex("#DDB9C5"), Amber: draw2d.MustHex("#EDDBA8"), Lime: draw2d.MustHex("#D3E0B9"),
+	Teal: draw2d.MustHex("#B9CFC2"), Sky: draw2d.MustHex("#B7CCE0"), Violet: draw2d.MustHex("#CBC5E2"),
+	Slate: draw2d.MustHex("#D8D4E2"), Coral: draw2d.MustHex("#E8C9B0"),
+}
+
+// darkPicture is how much of a picture's colour is kept on the dark theme.
+const darkPicture = 0.45
+
+// PictureFill is the colour of the picture of a work called name, in the theme being drawn: the
+// same work always gets the same one.
+func PictureFill(theme ui.Theme, name string) draw2d.Color {
+	fill := pictureFills[TagColorFor(TagKey(name))]
+	if look.Dark(theme) {
+		return draw2d.Color{fill[0] * darkPicture, fill[1] * darkPicture, fill[2] * darkPicture, 1}
+	}
+	return fill
+}

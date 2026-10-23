@@ -51,3 +51,22 @@ func Change(total money.Money, received Received) (change money.Money, enough bo
 	}
 	return given - total, true
 }
+
+// Breakdown is the fewest notes and coins that make up an amount, largest first; what no
+// denomination reaches (a cent or two) is left out.
+func Breakdown(amount money.Money) []money.Money {
+	var pieces []money.Money
+	for _, piece := range Denominations {
+		for amount >= piece {
+			pieces = append(pieces, piece)
+			amount -= piece
+		}
+	}
+	return pieces
+}
+
+// smallestNote is the smallest euro note; anything smaller is a coin.
+const smallestNote money.Money = 500
+
+// IsNote tells a note from a coin.
+func IsNote(piece money.Money) bool { return piece >= smallestNote }

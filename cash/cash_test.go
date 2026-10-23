@@ -1,6 +1,7 @@
 package cash
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/Itros97/MUSA/money"
@@ -43,5 +44,13 @@ func TestTheDenominationsGoFromLargestToSmallest(t *testing.T) {
 		if Denominations[index] >= Denominations[index-1] {
 			t.Errorf("%v comes after %v", Denominations[index], money.Money(Denominations[index-1]))
 		}
+	}
+}
+
+func TestTheChangeIsGivenWithTheFewestPieces(test *testing.T) {
+	got := Breakdown(1150)
+	want := []money.Money{1000, 100, 50}
+	if !slices.Equal(got, want) {
+		test.Errorf("Breakdown(11,50 €) = %v, want %v", got, want)
 	}
 }

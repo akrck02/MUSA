@@ -196,12 +196,14 @@ func (program *App) Show(page string) {
 	case "history":
 		program.Open(Sales)
 		program.sales.ShowHistory()
-	case "stand", "stand-basket", "stand-cash":
+	case "stand", "stand-basket", "stand-pay", "stand-cash":
 		program.Open(Stand)
 		program.stand.Choose(stand.WholeStock{Sales: program.stores.Sales, Products: program.stores.Products, Now: program.stores.Now})
 		switch page {
 		case "stand-basket":
 			program.stand.ShowBasket()
+		case "stand-pay":
+			program.stand.ShowPaymentChoice()
 		case "stand-cash":
 			program.stand.ShowCashPayment()
 		}

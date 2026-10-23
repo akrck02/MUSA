@@ -62,8 +62,8 @@ func (screens *Screens) card(context *ui.Context, project Project) {
 		ink = theme.InkSoft
 	}
 	if look.ClickableCard(context, project.Title, ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(12), Gap: 8}, func() {
-		tone := catalogue.TagTone(theme, catalogue.TagColorFor(project.Title))
-		context.Frame(ui.Layout{Width: ui.Grow(), Height: ui.Fixed(bandHeight)}, ui.Look{Fill: tone.Fill, Radius: theme.ControlRadius}, func() {})
+		band := ui.Look{Fill: catalogue.PictureFill(theme, project.Title), Radius: theme.ControlRadius}
+		context.Frame(ui.Layout{Width: ui.Grow(), Height: ui.Fixed(bandHeight)}, band, func() {})
 		look.Paragraph(context, project.Title, ui.TextStyle{Weight: draw2d.Bold, Color: ink})
 		screens.whoFor(context, person)
 		if label := screens.productLabel(project.VariantID); label != "" {

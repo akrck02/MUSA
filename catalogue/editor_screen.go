@@ -191,9 +191,8 @@ func (screens *Screens) editorPicture(context *ui.Context) {
 	theme := context.Theme
 	product := screens.editor.form.product
 	name := nameOr(product.Name, screens.editor.form.name)
-	tone := TagTone(theme, PictureColor(Product{Name: name}))
 	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Fixed(editorSideWidth), Padding: ui.Pad(theme.Padding), AlignX: ui.Center}
-	context.Frame(layout, ui.Look{Fill: tone.Fill, Radius: theme.PanelRadius}, func() {
+	context.Frame(layout, ui.Look{Fill: PictureFill(theme, name), Radius: theme.PanelRadius}, func() {
 		context.Box(ui.Layout{Width: ui.Grow(), Height: ui.Grow(), AlignX: ui.Center, AlignY: ui.Center}, func() {
 			context.Text(Initial(nameOr(name, "?")), ui.TextStyle{Size: cardLetterSize * 2.5, Weight: draw2d.Bold, Color: theme.Surface.WithAlpha(0.7)})
 		})

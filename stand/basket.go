@@ -1,6 +1,9 @@
 package stand
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/Itros97/MUSA/money"
 	"github.com/Itros97/MUSA/sales"
 )
@@ -82,4 +85,13 @@ func (basket Basket) Lines(newID func() string) []sales.LineDraft {
 		lines[index] = sales.LineDraft{ID: newID(), VariantID: each.item.VariantID, Quantity: each.quantity, UnitPrice: each.item.Price}
 	}
 	return lines
+}
+
+// Words lists what the basket holds as the artist reads it: "2 × Luna · Mate, 1 × Rana feliz".
+func (basket Basket) Words() string {
+	parts := make([]string, len(basket.entries))
+	for index, each := range basket.entries {
+		parts[index] = fmt.Sprintf("%d × %s", each.quantity, each.item.Label)
+	}
+	return strings.Join(parts, ", ")
 }

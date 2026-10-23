@@ -202,16 +202,16 @@ func (screens *Screens) card(context *ui.Context, product Product) {
 }
 
 // pictureShape is the top-rounded fill of a colour, kept from frame to frame.
-func (screens *Screens) pictureShape(theme ui.Theme, color TagColor) *look.TopRounded {
+func (screens *Screens) pictureShape(theme ui.Theme, name string) *look.TopRounded {
 	if screens.shapes == nil {
-		screens.shapes = map[TagColor]*look.TopRounded{}
+		screens.shapes = map[string]*look.TopRounded{}
 	}
-	shape, found := screens.shapes[color]
+	shape, found := screens.shapes[name]
 	if !found {
 		shape = &look.TopRounded{}
-		screens.shapes[color] = shape
+		screens.shapes[name] = shape
 	}
-	shape.Fill, shape.Radius = TagTone(theme, color).Fill, theme.PanelRadius-1
+	shape.Fill, shape.Radius = PictureFill(theme, name), theme.PanelRadius-1
 	return shape
 }
 
@@ -219,7 +219,7 @@ func (screens *Screens) pictureShape(theme ui.Theme, color TagColor) *look.TopRo
 func (screens *Screens) cardPicture(context *ui.Context, product Product) {
 	theme := context.Theme
 	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Fixed(cardPictureHeight), Padding: ui.Pad(10)}
-	context.Frame(layout, ui.Look{Backdrop: screens.pictureShape(theme, PictureColor(product))}, func() {
+	context.Frame(layout, ui.Look{Backdrop: screens.pictureShape(theme, product.Name)}, func() {
 		context.Box(ui.Layout{Width: ui.Grow(), Gap: 6}, func() {
 			if len(product.Tags) > 0 {
 				look.Pill(context, product.Tags[0].Name, look.Tone{Fill: theme.Surface, Ink: theme.Ink})

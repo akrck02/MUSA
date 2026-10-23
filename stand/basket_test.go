@@ -3,6 +3,8 @@ package stand
 import (
 	"fmt"
 	"testing"
+
+	"github.com/Itros97/MUSA/money"
 )
 
 var (
@@ -45,5 +47,27 @@ func TestRemovingTheLastOfAnItemTakesItOutOfTheBasket(t *testing.T) {
 	basket.Clear()
 	if basket.Count() != 0 {
 		t.Error("a cleared basket still holds something")
+	}
+}
+
+func TestTheBasketSaysWhatItHolds(test *testing.T) {
+	var basket Basket
+	basket.Add(Item{VariantID: "cat", Label: "Gato", Left: 5})
+	basket.Add(Item{VariantID: "cat", Label: "Gato", Left: 5})
+	basket.Add(Item{VariantID: "frog", Label: "Rana", Left: 5})
+	if got := basket.Words(); got != "2 × Gato, 1 × Rana" {
+		test.Errorf("Words = %q", got)
+	}
+}
+
+func TestTheChangeIsSaidInNotesAndCoins(test *testing.T) {
+	for change, want := range map[money.Money]string{
+		1100: "un billete de 10 € y una moneda de 1 €",
+		400:  "dos monedas de 2 €",
+		0:    "",
+	} {
+		if got := changeWords(change); got != want {
+			test.Errorf("changeWords(%d) = %q, want %q", change, got, want)
+		}
 	}
 }
