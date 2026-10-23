@@ -2,9 +2,6 @@ package stand
 
 import (
 	"fmt"
-	"strings"
-	"unicode"
-	"unicode/utf8"
 
 	"github.com/akrck02/go-renderer/draw2d"
 	ui "github.com/akrck02/go-ui"
@@ -63,23 +60,8 @@ func picture(context *ui.Context, item Item, chosen int) {
 				})
 			}
 		})
-		context.Text(initial(item.Label), ui.TextStyle{Size: letterSize, Weight: draw2d.Bold, Color: tone.Ink.WithAlpha(0.35)})
+		context.Text(catalogue.Initial(item.Label), ui.TextStyle{Size: letterSize, Weight: draw2d.Bold, Color: tone.Ink.WithAlpha(0.35)})
 	})
-}
-
-// initial is the first letter of a label's name: the quoted title when it has one, so «Lámina
-// «Gato»» gives G, not the L every print shares.
-func initial(label string) string {
-	if _, title, quoted := strings.Cut(label, "«"); quoted {
-		label = title
-	}
-	for _, letter := range label {
-		if unicode.IsLetter(letter) || unicode.IsDigit(letter) {
-			return string(unicode.ToUpper(letter))
-		}
-	}
-	first, _ := utf8.DecodeRuneInString(label)
-	return string(first)
 }
 
 // tileWords is the lower half of a tile: the name, the price and what is left, or, once chosen,

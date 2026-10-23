@@ -23,6 +23,19 @@ func PriceWords(product Product) string {
 	return price
 }
 
+// PriceRangeWords is "8 €", or "8 € – 15 €" from the cheapest variant to the dearest.
+func PriceRangeWords(product Product) string {
+	lowest := product.LowestPrice()
+	highest := lowest
+	for _, variant := range product.Variants {
+		highest = max(highest, variant.Price)
+	}
+	if highest == lowest {
+		return money.Format(lowest)
+	}
+	return money.Format(lowest) + " – " + money.Format(highest)
+}
+
 // SummaryWords is the kind, with the number of variants when there is more than one.
 func SummaryWords(product Product) string {
 	if len(product.Variants) > 1 {

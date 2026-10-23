@@ -2,7 +2,7 @@ package catalogue
 
 import (
 	"fmt"
-	"slices"
+	"strings"
 
 	"github.com/akrck02/go-renderer/draw2d"
 	ui "github.com/akrck02/go-ui"
@@ -12,28 +12,48 @@ import (
 
 // Measures of the list, in pixels.
 const (
-	cardMinimumWidth = 340
-	shownTags        = 3
-	thumbnailSide    = 56
+	cardMinimumWidth     = 300
+	cardPictureHeight    = 150
+	cardLetterSize       = 56
+	shownRestockNames    = 3
+	kindTabsWidth        = 340
+	searchFieldWidth     = 320
+	cardsOnAPhone        = 1
+	cardsWhenThereIsRoom = 4
 )
 
+// kindTabs are the two halves of the catalogue, in the order of their tabs.
+var kindTabs = []Kind{Physical, Digital}
+
 func (screens *Screens) drawList(context *ui.Context) {
+	screens.applyTabs()
 	shown := Filter(screens.products, screens.query)
-	look.PageHeader(context, "Catálogo", screens.subtitle(len(shown)), func() {
+	look.PageHeader(context, "Mis productos", screens.subtitle(), func() {
+		if screens.searching {
+			context.Box(ui.Layout{Width: ui.Fixed(searchFieldWidth)}, func() {
+				context.TextFieldWith("search", &screens.query.Text, ui.TextFieldOptions{Placeholder: "Buscar por nombre o SKU"})
+			})
+		}
+		if context.IconButton("search", "##Buscar") {
+			screens.searching = !screens.searching
+			screens.query.Text = ""
+		}
 		if context.PrimaryIconButton("plus", "Nuevo producto") {
 			screens.choosingKind = true
 		}
 	})
 	switch {
 	case screens.loadErr != nil:
-		look.Empty(context, "triangle-alert", "No se pudo leer el catálogo", screens.loadErr.Error(), "")
+		look.Empty(context, "triangle-alert", "No se pudieron leer tus productos", screens.loadErr.Error(), "")
 	case len(screens.products) == 0:
-		if look.Empty(context, "palette", "Tu catálogo está vacío",
+		if look.Empty(context, "palette", "Aún no tienes productos",
 			"Añade tu primera lámina, pegatina o comisión y empieza a llevar la cuenta.", "Crear tu primer producto") {
 			screens.choosingKind = true
 		}
 	default:
-		screens.filterBar(context)
+		screens.kindBar(context)
+		screens.restockBanner(context)
+		screens.tagBar(context)
 		screens.cards(context, shown)
 	}
 	if screens.choosingKind {
@@ -44,73 +64,109 @@ func (screens *Screens) drawList(context *ui.Context) {
 	}
 }
 
-func (screens *Screens) subtitle(count int) string {
-	noun := map[bool]string{true: "producto", false: "productos"}
-	if screens.query.Filtering() {
-		noun = map[bool]string{true: "resultado", false: "resultados"}
+// subtitle counts the artist's works: every product that is not archived.
+func (screens *Screens) subtitle() string {
+	count := len(Filter(screens.products, Query{}))
+	if count == 1 {
+		return "1 obra"
 	}
-	if len(screens.products) == 0 {
-		return "Todo lo que vendes, en un sitio"
-	}
-	return fmt.Sprintf("%d %s", count, noun[count == 1])
+	return fmt.Sprintf("%d obras", count)
 }
 
-func (screens *Screens) filterBar(context *ui.Context) {
-	query := &screens.query
-	context.TextFieldWith("search", &query.Text, ui.TextFieldOptions{Placeholder: "Buscar productos o SKU"})
-	context.Box(ui.Layout{Width: ui.Grow(), Gap: 6, Wrap: true}, func() {
-		theme := context.Theme
-		toggle := func(icon, label string, on bool) bool {
-			tone := look.Neutral(theme)
-			if on {
-				tone = look.Tone{Fill: theme.PrimaryTint, Ink: theme.Ink}
-			}
-			return context.Chip(icon, label, chipLook(tone))
-		}
-		for _, kind := range []Kind{Physical, Digital} {
-			if toggle(kindIcon(kind), pluralKindWords[kind], query.Kind == kind) {
-				query.Kind = map[bool]Kind{true: "", false: kind}[query.Kind == kind]
-			}
-		}
-		if toggle("triangle-alert", "Stock bajo", query.LowStockOnly) {
-			query.LowStockOnly = !query.LowStockOnly
-		}
-		if toggle("archive", "Archivados", query.Archived) {
-			query.Archived = !query.Archived
-		}
-		for _, tag := range screens.tags {
-			context.Push(tag.ID)
-			chosen := slices.Contains(query.TagIDs, tag.ID)
-			tone := TagTone(theme, tag.Color)
-			if !chosen {
-				tone = look.Neutral(theme)
-			}
-			if context.Chip("tag", tag.Name, chipLook(tone)) {
-				query.TagIDs = toggled(query.TagIDs, tag.ID)
-			}
-			context.Pop()
+// applyTabs turns the tabs the artist chose into the query.
+func (screens *Screens) applyTabs() {
+	screens.query.Kind = kindTabs[screens.kindTab]
+	tags := screens.tagsOfKind()
+	screens.query.TagIDs, screens.query.Archived = nil, false
+	switch {
+	case screens.tagTab > len(tags):
+		screens.query.Archived = true
+	case screens.tagTab > 0:
+		screens.query.TagIDs = []string{tags[screens.tagTab-1].ID}
+	}
+}
+
+// kindBar is Físico and Digital, each with how many products it holds.
+func (screens *Screens) kindBar(context *ui.Context) {
+	labels := make([]string, len(kindTabs))
+	for index, kind := range kindTabs {
+		labels[index] = fmt.Sprintf("%s  %d", kindWords[kind], len(Filter(screens.products, Query{Kind: kind})))
+	}
+	before := screens.kindTab
+	context.Box(ui.Layout{Width: ui.Fixed(kindTabsWidth)}, func() { context.Tabs("kind", &screens.kindTab, labels...) })
+	if screens.kindTab != before {
+		screens.tagTab = 0
+		screens.query.LowStockOnly = false
+	}
+}
+
+// restockBanner says how many versions run low and names the first few; «Ver cuáles» shows only
+// those products.
+func (screens *Screens) restockBanner(context *ui.Context) {
+	names := Restock(screens.products)
+	if len(names) == 0 || screens.query.Kind != Physical {
+		return
+	}
+	theme := context.Theme
+	look.Card(context, ui.Layout{Width: ui.Grow(), Padding: ui.Pad(theme.Padding), Gap: 14, AlignY: ui.Center}, func() {
+		look.Badge(context, "triangle-alert", theme.IconSize*1.6)
+		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Gap: 2}, func() {
+			context.Text(fmt.Sprintf("%d %s por reponer", len(names), map[bool]string{true: "producto", false: "productos"}[len(names) == 1]),
+				ui.TextStyle{Weight: draw2d.Bold})
+			context.Text(restockSummary(names), ui.TextStyle{Size: theme.SmallTextSize, Color: theme.InkSoft})
+		})
+		action := map[bool]string{true: "Ver todos", false: "Ver cuáles"}[screens.query.LowStockOnly]
+		if context.FlatButton(action) {
+			screens.query.LowStockOnly = !screens.query.LowStockOnly
 		}
 	})
-	if len(Filter(screens.products, *query)) == 0 && context.FlatButton("Quitar filtros") {
-		*query = Query{}
-	}
 }
 
-func toggled(ids []string, id string) []string {
-	if index := slices.Index(ids, id); index >= 0 {
-		return slices.Delete(slices.Clone(ids), index, index+1)
+// restockSummary names the first few and counts the rest: "A3 de Gato, Luna y 2 más".
+func restockSummary(names []string) string {
+	if len(names) <= shownRestockNames {
+		return strings.Join(names, ", ")
 	}
-	return append(slices.Clone(ids), id)
+	return fmt.Sprintf("%s y %d más", strings.Join(names[:shownRestockNames], ", "), len(names)-shownRestockNames)
+}
+
+// tagsOfKind are the tags some product of the chosen kind carries.
+func (screens *Screens) tagsOfKind() []Tag {
+	var used []Tag
+	for _, tag := range screens.tags {
+		if screens.countWithTag(tag.ID) > 0 {
+			used = append(used, tag)
+		}
+	}
+	return used
+}
+
+func (screens *Screens) countWithTag(id string) int {
+	return len(Filter(screens.products, Query{Kind: kindTabs[screens.kindTab], TagIDs: []string{id}}))
+}
+
+// tagBar is Todo, one tab per tag with its count, and Archivados when something is archived.
+func (screens *Screens) tagBar(context *ui.Context) {
+	kind := kindTabs[screens.kindTab]
+	labels := []string{fmt.Sprintf("Todo  %d", len(Filter(screens.products, Query{Kind: kind})))}
+	for _, tag := range screens.tagsOfKind() {
+		labels = append(labels, fmt.Sprintf("%s  %d", tag.Name, screens.countWithTag(tag.ID)))
+	}
+	if archived := len(Filter(screens.products, Query{Kind: kind, Archived: true})); archived > 0 {
+		labels = append(labels, fmt.Sprintf("Archivados  %d", archived))
+	}
+	screens.tagTab = min(screens.tagTab, len(labels)-1)
+	context.Tabs("tag", &screens.tagTab, labels...)
 }
 
 func (screens *Screens) cards(context *ui.Context, shown []Product) {
 	theme := context.Theme
 	if len(shown) == 0 {
-		look.Empty(context, "search", "Nada por aquí", "Ningún producto coincide con la búsqueda o los filtros.", "")
+		look.Empty(context, "search", "Nada por aquí", "Ningún producto coincide con la búsqueda.", "")
 		return
 	}
 	width, _ := context.Size()
-	columns := max(1, int(width/cardMinimumWidth)-1)
+	columns := min(cardsWhenThereIsRoom, max(cardsOnAPhone, int(width/cardMinimumWidth)))
 	context.Box(ui.Layout{Width: ui.Grow(), Columns: columns, Gap: theme.Gap}, func() {
 		for _, product := range shown {
 			context.Push(product.ID)
@@ -120,76 +176,82 @@ func (screens *Screens) cards(context *ui.Context, shown []Product) {
 	})
 }
 
+// card is one product: its picture with its first tag, its name, its prices and one pill per
+// version with what is left. Tapping it opens the product; a version's pill changes its stock.
 func (screens *Screens) card(context *ui.Context, product Product) {
 	theme := context.Theme
-	layout := ui.Layout{Width: ui.Grow(), Padding: ui.Pad(12), Gap: 14}
-	opened := look.ClickableCard(context, product.Name, layout, func() {
-		thumbnail(context, product)
-		context.Frame(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Gap: 4}, ui.Look{Clip: true}, func() {
-			context.Text(product.Name, ui.TextStyle{Weight: draw2d.Bold})
-			context.Text(SummaryWords(product), ui.TextStyle{Size: theme.SmallTextSize, Color: theme.InkSoft})
-			tagRow(context, product)
-			context.Box(ui.Layout{Width: ui.Grow(), Gap: 6, AlignY: ui.Center, Wrap: true}, func() {
-				context.Text(PriceWords(product), ui.TextStyle{Weight: draw2d.Bold, Color: theme.Primary})
-				context.Spacer()
-				screens.statusPills(context, product)
-			})
+	normal := ui.Look{Fill: theme.Surface, Border: theme.Line, BorderWidth: 1, Radius: theme.PanelRadius, Clip: true}
+	pressed := normal
+	pressed.Fill = theme.Sunken
+	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(1)}
+	if context.Clickable(product.Name, layout, ui.Looks{Normal: normal, Hovered: normal, Pressed: pressed}, func() {
+		cardPicture(context, product)
+		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(14), Gap: 6}, func() {
+			look.Paragraph(context, product.Name, ui.TextStyle{Weight: draw2d.Bold})
+			context.Text(PriceRangeWords(product), ui.TextStyle{Color: theme.InkSoft})
+			screens.versionPills(context, product)
 		})
-	})
-	if opened {
+	}) {
 		screens.edit(product)
 	}
 }
 
-// thumbnail is a square with the product's first letter, tinted by its kind, until products have
-// pictures.
-func thumbnail(context *ui.Context, product Product) {
+// cardPicture is the coloured top of a card with the product's first letter and first tag.
+func cardPicture(context *ui.Context, product Product) {
 	theme := context.Theme
-	fill := theme.PrimaryTint
-	if product.Kind == Digital {
-		fill = theme.Sunken
-	}
-	side := ui.Fixed(thumbnailSide)
-	context.Frame(ui.Layout{Width: side, Height: side, AlignX: ui.Center, AlignY: ui.Center}, ui.Look{Fill: fill, Radius: theme.ControlRadius}, func() {
-		context.IconSized(kindIcon(product.Kind), theme.IconSize*1.2, theme.Ink)
+	tone := TagTone(theme, PictureColor(product))
+	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Fixed(cardPictureHeight), Padding: ui.Pad(10)}
+	context.Frame(layout, ui.Look{Fill: tone.Fill, Radius: theme.PanelRadius}, func() {
+		context.Box(ui.Layout{Width: ui.Grow(), Gap: 6}, func() {
+			if len(product.Tags) > 0 {
+				look.Pill(context, product.Tags[0].Name, look.Tone{Fill: theme.Surface, Ink: theme.Ink})
+			}
+			if product.Status == Draft {
+				look.Pill(context, "Borrador", look.Tone{Fill: theme.Surface, Ink: theme.InkSoft})
+			}
+		})
+		context.Box(ui.Layout{Width: ui.Grow(), Height: ui.Grow(), AlignX: ui.Center, AlignY: ui.Center}, func() {
+			context.Text(Initial(product.Name), ui.TextStyle{Size: cardLetterSize, Weight: draw2d.Bold, Color: theme.Surface.WithAlpha(0.7)})
+		})
 	})
 }
 
-func tagRow(context *ui.Context, product Product) {
-	if len(product.Tags) == 0 {
-		return
-	}
+// versionPills shows each version with what is left, warm when it runs low and red when sold out;
+// a digital product is made to order instead.
+func (screens *Screens) versionPills(context *ui.Context, product Product) {
 	theme := context.Theme
-	context.Box(ui.Layout{Width: ui.Grow(), Gap: 4, Wrap: true}, func() {
-		for index, tag := range product.Tags {
-			if index == shownTags {
-				look.Pill(context, fmt.Sprintf("+%d", len(product.Tags)-shownTags), look.Neutral(theme))
-				break
+	context.Box(ui.Layout{Width: ui.Grow(), Gap: 6, Wrap: true}, func() {
+		if product.Kind == Digital {
+			look.Pill(context, "Por encargo", look.Neutral(theme))
+			return
+		}
+		for _, variant := range product.Variants {
+			context.Push(variant.ID)
+			if context.Chip("", versionWords(variant), chipLook(versionTone(theme, variant))) {
+				screens.stockOf = product.ID
 			}
-			look.Pill(context, tag.Name, TagTone(theme, tag.Color))
+			context.Pop()
 		}
 	})
 }
 
-func (screens *Screens) statusPills(context *ui.Context, product Product) {
-	theme := context.Theme
-	if product.Status == Draft {
-		look.Pill(context, "Borrador", look.Neutral(theme))
+// versionWords is a version and what is left of it: "A4 9", "Única 8", "A3 Agotado".
+func versionWords(variant Variant) string {
+	left := fmt.Sprint(variant.Stock)
+	if variant.Stock == 0 {
+		left = "Agotado"
 	}
-	if product.Kind == Digital {
-		look.Pill(context, "Por encargo", look.Neutral(theme))
-		return
-	}
-	tone := look.Positive(theme)
+	return nameOr(variant.Name, "Única") + " " + left
+}
+
+func versionTone(theme ui.Theme, variant Variant) look.Tone {
 	switch {
-	case product.TotalStock() == 0:
-		tone = look.Danger(theme)
-	case product.LowStock():
-		tone = look.Warning(theme)
+	case variant.Stock == 0:
+		return look.Tone{Fill: theme.Danger.WithAlpha(0.12), Ink: theme.Danger}
+	case variant.LowStock():
+		return look.Warning(theme)
 	}
-	if context.Chip("package", StockWords(product), chipLook(tone)) {
-		screens.stockOf = product.ID
-	}
+	return look.Neutral(theme)
 }
 
 func kindIcon(kind Kind) string {

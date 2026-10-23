@@ -20,6 +20,10 @@ type Screens struct {
 	query    Query
 	loadErr  error
 
+	kindTab   int  // index in kindTabs
+	tagTab    int  // 0 for every tag, then each tag of the kind, then the archived
+	searching bool // the search field is open
+
 	choosingKind bool
 	stockOf      string // the product whose quick stock sheet is open
 	editor       *editor
