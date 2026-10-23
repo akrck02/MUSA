@@ -10,6 +10,7 @@ import (
 	"github.com/Itros97/MUSA/catalogue"
 	"github.com/Itros97/MUSA/demo"
 	"github.com/Itros97/MUSA/money"
+	"github.com/Itros97/MUSA/projects"
 	"github.com/Itros97/MUSA/sales"
 	"github.com/Itros97/MUSA/stand"
 	"github.com/Itros97/MUSA/storage"
@@ -211,5 +212,25 @@ func TestGoingToTheStandFromTheHomePageOpensTodaysFair(t *testing.T) {
 	}
 	if _, err := window.Element(program.today.fair.Name); err != nil {
 		t.Error("the stand does not show the fair:", err)
+	}
+}
+
+func TestANewProjectIsSavedWithItsCustomerAndTheirNetwork(t *testing.T) {
+	program, window := openApp(t, false)
+	program.Open(Projects)
+	window.Frame()
+	steps(t, window, click(window, "Nuevo proyecto"),
+		typeInto(window, "Retrato de familia", "Retrato de Toby"),
+		typeInto(window, "Lucía", "Marta"),
+		typeInto(window, "@instagram", "@marta"),
+		typeInto(window, "40", "35"),
+		click(window, "Guardar"))
+	saved, err := program.stores.Projects.All()
+	if err != nil || len(saved) != 1 || saved[0].Title != "Retrato de Toby" || saved[0].Price != 3500 || saved[0].Stage != projects.ToStart {
+		t.Fatalf("saved %+v, %v", saved, err)
+	}
+	person, _, _ := program.stores.Customers.Find(saved[0].CustomerID)
+	if handle, found := person.Handle("instagram"); person.Name != "Marta" || !found || handle != "@marta" {
+		t.Errorf("customer %+v", person)
 	}
 }

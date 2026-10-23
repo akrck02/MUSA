@@ -14,6 +14,44 @@ var migrations = []string{
 	"ALTER TABLE sale ADD COLUMN status TEXT NOT NULL DEFAULT 'DELIVERED'",
 	// Sales say how they were paid; older ones did not say.
 	"ALTER TABLE sale ADD COLUMN paid_with TEXT NOT NULL DEFAULT ''",
+	// Customers, the social networks the artist reaches them on, and commissioned projects.
+	`CREATE TABLE social_network (
+		id TEXT NOT NULL PRIMARY KEY,
+		name TEXT NOT NULL,
+		link_pattern TEXT NOT NULL,
+		icon TEXT NOT NULL,
+		position INTEGER NOT NULL
+	);
+	INSERT INTO social_network VALUES
+		('instagram', 'Instagram', 'https://instagram.com/{user}', 'camera', 0),
+		('bluesky', 'Bluesky', 'https://bsky.app/profile/{user}', 'cloud', 1),
+		('x', 'X', 'https://x.com/{user}', 'x', 2);
+	CREATE TABLE customer (
+		id TEXT NOT NULL PRIMARY KEY,
+		name TEXT NOT NULL,
+		contact TEXT NOT NULL,
+		created_at INTEGER NOT NULL,
+		updated_at INTEGER NOT NULL
+	);
+	CREATE TABLE customer_profile (
+		customer_id TEXT NOT NULL,
+		network_id TEXT NOT NULL,
+		handle TEXT NOT NULL,
+		PRIMARY KEY (customer_id, network_id)
+	);
+	CREATE TABLE project (
+		id TEXT NOT NULL PRIMARY KEY,
+		title TEXT NOT NULL,
+		customer_id TEXT NOT NULL,
+		stage TEXT NOT NULL,
+		deadline TEXT NOT NULL,
+		price_cents INTEGER NOT NULL,
+		variant_id TEXT NOT NULL,
+		sale_id TEXT NOT NULL,
+		created_at INTEGER NOT NULL,
+		updated_at INTEGER NOT NULL,
+		deleted_at INTEGER
+	);`,
 }
 
 // migrate takes the steps a database has not taken yet, each in its own transaction.

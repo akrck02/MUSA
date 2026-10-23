@@ -10,9 +10,11 @@ import (
 	ui "github.com/akrck02/go-ui"
 
 	"github.com/Itros97/MUSA/catalogue"
+	"github.com/Itros97/MUSA/customers"
 	"github.com/Itros97/MUSA/demo"
 	"github.com/Itros97/MUSA/events"
 	"github.com/Itros97/MUSA/look"
+	"github.com/Itros97/MUSA/projects"
 	"github.com/Itros97/MUSA/sales"
 	"github.com/Itros97/MUSA/stand"
 	"github.com/Itros97/MUSA/storage"
@@ -31,6 +33,7 @@ const (
 	Fairs
 	Sales
 	Stand
+	Projects
 )
 
 // Options are how the program was started.
@@ -39,6 +42,8 @@ type Options struct {
 	// DevelopmentTools shows, on the home page, buttons that fill the database with toy data or
 	// empty it.
 	DevelopmentTools bool
+	// OpenLink opens a web address in the system's browser; nil where nothing can.
+	OpenLink func(link string) bool
 }
 
 // App is everything MUSA remembers between frames.
@@ -52,6 +57,7 @@ type App struct {
 	fairs     *events.Screens
 	sales     *sales.Screens
 	stand     *stand.Screens
+	projects  *projects.Screens
 	home      homeState
 	today     today
 }
@@ -74,8 +80,11 @@ func New(database *storage.Database, options Options) (*App, error) {
 	products := catalogue.NewStore(database, now, storage.NewID)
 	sold := sales.NewStore(database, products, now, storage.NewID)
 	fairs := events.NewStore(database, sold, now, storage.NewID)
+	people := customers.NewStore(database, now, storage.NewID)
+	commissions := projects.NewStore(database, products, people, now, storage.NewID)
 	program := &App{
-		stores:  demo.Stores{Database: database, Products: products, Sales: sold, Events: fairs, Now: now, NewID: storage.NewID},
+		stores: demo.Stores{Database: database, Products: products, Sales: sold, Events: fairs, Customers: people,
+			Projects: commissions, Now: now, NewID: storage.NewID},
 		theme:   goui.Theme(design),
 		options: options,
 	}
@@ -87,6 +96,7 @@ func New(database *storage.Database, options Options) (*App, error) {
 		return event.Name
 	})
 	program.stand = stand.NewScreens(fairs, products, sold, storage.NewID, now)
+	program.projects = projects.NewScreens(commissions, people, products, storage.NewID, now, options.OpenLink)
 	program.Open(Home)
 	return program, nil
 }
@@ -106,6 +116,8 @@ func (program *App) Open(place Place) {
 		program.sales.Reload()
 	case Stand:
 		program.stand.Reload()
+	case Projects:
+		program.projects.Reload()
 	}
 }
 
@@ -132,6 +144,8 @@ func (program *App) back() bool {
 		return program.sales.Back()
 	case Stand:
 		return program.stand.Back()
+	case Projects:
+		return program.projects.Back()
 	}
 	return false
 }
@@ -146,6 +160,8 @@ func (program *App) page(context *ui.Context) {
 		program.sales.Draw(context)
 	case Stand:
 		program.stand.Draw(context)
+	case Projects:
+		program.projects.Draw(context)
 	default:
 		program.drawHome(context)
 	}
@@ -155,7 +171,7 @@ func (program *App) page(context *ui.Context) {
 func (program *App) Stores() demo.Stores { return program.stores }
 
 // Show opens one of the pages inside a place, for captures and tests: "product" (the first
-// product's editor), "fair" (the open fair's detail), "order" (a new order), "history" (the sales history), "calendar" (the month on the home page), "stand" (selling
+// product's editor), "fair" (the open fair's detail), "order" (a new order), "project" (a project's editor), "history" (the sales history), "calendar" (the month on the home page), "stand" (selling
 // from the whole stock), "stand-basket" (with a basket) or "stand-cash" (its cash dialog).
 func (program *App) Show(page string) {
 	switch page {
@@ -168,6 +184,9 @@ func (program *App) Show(page string) {
 	case "order":
 		program.Open(Sales)
 		program.sales.StartOrder()
+	case "project":
+		program.Open(Projects)
+		program.projects.ShowEditor()
 	case "calendar":
 		program.Open(Home)
 		program.home.tab = 1

@@ -6,7 +6,9 @@ import (
 	"time"
 
 	"github.com/Itros97/MUSA/catalogue"
+	"github.com/Itros97/MUSA/customers"
 	"github.com/Itros97/MUSA/events"
+	"github.com/Itros97/MUSA/projects"
 	"github.com/Itros97/MUSA/sales"
 	"github.com/Itros97/MUSA/storage"
 )
@@ -21,8 +23,10 @@ func openStores(t *testing.T) Stores {
 	now := func() time.Time { return time.Date(2026, 4, 18, 11, 0, 0, 0, time.Local) }
 	products := catalogue.NewStore(database, now, storage.NewID)
 	sold := sales.NewStore(database, products, now, storage.NewID)
+	people := customers.NewStore(database, now, storage.NewID)
 	return Stores{Database: database, Products: products, Sales: sold,
-		Events: events.NewStore(database, sold, now, storage.NewID), Now: now, NewID: storage.NewID}
+		Events: events.NewStore(database, sold, now, storage.NewID), Customers: people,
+		Projects: projects.NewStore(database, products, people, now, storage.NewID), Now: now, NewID: storage.NewID}
 }
 
 func TestDemoDataFillsEveryModule(t *testing.T) {
@@ -33,8 +37,10 @@ func TestDemoDataFillsEveryModule(t *testing.T) {
 	products, _ := stores.Products.All()
 	fairs, _ := stores.Events.All()
 	orders, _ := stores.Sales.All()
-	if len(products) != 10 || len(fairs) != 3 || len(orders) != 4+4+4 {
-		t.Errorf("%d products, %d fairs, %d sales", len(products), len(fairs), len(orders))
+	commissions, _ := stores.Projects.All()
+	// Sales: four at each fair, four orders, and the delivered project's.
+	if len(products) != 10 || len(fairs) != 3 || len(orders) != 4+4+4+1 || len(commissions) != 5 {
+		t.Errorf("%d products, %d fairs, %d sales, %d projects", len(products), len(fairs), len(orders), len(commissions))
 	}
 	if fairs[len(fairs)-1].Status != events.Closed {
 		t.Error("last month's fair is not closed")

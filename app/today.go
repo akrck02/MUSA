@@ -36,7 +36,12 @@ func readToday(stores demo.Stores, now time.Time) today {
 		day.loadErr = err
 		return day
 	}
-	day.plan = agenda{fairs: fairs, onTheWay: sales.OnTheWay(sold), zone: now.Location()}
+	commissions, err := stores.Projects.All()
+	if err != nil {
+		day.loadErr = err
+		return day
+	}
+	day.plan = agenda{fairs: fairs, onTheWay: sales.OnTheWay(sold), projects: commissions, zone: now.Location()}
 	day.month = sales.Summarise(sales.Filter(sold, sales.Query{Period: sales.ThisMonth}, day.date, time.Local))
 	products, err := stores.Products.All()
 	if err != nil {

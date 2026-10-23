@@ -5,7 +5,7 @@ import "fmt"
 // What the screens call each channel and period, in Spanish, the language of the app.
 var (
 	channelWords = map[Channel]string{AtEvent: "Evento", OnlineShop: "Tienda online", Social: "Redes y mensajes",
-		Marketplace: "Marketplace", InPerson: "Venta local", Other: "Otro"}
+		Marketplace: "Marketplace", InPerson: "Venta local", Other: "Otro", Commission: "Proyecto"}
 	periodWords = map[Period]string{ThisMonth: "Este mes", LastMonth: "Mes pasado", ThisYear: "Este año", AllTime: "Todo"}
 )
 

@@ -46,6 +46,7 @@ go test ./...             # the tests
 - **Mis productos**: physical and digital products, variants, stock, prices and tags.
 - **Ferias**: stock taken to a fair, its sales and expenses, and the profit.
 - **Puesto**: sell from a fair or the whole stock; pay in cash, with the change worked out, or by card.
+- **Proyectos**: commissions on a board, with each customer's networks; delivering one records its sale.
 - **Pedidos**: orders to prepare and sent on a board; delivered ones and local sales in the history.
 
 ## 📚 Documentation
@@ -59,6 +60,7 @@ go test ./...             # the tests
 | [Events](docs/06-events.md) | Stock taken to a fair, sales, expenses, profit and closing. |
 | [Sales](docs/07-sales.md) | Orders, their status, the board and the sales history. |
 | [The stand](docs/08-stand.md) | Selling from a fair or the whole stock, and charging in cash or by card. |
+| [Projects](docs/09-projects.md) | Commissions on a board, customers and their networks. |
 | [Roadmap](docs/05-roadmap.md) | The modules still to come and the plan for sync. |
 
 [Read the docs online →](https://itros97.github.io/MUSA/)

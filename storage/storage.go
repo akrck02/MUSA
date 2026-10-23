@@ -81,7 +81,7 @@ func Moment(milliseconds int64) time.Time { return time.UnixMilli(milliseconds) 
 
 // tables lists every table, for wiping them all.
 var tables = []string{"product", "digital_product", "physical_product", "product_variant", "physical_variant", "tag",
-	"product_tag", "event", "event_stock", "event_expense", "sale", "sale_line"}
+	"product_tag", "event", "event_stock", "event_expense", "sale", "sale_line", "customer", "customer_profile", "project"}
 
 // Empty tells whether there are no products and no events, deleted ones included.
 func (database *Database) Empty() (bool, error) {

@@ -9,20 +9,24 @@ import (
 
 	"github.com/Itros97/MUSA/calendar"
 	"github.com/Itros97/MUSA/catalogue"
+	"github.com/Itros97/MUSA/customers"
 	"github.com/Itros97/MUSA/events"
 	"github.com/Itros97/MUSA/money"
+	"github.com/Itros97/MUSA/projects"
 	"github.com/Itros97/MUSA/sales"
 	"github.com/Itros97/MUSA/storage"
 )
 
 // Stores are the stores the demo writes through.
 type Stores struct {
-	Database *storage.Database
-	Products *catalogue.Store
-	Sales    *sales.Store
-	Events   *events.Store
-	Now      func() time.Time
-	NewID    func() string
+	Database  *storage.Database
+	Products  *catalogue.Store
+	Sales     *sales.Store
+	Events    *events.Store
+	Customers *customers.Store
+	Projects  *projects.Store
+	Now       func() time.Time
+	NewID     func() string
 }
 
 // CodeNotEmpty is the code of filling a database that already has data: its SKUs would clash.
@@ -78,6 +82,7 @@ func (filler *filler) fill() error {
 	filler.event("Mercado de Navidad", "Centro cultural", today.AddDays(50), today.AddDays(52))
 
 	filler.orders(today)
+	filler.projects(today)
 	return filler.err
 }
 

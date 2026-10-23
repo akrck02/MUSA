@@ -9,6 +9,7 @@ import (
 
 	"github.com/Itros97/MUSA/calendar"
 	"github.com/Itros97/MUSA/events"
+	"github.com/Itros97/MUSA/projects"
 	"github.com/Itros97/MUSA/sales"
 )
 
@@ -16,16 +17,20 @@ import (
 type agendaEntry struct {
 	icon, words string
 	fair        bool
+	project     bool
 }
 
-// agenda is what the calendar shows: the fairs, and the orders still on their way.
+// agenda is what the calendar shows: the fairs, the orders still on their way and the projects
+// still to deliver.
 type agenda struct {
 	fairs    []events.Event
 	onTheWay []sales.Sale
+	projects []projects.Project
 	zone     *time.Location
 }
 
-// on is what happens on one day: the fairs it falls in, then the orders made that day still to send.
+// on is what happens on one day: the fairs it falls in, the orders made that day still to send,
+// and the projects due that day.
 func (plan agenda) on(day calendar.Date) []agendaEntry {
 	var entries []agendaEntry
 	for _, fair := range plan.fairs {
@@ -36,6 +41,11 @@ func (plan agenda) on(day calendar.Date) []agendaEntry {
 	for _, order := range plan.onTheWay {
 		if calendar.Of(order.SoldAt.In(plan.zone)) == day {
 			entries = append(entries, agendaEntry{icon: "truck", words: "Enviar a " + whoTo(order)})
+		}
+	}
+	for _, project := range plan.projects {
+		if project.Stage != projects.Delivered && project.Deadline == day {
+			entries = append(entries, agendaEntry{icon: "pencil", words: project.Title, project: true})
 		}
 	}
 	return entries
@@ -53,12 +63,15 @@ func whoTo(order sales.Sale) string {
 const chipHeight = 26
 
 // entryChip is one entry inside a day: its icon and words on a soft patch, a fair in the accent's
-// tint and an order in the positive colour's.
+// tint, a project in the warning colour's and an order in the positive colour's.
 func entryChip(context *ui.Context, entry agendaEntry) {
 	theme := context.Theme
 	fill := theme.Positive.WithAlpha(0.16)
-	if entry.fair {
+	switch {
+	case entry.fair:
 		fill = theme.Surface.Mix(theme.Primary, 0.14)
+	case entry.project:
+		fill = theme.Warning.WithAlpha(0.18)
 	}
 	layout := ui.Layout{Width: ui.Grow(), Height: ui.Fixed(chipHeight), Padding: ui.PadXY(8, 0), Gap: 6, AlignY: ui.Center}
 	context.Frame(layout, ui.Look{Fill: fill, Radius: chipHeight / 2, Clip: true}, func() {

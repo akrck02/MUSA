@@ -77,6 +77,9 @@ func (program *App) monthHeader(context *ui.Context, shown calendar.Date) {
 			program.home.month = shown.AddMonths(1)
 		}
 		context.Spacer()
+		if context.IconButton("tent", "Todas las ferias") {
+			program.Open(Fairs)
+		}
 		if context.PrimaryIconButton("plus", "Nueva feria") {
 			program.Open(Fairs)
 			program.fairs.StartFair(program.today.date)

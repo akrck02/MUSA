@@ -22,6 +22,8 @@ const (
 	Marketplace Channel = "MARKETPLACE"
 	InPerson    Channel = "IN_PERSON"
 	Other       Channel = "OTHER"
+	// Commission sales are delivered projects, recorded from their project.
+	Commission Channel = "PROJECT"
 )
 
 // SelectableChannels are the channels the order editor offers: every one but AtEvent.

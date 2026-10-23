@@ -26,7 +26,7 @@ var destinations = []destination{
 	{Home, "house", "Inicio"},
 	{Stand, "store", "Puesto"},
 	{Catalogue, "palette", "Mis productos"},
-	{Fairs, "tent", "Ferias"},
+	{Projects, "square-kanban", "Proyectos"},
 	{Sales, "package", "Pedidos"},
 }
 
