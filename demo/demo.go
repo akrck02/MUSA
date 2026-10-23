@@ -125,7 +125,9 @@ func (filler *filler) order(draft sales.Draft) {
 	filler.stop(len(problems), problems, err)
 }
 
-func (filler *filler) refused(refusals []events.Refusal, err error) { filler.stop(len(refusals), refusals, err) }
+func (filler *filler) refused(refusals []events.Refusal, err error) {
+	filler.stop(len(refusals), refusals, err)
+}
 
 // stop keeps the first error, or the first refusal as one: the demo's data must never be refused.
 func (filler *filler) stop(refusedCount int, refusals any, err error) {

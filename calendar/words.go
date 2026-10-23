@@ -1,6 +1,10 @@
 package calendar
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+	"time"
+)
 
 // monthNames are the short Spanish names of the months, January first.
 var monthNames = [...]string{"ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"}
@@ -23,3 +27,21 @@ func RangeWords(start, end Date) string {
 }
 
 func monthName(date Date) string { return monthNames[date.Month-1] }
+
+// Typed writes a date the way the artist types one: "18/4/2026".
+func Typed(date Date) string { return fmt.Sprintf("%d/%d/%d", date.Day, date.Month, date.Year) }
+
+// ParseTyped reads a date typed as day/month/year ("18/4/2026", "18-04-2026"); found is false for
+// anything else, including days a month does not have.
+func ParseTyped(text string) (date Date, found bool) {
+	var day, month, year int
+	clean := strings.ReplaceAll(strings.TrimSpace(text), "-", "/")
+	if _, err := fmt.Sscanf(clean, "%d/%d/%d", &day, &month, &year); err != nil {
+		return Date{}, false
+	}
+	date = Date{Year: year, Month: time.Month(month), Day: day}
+	if Of(date.At(0, time.UTC)) != date {
+		return Date{}, false // 31/2 would roll over into March
+	}
+	return date, true
+}

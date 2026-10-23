@@ -35,3 +35,20 @@ func TestADateIsStoredAsISOTextAndReadBack(t *testing.T) {
 		t.Errorf("AddDays = %v", got)
 	}
 }
+
+func TestADateIsTypedAsDayMonthAndYear(t *testing.T) {
+	date := Date{2026, time.April, 18}
+	for _, text := range []string{"18/4/2026", " 18-04-2026 "} {
+		if got, found := ParseTyped(text); !found || got != date {
+			t.Errorf("ParseTyped(%q) = %v %v", text, got, found)
+		}
+	}
+	for _, text := range []string{"", "31/2/2026", "mañana"} {
+		if _, found := ParseTyped(text); found {
+			t.Errorf("ParseTyped(%q) was accepted", text)
+		}
+	}
+	if Typed(date) != "18/4/2026" {
+		t.Errorf("Typed = %q", Typed(date))
+	}
+}
