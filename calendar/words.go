@@ -45,3 +45,16 @@ func ParseTyped(text string) (date Date, found bool) {
 	}
 	return date, true
 }
+
+// fullMonthNames and weekdayNames are the whole Spanish names, for a date written out in full.
+var (
+	fullMonthNames = [...]string{"enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto",
+		"septiembre", "octubre", "noviembre", "diciembre"}
+	weekdayNames = [...]string{"domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"}
+)
+
+// LongWords writes a date out as people say it: "viernes, 23 de octubre".
+func LongWords(date Date) string {
+	weekday := date.At(0, time.UTC).Weekday()
+	return fmt.Sprintf("%s, %d de %s", weekdayNames[weekday], date.Day, fullMonthNames[date.Month-1])
+}

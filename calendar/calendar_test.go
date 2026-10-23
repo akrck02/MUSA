@@ -52,3 +52,10 @@ func TestADateIsTypedAsDayMonthAndYear(t *testing.T) {
 		t.Errorf("Typed = %q", Typed(date))
 	}
 }
+
+func TestADateIsWrittenOutAsPeopleSayIt(t *testing.T) {
+	date := Date{Year: 2026, Month: time.October, Day: 23}
+	if words := LongWords(date); words != "viernes, 23 de octubre" {
+		t.Errorf("got %q", words)
+	}
+}

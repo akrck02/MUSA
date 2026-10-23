@@ -109,7 +109,7 @@ func (screens *Screens) drawList(context *ui.Context) {
 		context.Select("channel", &screens.channel, channels)
 	})
 	summary := Summarise(shown)
-	context.Box(ui.Layout{Width: ui.Grow(), Columns: look.Columns(context, 4), Gap: theme.Gap}, func() {
+	look.Figures(context, 4, func() {
 		look.Figure(context, "Pedidos", fmt.Sprint(summary.Count), false)
 		look.Figure(context, "Ingresos", money.Format(summary.Revenue), false)
 		look.Figure(context, "Coste", money.Format(summary.Cost), false)
@@ -137,7 +137,7 @@ func (screens *Screens) drawList(context *ui.Context) {
 // row is one sale in the list; it returns true on the frame it is clicked.
 func (screens *Screens) row(context *ui.Context, sale Sale) bool {
 	theme := context.Theme
-	return look.ClickableCard(context, "row", ui.Layout{Width: ui.Grow(), Padding: ui.Pad(12), Gap: 12, AlignY: ui.Center}, func() {
+	return look.ClickableCard(context, screens.headline(sale), ui.Layout{Width: ui.Grow(), Padding: ui.Pad(12), Gap: 12, AlignY: ui.Center}, func() {
 		context.Frame(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Gap: 2}, ui.Look{Clip: true}, func() {
 			context.Text(screens.headline(sale), ui.TextStyle{Weight: draw2d.Bold})
 			context.Text(calendar.Words(calendar.Of(sale.SoldAt))+" · "+channelWords[sale.Channel]+customerWords(sale),

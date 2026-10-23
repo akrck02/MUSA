@@ -28,6 +28,12 @@ type Screens struct {
 	sheet   sheet
 
 	newExpense expenseForm
+	detailTab  int
+
+	// lastSale is the quick sale that can still be undone, what it says and until when.
+	lastSale  string
+	lastWords string
+	lastUntil time.Time
 
 	note        string
 	noteWarning bool
@@ -101,7 +107,6 @@ func (screens *Screens) tell(refused []Refusal, err error, done string) bool {
 }
 
 func (screens *Screens) drawList(context *ui.Context) {
-	theme := context.Theme
 	look.PageHeader(context, "Eventos", "Ferias y mercados: qué llevas, cuánto vendes y cuánto te cuesta ir", func() {
 		if context.PrimaryIconButton("plus", "Nuevo evento") {
 			today := calendar.Of(screens.now())
@@ -115,20 +120,49 @@ func (screens *Screens) drawList(context *ui.Context) {
 		look.Empty(context, "calendar-days", "Aún no hay eventos",
 			"Apunta tu próxima feria para llevar la cuenta de lo que llevas y lo que vendes.", "")
 	}
-	for _, event := range screens.events {
-		context.Push(event.ID)
-		layout := ui.Layout{Width: ui.Grow(), Padding: ui.Pad(14), Gap: 12, AlignY: ui.Center}
-		if look.ClickableCard(context, "event", layout, func() {
-			context.IconSized("calendar-days", theme.IconSize*1.3, theme.Primary)
-			context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Gap: 2}, func() {
-				context.Text(event.Name, ui.TextStyle{Weight: draw2d.Bold})
-				context.Text(event.WhenAndWhere(), ui.TextStyle{Size: theme.SmallTextSize, Color: theme.InkSoft})
-			})
-			statusPill(context, event.Status)
-		}) {
-			screens.open(event.ID)
+	today := calendar.Of(screens.now())
+	for _, group := range []struct {
+		timing Timing
+		title  string
+	}{{Happening, "En curso"}, {Upcoming, "Próximos"}, {Past, "Pasados"}} {
+		var shown []Event
+		for _, event := range screens.events {
+			if TimingOf(event, today) == group.timing {
+				shown = append(shown, event)
+			}
 		}
-		context.Pop()
+		if len(shown) == 0 {
+			continue
+		}
+		look.Label(context, group.title)
+		for _, event := range shown {
+			context.Push(event.ID)
+			screens.eventCard(context, event, today)
+			context.Pop()
+		}
+	}
+}
+
+func (screens *Screens) eventCard(context *ui.Context, event Event, today calendar.Date) {
+	theme := context.Theme
+	layout := ui.Layout{Width: ui.Grow(), Padding: ui.Pad(14), Gap: 12, AlignY: ui.Center}
+	if look.ClickableCard(context, event.Name, layout, func() {
+		colour := theme.Primary
+		if TimingOf(event, today) == Past {
+			colour = theme.InkQuiet
+		}
+		context.IconSized("calendar-days", theme.IconSize*1.3, colour)
+		context.Frame(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Gap: 2}, ui.Look{Clip: true}, func() {
+			context.Text(event.Name, ui.TextStyle{Weight: draw2d.Bold})
+			context.Text(event.WhenAndWhere(), ui.TextStyle{Size: theme.SmallTextSize, Color: theme.InkSoft})
+		})
+		tone := look.Neutral(theme)
+		if TimingOf(event, today) == Happening {
+			tone = look.Positive(theme)
+		}
+		look.Pill(context, WhenWords(event, today), tone)
+	}) {
+		screens.open(event.ID)
 	}
 }
 
@@ -146,7 +180,13 @@ func (screens *Screens) open(id string) {
 		screens.tell(nil, err, "")
 		return
 	}
-	screens.detail = &detail
+	screens.detail, screens.detailTab, screens.lastSale = &detail, 0, ""
+}
+
+// OpenFair opens one fair's detail on its stand.
+func (screens *Screens) OpenFair(id string) {
+	screens.Reload()
+	screens.open(id)
 }
 
 // eventEditor is the fair editor's text, as typed.
@@ -219,4 +259,12 @@ func (screens *Screens) OpenFirstOpen() {
 	if len(screens.events) > 0 {
 		screens.open(screens.events[0].ID)
 	}
+}
+
+// Detail is the fair whose detail is open, or the zero Detail when none is.
+func (screens *Screens) Detail() Detail {
+	if screens.detail == nil {
+		return Detail{}
+	}
+	return *screens.detail
 }

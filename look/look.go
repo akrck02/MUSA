@@ -15,9 +15,9 @@ import (
 
 // Measures of these pieces that are not tokens of the theme, in pixels, as in Bubble's CSS.
 const (
-	titleSize   = 26
-	figureSize  = 22
-	pillHeight  = 24
+	titleSize   = 32
+	figureSize  = 28
+	pillHeight  = 28
 	pillPadding = 10
 	emptyIcon   = 40
 	cardBorder  = 1
@@ -28,16 +28,19 @@ func Card(context *ui.Context, layout ui.Layout, content func()) {
 	context.Frame(layout, cardLook(context.Theme), content)
 }
 
-// ClickableCard is a Card the whole of which is one button; it returns true on the frame it is
-// clicked. Hovering brightens it a step, as Bubble's hover does; it never moves.
-func ClickableCard(context *ui.Context, name string, layout ui.Layout, content func()) bool {
+// ClickableCard is a Card the whole of which is one button, which a screen reader calls label; it
+// returns true on the frame it is clicked. Hovering brightens its edge, as Bubble's hover does; it
+// never moves.
+func ClickableCard(context *ui.Context, label string, layout ui.Layout, content func()) bool {
 	theme := context.Theme
 	normal := cardLook(theme)
 	hovered := normal
 	hovered.Border = theme.ControlLine
 	pressed := hovered
 	pressed.Fill = theme.Sunken
-	return context.Clickable(name, layout, ui.Looks{Normal: normal, Hovered: hovered, Pressed: pressed}, content)
+	clicked := context.Clickable(label, layout, ui.Looks{Normal: normal, Hovered: hovered, Pressed: pressed}, content)
+	context.Describe(ui.Description{Role: ui.ButtonRole, Label: label})
+	return clicked
 }
 
 func cardLook(theme ui.Theme) ui.Look {
@@ -61,6 +64,17 @@ func PageHeader(context *ui.Context, title, subtitle string, actions func()) {
 	})
 }
 
+// Figures is one quiet card holding a row of figures, so a summary reads as one thing rather
+// than a wall of boxes. On a narrow window the row folds into two columns.
+func Figures(context *ui.Context, count int, figures func()) {
+	theme := context.Theme
+	columns := count
+	if Narrow(context) && count > 3 {
+		columns = 2
+	}
+	Card(context, ui.Layout{Width: ui.Grow(), Columns: columns, Padding: ui.Pad(theme.Padding), Gap: theme.Gap}, figures)
+}
+
 // Figure is one number of a summary: its label, small and soft, above it in bold. A negative
 // figure (an amount lost) is painted with the theme's danger colour.
 func Figure(context *ui.Context, label, value string, negative bool) {
@@ -69,7 +83,7 @@ func Figure(context *ui.Context, label, value string, negative bool) {
 	if negative {
 		colour = theme.Danger
 	}
-	Card(context, ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(theme.Padding * 0.75), Gap: 4}, func() {
+	context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Gap: 4}, func() {
 		context.Text(label, ui.TextStyle{Size: theme.SmallTextSize, Color: theme.InkSoft})
 		context.Text(value, ui.TextStyle{Size: figureSize, Weight: draw2d.Bold, Color: colour})
 	})
@@ -114,13 +128,20 @@ func Empty(context *ui.Context, icon, title, message, action string) bool {
 	return clicked
 }
 
-// Section is a card with a heading, for one part of a form or a detail page.
+// Section is one part of a form or a detail page: a small, soft title above a card, so the
+// content leads and the titles stay out of its way.
 func Section(context *ui.Context, title string, content func()) {
 	theme := context.Theme
-	Card(context, ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(theme.Padding), Gap: theme.Gap}, func() {
-		context.Heading(title)
-		content()
+	context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Gap: 8}, func() {
+		Label(context, title)
+		Card(context, ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(theme.Padding), Gap: theme.Gap}, content)
 	})
+}
+
+// Label is the small, soft title of a group: a section, or a part of a list.
+func Label(context *ui.Context, title string) {
+	theme := context.Theme
+	context.Text(title, ui.TextStyle{Size: theme.SmallTextSize, Weight: draw2d.Bold, Color: theme.InkSoft})
 }
 
 // Field is a labelled text field: the label small and bold above it, and, when problem is not
@@ -156,12 +177,20 @@ func Paragraph(context *ui.Context, text string, style ui.TextStyle) {
 	if size == 0 {
 		size = context.Theme.TextSize
 	}
+	// Each word is its own line of text, as tall as the theme's line height; a paragraph keeps its
+	// lines closer, or the words of one sentence drift apart.
+	saved := context.Theme
+	context.Theme.LineHeight, context.Theme.HeadingLineHeight = paragraphLineHeight, paragraphLineHeight
+	defer func() { context.Theme = saved }()
 	context.Box(ui.Layout{Width: ui.Grow(), Wrap: true, Gap: size * wordSpace}, func() {
 		for _, word := range strings.Fields(text) {
 			context.Text(word, style)
 		}
 	})
 }
+
+// paragraphLineHeight is how tall a line of a paragraph is, as a multiple of its text size.
+const paragraphLineHeight = 1.2
 
 // narrowWidth is the window width under which MUSA lays itself out for a phone, in pixels.
 const narrowWidth = 760
@@ -170,6 +199,16 @@ const narrowWidth = 760
 func Narrow(context *ui.Context) bool {
 	width, _ := context.Size()
 	return width < narrowWidth
+}
+
+// wideWidth is the window width from which a page can hold two panes side by side, in pixels: a
+// large tablet held across (an iPad of 13 inches is 1366 wide), a laptop, a desktop.
+const wideWidth = 1180
+
+// Wide tells whether the window is wide enough for two panes side by side.
+func Wide(context *ui.Context) bool {
+	width, _ := context.Size()
+	return width >= wideWidth
 }
 
 // Columns is how many columns a grid of wanted columns gets: on a phone, half of them, at least one.
@@ -187,4 +226,36 @@ func Across(context *ui.Context) ui.Direction {
 		return ui.Vertical
 	}
 	return ui.Horizontal
+}
+
+// Badge is an icon in a soft round patch of the accent, the picture of a place or an action.
+func Badge(context *ui.Context, icon string, size float32) {
+	theme := context.Theme
+	context.Frame(ui.Layout{Width: ui.Fixed(size), Height: ui.Fixed(size), AlignX: ui.Center, AlignY: ui.Center},
+		ui.Look{Fill: theme.Surface.Mix(theme.Primary, badgeTint), Radius: size / 2}, func() {
+			context.IconSized(icon, size*badgeIcon, theme.Primary)
+		})
+}
+
+// badgeTint is how much of the accent a badge's patch takes; badgeIcon is its icon's share of it.
+const (
+	badgeTint = 0.12
+	badgeIcon = 0.5
+)
+
+// meterHeight is how thick a meter is, in pixels.
+const meterHeight = 6
+
+// Meter is a thin bar of how much of a whole is done: units sold of those taken.
+func Meter(context *ui.Context, done, whole int) {
+	theme := context.Theme
+	share := float32(0)
+	if whole > 0 {
+		share = float32(min(done, whole)) / float32(whole)
+	}
+	context.Frame(ui.Layout{Width: ui.Grow(), Height: ui.Fixed(meterHeight)}, ui.Look{Fill: theme.Sunken, Radius: meterHeight / 2}, func() {
+		if share > 0 {
+			context.Frame(ui.Layout{Width: ui.Percent(share), Height: ui.Grow()}, ui.Look{Fill: theme.Primary, Radius: meterHeight / 2}, nil)
+		}
+	})
 }

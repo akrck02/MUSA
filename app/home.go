@@ -8,6 +8,7 @@ import (
 	"github.com/akrck02/go-renderer/draw2d"
 	ui "github.com/akrck02/go-ui"
 
+	"github.com/Itros97/MUSA/calendar"
 	"github.com/Itros97/MUSA/demo"
 	"github.com/Itros97/MUSA/look"
 )
@@ -23,29 +24,32 @@ type homeState struct {
 	askingWipe  bool
 }
 
-// section is a part of MUSA as the home page offers it.
+// section is a part of MUSA as the home page offers it: a big picture button with a plain name.
 type section struct {
 	place       Place
 	icon, title string
 	description string
-	ready       bool
 }
 
 var sections = []section{
-	{Catalogue, "palette", "Catálogo", "Tus productos digitales y físicos, con variantes, precios y stock.", true},
-	{Fairs, "calendar-days", "Eventos", "Ferias y mercados: qué llevas, cuánto vendes y cuánto te cuesta ir.", true},
-	{Sales, "receipt", "Ventas", "Cada venta registrada, con su canal, su margen y su envío.", true},
-	{Home, "trending-up", "Análisis de mercado", "Qué se vende mejor, dónde y a qué precio. Pronto.", false},
+	{Fairs, "store", "Vender en una feria", "Lo que llevas y lo que ganas"},
+	{Catalogue, "palette", "Mis productos", "Tus láminas, pegatinas y demás"},
+	{Sales, "receipt", "Mis ventas", "Todo lo que has vendido"},
 }
 
 func (program *App) drawHome(context *ui.Context) {
-	theme := context.Theme
-	look.PageHeader(context, "MUSA", "Tu estudio, tu stock y tus ventas, en un sitio", nil)
-	context.Box(ui.Layout{Width: ui.Grow(), Columns: look.Columns(context, 2), Gap: theme.Gap}, func() {
+	look.PageHeader(context, "Hola", calendar.LongWords(program.today.date), nil)
+	program.drawToday(context)
+	columns := 1
+	if look.Wide(context) {
+		columns = len(sections)
+	}
+	context.Box(ui.Layout{Width: ui.Grow(), Columns: columns, Gap: context.Theme.Gap}, func() {
 		for _, each := range sections {
 			program.sectionCard(context, each)
 		}
 	})
+	program.drawMonth(context)
 	if program.options.DevelopmentTools {
 		program.developmentTools(context)
 	}
@@ -56,33 +60,42 @@ func (program *App) drawHome(context *ui.Context) {
 	}
 }
 
+// sectionIcon is how big the picture of a section is, in pixels.
+const sectionIcon = 72
+
+// sectionCard is a big button with a picture: three side by side on a wide window, and on a
+// narrower one a full-width row each, the picture beside the words, so no word is ever cut.
 func (program *App) sectionCard(context *ui.Context, each section) {
 	theme := context.Theme
-	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(theme.Padding), Gap: 6}
-	content := func() {
-		colour := theme.Primary
-		if !each.ready {
-			colour = theme.InkQuiet
+	layout := ui.Layout{Width: ui.Grow(), Padding: ui.Pad(theme.Padding * 1.25), Gap: theme.Gap * 1.5, AlignY: ui.Center}
+	if look.Wide(context) {
+		layout.Direction, layout.AlignX = ui.Vertical, ui.Center
+	}
+	if look.ClickableCard(context, each.title, layout, func() {
+		badge, title := float32(sectionIcon), theme.HeadingSize*1.2
+		if look.Narrow(context) {
+			badge, title = sectionIcon*0.75, theme.HeadingSize
 		}
-		context.IconSized(each.icon, theme.IconSize*1.5, colour)
-		context.Text(each.title, ui.TextStyle{Size: theme.HeadingSize, Weight: draw2d.Bold})
-		look.Paragraph(context, each.description, ui.TextStyle{Color: theme.InkSoft})
-	}
-	if !each.ready {
-		look.Card(context, layout, content)
-		return
-	}
-	if look.ClickableCard(context, each.title, layout, content) {
+		look.Badge(context, each.icon, badge)
+		words := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Gap: 6, AlignX: layout.AlignX}
+		if look.Wide(context) {
+			words.Width = ui.Layout{}.Width
+		}
+		context.Box(words, func() {
+			context.Text(each.title, ui.TextStyle{Size: title, Weight: draw2d.Bold})
+			look.Paragraph(context, each.description, ui.TextStyle{Color: theme.InkSoft})
+		})
+	}) {
 		program.Open(each.place)
 	}
 }
 
 func (program *App) developmentTools(context *ui.Context) {
-	look.Section(context, "Herramientas de prueba", func() {
+	look.Section(context, "Para probar (solo en desarrollo)", func() {
 		look.Paragraph(context, "Solo en builds de desarrollo. Rellena la base de datos con datos de juguete o vacíala para empezar de cero.",
 			ui.TextStyle{Color: context.Theme.InkSoft})
-		context.Box(ui.Layout{Gap: 8, Wrap: true}, func() {
-			if context.PrimaryIconButton("sparkles", "Rellenar con datos de prueba") {
+		context.Box(ui.Layout{Direction: look.Across(context), Gap: 8}, func() {
+			if context.IconButton("sparkles", "Rellenar con datos de prueba") {
 				program.fillWithDemo()
 			}
 			if context.IconButton("trash-2", "Vaciar base de datos") {
@@ -105,6 +118,7 @@ func (program *App) askWipe(context *ui.Context) {
 			if context.PrimaryButton("Vaciar") {
 				program.home.askingWipe = false
 				program.tell(program.stores.Database.Wipe(), "Base de datos vacía")
+				program.Open(Home)
 			}
 		})
 	}) {
@@ -118,6 +132,7 @@ func (program *App) fillWithDemo() {
 		err = errors.New("La base de datos ya tiene datos: vacíala primero")
 	}
 	program.tell(err, "Datos de prueba cargados")
+	program.Open(Home)
 }
 
 // tell shows what a development tool did, or why it could not.

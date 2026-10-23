@@ -34,7 +34,8 @@ func (screens *Screens) drawSheet(context *ui.Context) {
 			if context.Button("Cancelar") {
 				screens.sheet = sheet{}
 			}
-			if context.PrimaryButton(map[sheetKind]string{closeSheet: "Cerrar", deleteSheet: "Eliminar"}[current.kind] + "##confirm") {
+			if context.PrimaryButton(map[sheetKind]string{takeSheet: "Llevar", sellSheet: "Apuntar venta", returnSheet: "Devolver",
+				closeSheet: "Cerrar evento", deleteSheet: "Eliminar"}[current.kind] + "##confirm") {
 				screens.confirmSheet()
 			}
 		})

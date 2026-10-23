@@ -123,7 +123,7 @@ func (screens *Screens) cards(context *ui.Context, shown []Product) {
 func (screens *Screens) card(context *ui.Context, product Product) {
 	theme := context.Theme
 	layout := ui.Layout{Width: ui.Grow(), Padding: ui.Pad(12), Gap: 14}
-	opened := look.ClickableCard(context, "card", layout, func() {
+	opened := look.ClickableCard(context, product.Name, layout, func() {
 		thumbnail(context, product)
 		context.Frame(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Gap: 4}, ui.Look{Clip: true}, func() {
 			context.Text(product.Name, ui.TextStyle{Weight: draw2d.Bold})

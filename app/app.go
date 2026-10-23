@@ -13,12 +13,13 @@ import (
 	"github.com/Itros97/MUSA/catalogue"
 	"github.com/Itros97/MUSA/demo"
 	"github.com/Itros97/MUSA/events"
+	"github.com/Itros97/MUSA/look"
 	"github.com/Itros97/MUSA/sales"
 	"github.com/Itros97/MUSA/storage"
 )
 
-// Accent is MUSA's colour: the terracotta of its studio palette.
-const Accent = "#9A4532"
+// Accent is MUSA's colour: a deep slate, quiet like ink, so the artwork brings the colour.
+const Accent = "#3F4A5A"
 
 // Place is one of the parts of MUSA the index leads to.
 type Place int
@@ -50,6 +51,7 @@ type App struct {
 	fairs     *events.Screens
 	sales     *sales.Screens
 	home      homeState
+	today     today
 }
 
 // New opens MUSA over an open database.
@@ -78,12 +80,16 @@ func New(database *storage.Database, options Options) (*App, error) {
 	program.catalogue = catalogue.NewScreens(products, storage.NewID)
 	program.fairs = events.NewScreens(fairs, products, storage.NewID, now)
 	program.sales = sales.NewScreens(sold, products, storage.NewID, now)
+	program.Open(Home)
 	return program, nil
 }
 
 // Open moves to a place, reading its data again: other places may have changed it.
 func (program *App) Open(place Place) {
 	program.place = place
+	if place == Home {
+		program.today = readToday(program.stores, program.stores.Now())
+	}
 	switch place {
 	case Catalogue:
 		program.catalogue.Reload()
@@ -97,6 +103,9 @@ func (program *App) Open(place Place) {
 // Build draws one frame of MUSA; it is the function given to window.Run.
 func (program *App) Build(context *ui.Context) {
 	context.Theme = program.theme
+	if !look.Narrow(context) {
+		context.Theme = forTouch(context.Theme) // a tablet: bigger, for a finger at arm's length
+	}
 	if context.Back() && !program.back() {
 		program.Open(Home)
 	}

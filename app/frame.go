@@ -9,12 +9,14 @@ import (
 
 // Measures of the frame, in pixels, as in Bubble's showcase.
 const (
-	indexWidth  = 240
-	barHeight   = 64
+	barHeight   = 88
+	barWidth    = 760 // the places' width on a wide window
+	pillWidth   = 64  // the soft pill behind the chosen place's icon
+	pillHeight  = 32
 	brandLetter = 0.14 // the brand's letter spacing, in ems
 )
 
-// destination is a place as the index shows it.
+// destination is a place as the bar shows it.
 type destination struct {
 	place      Place
 	icon, name string
@@ -22,73 +24,55 @@ type destination struct {
 
 var destinations = []destination{
 	{Home, "house", "Inicio"},
-	{Catalogue, "palette", "Catálogo"},
-	{Fairs, "calendar-days", "Eventos"},
-	{Sales, "receipt", "Ventas"},
+	{Fairs, "store", "Ferias"},
+	{Catalogue, "palette", "Mis productos"},
+	{Sales, "receipt", "Mis ventas"},
 }
 
-// frame is Bubble's: the index on the left, the whole height, and the page beside it; on a narrow
-// window the page fills it and the places sit in a bar at the bottom.
+// frame is the page above and the places in a bar along the bottom, on every size, as on an
+// Android phone: one way to move around, always in the same place, within reach of a thumb.
 func (program *App) frame(context *ui.Context) {
-	if look.Narrow(context) {
-		program.phoneFrame(context)
-		return
-	}
-	context.Box(ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func() {
-		program.index(context)
-		context.Separator()
-		program.scrollingPage(context)
-	})
-}
-
-func (program *App) phoneFrame(context *ui.Context) {
 	theme := context.Theme
 	insets := context.Insets()
 	context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Grow(), Padding: ui.Padding{Top: insets.Top}}, func() {
 		program.scrollingPage(context)
 		context.Separator()
-		bar := ui.Layout{Width: ui.Grow(), Height: ui.Fixed(barHeight + insets.Bottom), Padding: ui.Padding{Bottom: insets.Bottom}}
+		bar := ui.Layout{Width: ui.Grow(), Height: ui.Fixed(barHeight + insets.Bottom), Padding: ui.Padding{Bottom: insets.Bottom}, AlignX: ui.Center}
 		context.Frame(bar, ui.Look{Fill: theme.Surface}, func() {
-			for _, each := range destinations {
-				program.barItem(context, each)
+			// On a wide window the places stay together in the middle, not spread to the edges.
+			width := ui.Grow()
+			if !look.Narrow(context) {
+				width = ui.Fixed(barWidth)
 			}
+			context.Box(ui.Layout{Width: width, Height: ui.Grow()}, func() {
+				for _, each := range destinations {
+					program.barItem(context, each)
+				}
+			})
 		})
 	})
 }
 
-// barItem is one place in the phone's bar: its icon over its name, brighter and bold when chosen.
+// barItem is one place in the bar: its icon over its name; the chosen one has its icon on a soft
+// pill and its name in bold, as Android's navigation bar marks it.
 func (program *App) barItem(context *ui.Context, each destination) {
 	theme := context.Theme
 	chosen := each.place == program.place
-	colour, weight := theme.InkSoft, draw2d.Regular
+	colour, weight, pill := theme.InkSoft, draw2d.Regular, draw2d.Transparent
 	if chosen {
-		colour, weight = theme.Ink, draw2d.Bold
+		colour, weight, pill = theme.Ink, draw2d.Bold, theme.Sunken
 	}
-	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Grow(), Gap: 2, AlignX: ui.Center, AlignY: ui.Center}
+	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Grow(), Gap: 4, AlignX: ui.Center, AlignY: ui.Center}
 	looks := ui.Looks{Pressed: ui.Look{Fill: theme.Sunken}}
 	if context.Clickable(each.name+"##bar", layout, looks, func() {
-		context.IconSized(each.icon, theme.IconSize, colour)
+		context.Frame(ui.Layout{Width: ui.Fixed(pillWidth), Height: ui.Fixed(pillHeight), AlignX: ui.Center, AlignY: ui.Center},
+			ui.Look{Fill: pill, Radius: pillHeight / 2}, func() {
+				context.IconSized(each.icon, theme.IconSize, colour)
+			})
 		context.Text(each.name, ui.TextStyle{Size: theme.SmallTextSize, Weight: weight, Color: colour})
 	}) {
 		program.Open(each.place)
 	}
-}
-
-func (program *App) index(context *ui.Context) {
-	theme := context.Theme
-	context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Fixed(indexWidth - 1), Height: ui.Grow(), Padding: ui.PadXY(12, 14), Gap: theme.Gap}, func() {
-		context.Box(ui.Layout{Height: ui.Fixed(theme.ControlHeight), Padding: ui.PadXY(8, 0), Gap: 10, AlignY: ui.Center}, func() {
-			context.IconSized("palette", theme.IconSize, theme.Primary)
-			spaced(context, "MUSA", theme.SmallTextSize)
-		})
-		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Gap: 2}, func() {
-			for _, each := range destinations {
-				if context.Selectable(each.icon, each.name, each.place == program.place) {
-					program.Open(each.place)
-				}
-			}
-		})
-	})
 }
 
 func (program *App) scrollingPage(context *ui.Context) {
@@ -111,4 +95,5 @@ func spaced(context *ui.Context, text string, size float32) {
 			context.Text(string(letter), ui.TextStyle{Size: size, Weight: draw2d.Bold})
 		}
 	})
+	context.Describe(ui.Description{Role: ui.TextRole, Label: text}) // a word, not letters, for a screen reader
 }

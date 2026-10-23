@@ -1,0 +1,134 @@
+package app
+
+import (
+	"github.com/Itros97/MUSA/money"
+	"strings"
+	"testing"
+
+	"github.com/akrck02/go-ui/uitest"
+
+	"github.com/Itros97/MUSA/catalogue"
+	"github.com/Itros97/MUSA/demo"
+	"github.com/Itros97/MUSA/sales"
+	"github.com/Itros97/MUSA/storage"
+)
+
+// openApp opens MUSA over a database in memory, filled with the demo when withDemo, in a test
+// window the size of a laptop's.
+func openApp(t *testing.T, withDemo bool) (*App, *uitest.Window) {
+	t.Helper()
+	database, err := storage.Open(storage.InMemory)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { database.Close() })
+	program, err := New(database, Options{DevelopmentTools: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if withDemo {
+		if err := demo.Fill(program.Stores()); err != nil {
+			t.Fatal(err)
+		}
+	}
+	window, err := uitest.New(program.Build, uitest.Size(1280, 1600), uitest.Test(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	window.Frame()
+	return program, window
+}
+
+func steps(t *testing.T, window *uitest.Window, script ...func() error) {
+	t.Helper()
+	for index, step := range script {
+		if err := step(); err != nil {
+			t.Fatalf("step %d: %v", index+1, err)
+		}
+	}
+}
+
+func typeInto(window *uitest.Window, placeholder, text string) func() error {
+	return func() error {
+		if err := window.Click(placeholder); err != nil {
+			return err
+		}
+		window.Type(text)
+		return nil
+	}
+}
+
+func click(window *uitest.Window, label string) func() error {
+	return func() error { return window.Click(label) }
+}
+
+func TestCreatingAProductPutsItInTheCatalogue(t *testing.T) {
+	program, window := openApp(t, false)
+	program.Open(Catalogue)
+	window.Frame()
+	steps(t, window,
+		click(window, "Crear tu primer producto"),
+		click(window, "Producto físico"),
+		typeInto(window, "Lámina «Gato astronauta»", "Lámina de prueba"),
+		typeInto(window, "12,50", "15"),
+		click(window, "Guardar"),
+	)
+	products, err := program.stores.Products.All()
+	if err != nil || len(products) != 1 {
+		t.Fatalf("%d products, %v", len(products), err)
+	}
+	if product := products[0]; product.Name != "Lámina de prueba" || product.Kind != catalogue.Physical || product.Variants[0].Price != 1500 {
+		t.Errorf("saved %+v", product)
+	}
+	if _, err := window.Element("Lámina de prueba"); err != nil {
+		t.Error("the new product is not in the list:", err)
+	}
+}
+
+func TestAProductWithoutANameIsNotSaved(t *testing.T) {
+	program, window := openApp(t, false)
+	program.Open(Catalogue)
+	window.Frame()
+	steps(t, window, click(window, "Crear tu primer producto"),
+		click(window, "Producto digital"), click(window, "Guardar"))
+	if _, err := window.Element("Ponle un nombre"); err != nil {
+		t.Error("the editor does not say what is missing:", err)
+	}
+	if products, _ := program.stores.Products.All(); len(products) != 0 {
+		t.Errorf("%d products saved", len(products))
+	}
+}
+
+func TestSellingAtAFairLeavesFewerOnTheStand(t *testing.T) {
+	program, window := openApp(t, true)
+	program.Show("fair")
+	window.Frame()
+	before := program.fairs.Detail().Stock[0]
+	// One touch sells one at the stand's price, with no sheet to confirm: undo is offered instead.
+	steps(t, window, click(window, "Vender 1 · "+money.Format(before.Price)))
+	after := program.fairs.Detail().Stock[0]
+	if after.Remaining() != before.Remaining()-1 {
+		t.Errorf("remaining %d, then %d", before.Remaining(), after.Remaining())
+	}
+}
+
+func TestRecordingAnOrderTakesItsStockFromTheCatalogue(t *testing.T) {
+	program, window := openApp(t, true)
+	before, _ := program.stores.Sales.All()
+	program.Open(Sales)
+	window.Frame()
+	steps(t, window, click(window, "Nueva venta"), typeInto(window, "Opcional", "Ana"), click(window, "Guardar"))
+	after, _ := program.stores.Sales.All()
+	if len(after) != len(before)+1 {
+		t.Fatalf("%d sales, then %d", len(before), len(after))
+	}
+	var recorded sales.Sale
+	for _, sale := range after {
+		if sale.Customer == "Ana" {
+			recorded = sale
+		}
+	}
+	if recorded.Channel != sales.OnlineShop || len(recorded.Lines) != 1 || !strings.Contains(recorded.Lines[0].ProductName, "Chapa") {
+		t.Errorf("recorded %+v", recorded)
+	}
+}
