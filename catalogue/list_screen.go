@@ -20,6 +20,9 @@ const (
 	searchFieldWidth     = 320
 	cardsOnAPhone        = 1
 	cardsWhenThereIsRoom = 4
+	cardNameScale        = 1.15
+	versionPillHeight    = 30
+	versionPillTextScale = 1.15
 )
 
 // kindTabs are the two halves of the catalogue, in the order of their tabs.
@@ -86,15 +89,16 @@ func (screens *Screens) applyTabs() {
 	}
 }
 
+// kindIcons are the icons of the kinds' tabs.
+var kindIcons = map[Kind]string{Physical: "package", Digital: "cloud"}
+
 // kindBar is Físico and Digital, each with how many products it holds.
 func (screens *Screens) kindBar(context *ui.Context) {
-	labels := make([]string, len(kindTabs))
+	tabs := make([]look.Tab, len(kindTabs))
 	for index, kind := range kindTabs {
-		labels[index] = fmt.Sprintf("%s  %d", kindWords[kind], len(Filter(screens.products, Query{Kind: kind})))
+		tabs[index] = look.Tab{Icon: kindIcons[kind], Label: kindWords[kind], Count: len(Filter(screens.products, Query{Kind: kind})), HasCount: true}
 	}
-	before := screens.kindTab
-	context.Box(ui.Layout{Width: ui.Fixed(kindTabsWidth)}, func() { context.Tabs("kind", &screens.kindTab, labels...) })
-	if screens.kindTab != before {
+	if look.Segmented(context, "kind", &screens.kindTab, tabs) {
 		screens.tagTab = 0
 		screens.query.LowStockOnly = false
 	}
@@ -116,7 +120,7 @@ func (screens *Screens) restockBanner(context *ui.Context) {
 			context.Text(restockSummary(names), ui.TextStyle{Size: theme.SmallTextSize, Color: theme.InkSoft})
 		})
 		action := map[bool]string{true: "Ver todos", false: "Ver cuáles"}[screens.query.LowStockOnly]
-		if context.FlatButton(action) {
+		if look.Link(context, action) {
 			screens.query.LowStockOnly = !screens.query.LowStockOnly
 		}
 	})
@@ -148,15 +152,15 @@ func (screens *Screens) countWithTag(id string) int {
 // tagBar is Todo, one tab per tag with its count, and Archivados when something is archived.
 func (screens *Screens) tagBar(context *ui.Context) {
 	kind := kindTabs[screens.kindTab]
-	labels := []string{fmt.Sprintf("Todo  %d", len(Filter(screens.products, Query{Kind: kind})))}
+	tabs := []look.Tab{{Label: "Todo", Count: len(Filter(screens.products, Query{Kind: kind})), HasCount: true}}
 	for _, tag := range screens.tagsOfKind() {
-		labels = append(labels, fmt.Sprintf("%s  %d", tag.Name, screens.countWithTag(tag.ID)))
+		tabs = append(tabs, look.Tab{Label: tag.Name, Count: screens.countWithTag(tag.ID), HasCount: true})
 	}
 	if archived := len(Filter(screens.products, Query{Kind: kind, Archived: true})); archived > 0 {
-		labels = append(labels, fmt.Sprintf("Archivados  %d", archived))
+		tabs = append(tabs, look.Tab{Label: "Archivados", Count: archived, HasCount: true})
 	}
-	screens.tagTab = min(screens.tagTab, len(labels)-1)
-	context.Tabs("tag", &screens.tagTab, labels...)
+	screens.tagTab = min(screens.tagTab, len(tabs)-1)
+	look.PillTabs(context, "tag", &screens.tagTab, tabs)
 }
 
 func (screens *Screens) cards(context *ui.Context, shown []Product) {
@@ -180,15 +184,16 @@ func (screens *Screens) cards(context *ui.Context, shown []Product) {
 // version with what is left. Tapping it opens the product; a version's pill changes its stock.
 func (screens *Screens) card(context *ui.Context, product Product) {
 	theme := context.Theme
-	normal := ui.Look{Fill: theme.Surface, Border: theme.Line, BorderWidth: 1, Radius: theme.PanelRadius, Clip: true}
-	pressed := normal
-	pressed.Fill = theme.Sunken
+	normal := ui.Look{Fill: theme.Surface, Border: theme.Line, BorderWidth: 1, Radius: theme.PanelRadius}
+	hovered := normal
+	hovered.Border = theme.ControlLine
 	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(1)}
-	if context.Clickable(product.Name, layout, ui.Looks{Normal: normal, Hovered: normal, Pressed: pressed}, func() {
-		cardPicture(context, product)
-		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(14), Gap: 6}, func() {
-			look.Paragraph(context, product.Name, ui.TextStyle{Weight: draw2d.Bold})
+	if context.Clickable(product.Name, layout, ui.Looks{Normal: normal, Hovered: hovered, Pressed: hovered}, func() {
+		screens.cardPicture(context, product)
+		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(16), Gap: 4}, func() {
+			look.Paragraph(context, product.Name, ui.TextStyle{Size: theme.TextSize * cardNameScale, Weight: draw2d.Bold})
 			context.Text(PriceRangeWords(product), ui.TextStyle{Color: theme.InkSoft})
+			context.Box(ui.Layout{Height: ui.Fixed(6)}, nil)
 			screens.versionPills(context, product)
 		})
 	}) {
@@ -196,12 +201,25 @@ func (screens *Screens) card(context *ui.Context, product Product) {
 	}
 }
 
+// pictureShape is the top-rounded fill of a colour, kept from frame to frame.
+func (screens *Screens) pictureShape(theme ui.Theme, color TagColor) *look.TopRounded {
+	if screens.shapes == nil {
+		screens.shapes = map[TagColor]*look.TopRounded{}
+	}
+	shape, found := screens.shapes[color]
+	if !found {
+		shape = &look.TopRounded{}
+		screens.shapes[color] = shape
+	}
+	shape.Fill, shape.Radius = TagTone(theme, color).Fill, theme.PanelRadius-1
+	return shape
+}
+
 // cardPicture is the coloured top of a card with the product's first letter and first tag.
-func cardPicture(context *ui.Context, product Product) {
+func (screens *Screens) cardPicture(context *ui.Context, product Product) {
 	theme := context.Theme
-	tone := TagTone(theme, PictureColor(product))
 	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Fixed(cardPictureHeight), Padding: ui.Pad(10)}
-	context.Frame(layout, ui.Look{Fill: tone.Fill, Radius: theme.PanelRadius}, func() {
+	context.Frame(layout, ui.Look{Backdrop: screens.pictureShape(theme, PictureColor(product))}, func() {
 		context.Box(ui.Layout{Width: ui.Grow(), Gap: 6}, func() {
 			if len(product.Tags) > 0 {
 				look.Pill(context, product.Tags[0].Name, look.Tone{Fill: theme.Surface, Ink: theme.Ink})
@@ -216,8 +234,8 @@ func cardPicture(context *ui.Context, product Product) {
 	})
 }
 
-// versionPills shows each version with what is left, warm when it runs low and red when sold out;
-// a digital product is made to order instead.
+// versionPills shows each version with what is left, the count warm when it runs low and the
+// whole pill red when sold out; a digital product is made to order instead.
 func (screens *Screens) versionPills(context *ui.Context, product Product) {
 	theme := context.Theme
 	context.Box(ui.Layout{Width: ui.Grow(), Gap: 6, Wrap: true}, func() {
@@ -227,7 +245,7 @@ func (screens *Screens) versionPills(context *ui.Context, product Product) {
 		}
 		for _, variant := range product.Variants {
 			context.Push(variant.ID)
-			if context.Chip("", versionWords(variant), chipLook(versionTone(theme, variant))) {
+			if versionPill(context, variant) {
 				screens.stockOf = product.ID
 			}
 			context.Pop()
@@ -235,23 +253,26 @@ func (screens *Screens) versionPills(context *ui.Context, product Product) {
 	})
 }
 
-// versionWords is a version and what is left of it: "A4 9", "Única 8", "A3 Agotado".
-func versionWords(variant Variant) string {
-	left := fmt.Sprint(variant.Stock)
-	if variant.Stock == 0 {
-		left = "Agotado"
-	}
-	return nameOr(variant.Name, "Única") + " " + left
-}
-
-func versionTone(theme ui.Theme, variant Variant) look.Tone {
+// versionPill is "A4 9", "Única 8" or "A3 Agotado", as a button.
+func versionPill(context *ui.Context, variant Variant) bool {
+	theme := context.Theme
+	name := nameOr(variant.Name, "Única")
+	fill, ink, countInk, weight := theme.Sunken, theme.Ink, theme.InkSoft, draw2d.Regular
+	count := fmt.Sprint(variant.Stock)
 	switch {
 	case variant.Stock == 0:
-		return look.Tone{Fill: theme.Danger.WithAlpha(0.12), Ink: theme.Danger}
+		fill, ink, countInk, count = theme.Danger.WithAlpha(0.1), theme.Danger, theme.Danger, "Agotado"
 	case variant.LowStock():
-		return look.Warning(theme)
+		countInk, weight = theme.Warning, draw2d.Bold
 	}
-	return look.Neutral(theme)
+	normal := ui.Look{Fill: fill, Radius: versionPillHeight / 2}
+	pressed := normal
+	pressed.Border, pressed.BorderWidth = theme.ControlLine, 1
+	layout := ui.Layout{Height: ui.Fixed(versionPillHeight), Padding: ui.PadXY(10, 0), Gap: 6, AlignY: ui.Center}
+	return context.Clickable(name, layout, ui.Looks{Normal: normal, Hovered: pressed, Pressed: pressed}, func() {
+		context.Text(name, ui.TextStyle{Size: theme.SmallTextSize * versionPillTextScale, Color: ink})
+		context.Text(count, ui.TextStyle{Size: theme.SmallTextSize * versionPillTextScale, Color: countInk, Weight: weight})
+	})
 }
 
 func kindIcon(kind Kind) string {

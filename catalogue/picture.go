@@ -21,13 +21,9 @@ func Initial(name string) string {
 	return string(first)
 }
 
-// PictureColor is the colour of a product's picture: its first tag's, or none for the theme's own.
-func PictureColor(product Product) TagColor {
-	if len(product.Tags) == 0 {
-		return ""
-	}
-	return product.Tags[0].Color
-}
+// PictureColor is the colour of a product's picture until it has a photo: one of the tags'
+// palette, picked by its name, so works side by side look different and each keeps its colour.
+func PictureColor(product Product) TagColor { return TagColorFor(TagKey(product.Name)) }
 
 // Restock lists what needs restocking, as the artist says it: "A3 de Gato astronauta" for a
 // version, "Luna" for a product with a single one. It reads physical products that are not

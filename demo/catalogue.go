@@ -8,22 +8,21 @@ import (
 // catalogue saves the made-up products, with low and sold-out stock among them.
 func (filler *filler) catalogue() {
 	paper := "Papel de algodón 300 g"
-	filler.physical("Lámina «Gato astronauta»", []string{"Gatos", "Espacio"}, paper, catalogue.Active,
-		filler.item("A4", 1200, 350, "LAM-GAT-A4", 14, 4), filler.item("A3", 2000, 600, "LAM-GAT-A3", 6, 2))
-	filler.physical("Lámina «Bosque de niebla»", []string{"Paisaje"}, paper, catalogue.Active,
-		filler.item("A4", 1200, 350, "LAM-BOS-A4", 10, 0), filler.item("A3", 2000, 600, "LAM-BOS-A3", 3, 3))
-	filler.physical("Pegatina holográfica «Luna»", []string{"Pegatinas", "Espacio"}, "Vinilo holográfico", catalogue.Active,
-		filler.item("", 300, 60, "PEG-LUNA", 40, 0))
-	filler.physical("Pack de pegatinas «Hongos»", []string{"Pegatinas", "Hongos"}, "Vinilo mate", catalogue.Active,
-		filler.item("", 600, 150, "PEG-HONG", 2, 5))
-	filler.physical("Chapa «Rana con sombrero»", []string{"Chapas"}, "Metal 38 mm", catalogue.Active,
-		filler.item("", 250, 70, "CHA-RANA", 25, 0))
-	filler.physical("Tote bag «Gato astronauta»", []string{"Gatos", "Merch"}, "Algodón orgánico", catalogue.Active,
-		filler.item("", 1800, 700, "TOT-GAT", 0, 2))
-	filler.physical("Llavero acrílico «Dragón»", []string{"Merch"}, "Acrílico 5 cm", catalogue.Active,
-		filler.item("", 800, 220, "LLA-DRAG", 12, 0))
-	filler.physical("Fanzine «Cuaderno de bocetos»", []string{"Fanzines"}, "Grapado A5, 24 páginas", catalogue.Draft,
-		filler.item("", 700, 250, "FAN-BOC", 9, 0))
+	vinyl := "Vinilo"
+	filler.physical("Gato astronauta", []string{"Láminas"}, paper, catalogue.Active,
+		filler.item("A5", 800, 200, "LAM-GAT-A5", 23, 3), filler.item("A4", 1200, 350, "LAM-GAT-A4", 5, 3),
+		filler.item("A3", 1500, 600, "LAM-GAT-A3", 1, 2))
+	filler.physical("Luna", []string{"Pegatinas"}, vinyl, catalogue.Active,
+		filler.item("Mate", 300, 60, "PEG-LUN-M", 3, 5), filler.item("Brillo", 300, 70, "PEG-LUN-B", 47, 5))
+	filler.physical("Bosque de noche", []string{"Láminas"}, paper, catalogue.Active,
+		filler.item("A4", 1000, 300, "LAM-BOS-A4", 11, 3), filler.item("A3", 1800, 600, "LAM-BOS-A3", 0, 2))
+	filler.physical("Rana feliz", []string{"Llaveros"}, "Acrílico 5 cm", catalogue.Active,
+		filler.item("", 600, 180, "LLA-RAN", 16, 3))
+	filler.physical("Ola", []string{"Pegatinas"}, vinyl, catalogue.Active, filler.item("", 300, 60, "PEG-OLA", 16, 5))
+	filler.physical("Nube", []string{"Pegatinas"}, vinyl, catalogue.Active, filler.item("", 300, 60, "PEG-NUB", 32, 5))
+	filler.physical("Seta", []string{"Pegatinas"}, vinyl, catalogue.Active, filler.item("", 300, 60, "PEG-SET", 0, 5))
+	filler.physical("Zorro", []string{"Láminas"}, paper, catalogue.Active,
+		filler.item("A5", 800, 200, "LAM-ZOR-A5", 6, 3), filler.item("A4", 1500, 350, "LAM-ZOR-A4", 9, 3))
 	filler.digital("Retrato digital", "PNG 4000 px", 21, filler.tier("Busto", 3500), filler.tier("Cuerpo entero", 7000))
 	filler.digital("Icono para redes", "PNG 1000 px", 7, filler.tier("", 2000))
 }

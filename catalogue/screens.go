@@ -3,6 +3,7 @@ package catalogue
 import (
 	"time"
 
+	"github.com/Itros97/MUSA/look"
 	ui "github.com/akrck02/go-ui"
 )
 
@@ -20,9 +21,10 @@ type Screens struct {
 	query    Query
 	loadErr  error
 
-	kindTab   int  // index in kindTabs
-	tagTab    int  // 0 for every tag, then each tag of the kind, then the archived
-	searching bool // the search field is open
+	kindTab   int                           // index in kindTabs
+	tagTab    int                           // 0 for every tag, then each tag of the kind, then the archived
+	searching bool                          // the search field is open
+	shapes    map[TagColor]*look.TopRounded // the pictures' fills, kept so drawing them allocates nothing
 
 	choosingKind bool
 	stockOf      string // the product whose quick stock sheet is open
@@ -91,9 +93,17 @@ func (screens *Screens) product(id string) (Product, bool) {
 	return Product{}, false
 }
 
-// EditFirst opens the editor of the first product of the list, when there is one.
+// EditFirst opens the editor of the first product of the list with more than one version, or of
+// the first product when none has; nothing when the list is empty.
 func (screens *Screens) EditFirst() {
-	if shown := Filter(screens.products, screens.query); len(shown) > 0 {
-		screens.edit(shown[len(shown)/2])
+	shown := Filter(screens.products, screens.query)
+	for _, product := range shown {
+		if len(product.Variants) > 1 {
+			screens.edit(product)
+			return
+		}
+	}
+	if len(shown) > 0 {
+		screens.edit(shown[0])
 	}
 }

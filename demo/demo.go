@@ -61,21 +61,21 @@ func (filler *filler) fill() error {
 	today := calendar.Of(filler.stores.Now())
 
 	autumn := filler.event("Mercadillo de otoño", "Plaza Mayor", today.AddDays(-30), today.AddDays(-29))
-	filler.take(autumn, map[string]int{"LAM-GAT-A4": 6, "PEG-LUNA": 15, "CHA-RANA": 10})
-	filler.sell(autumn, "LAM-GAT-A4", 4, 1200)
-	filler.sell(autumn, "LAM-GAT-A4", 1, 1000)
-	filler.sell(autumn, "PEG-LUNA", 9, 300)
-	filler.sell(autumn, "CHA-RANA", 6, 250)
+	filler.take(autumn, map[string]int{"LAM-GAT-A5": 6, "PEG-LUN-B": 15, "PEG-NUB": 10})
+	filler.sell(autumn, "LAM-GAT-A5", 4, 1200)
+	filler.sell(autumn, "LAM-GAT-A5", 1, 1000)
+	filler.sell(autumn, "PEG-LUN-B", 9, 300)
+	filler.sell(autumn, "PEG-NUB", 6, 250)
 	filler.spend(autumn, "Stand", 4000)
 	filler.spend(autumn, "Gasolina", 2200)
 	filler.refused(filler.stores.Events.Close(autumn))
 
 	comic := filler.event("Feria del cómic", "Pabellón 3", today, today.AddDays(1))
-	filler.take(comic, map[string]int{"LAM-GAT-A4": 5, "LAM-BOS-A3": 2, "PEG-LUNA": 12, "LLA-DRAG": 6})
-	filler.sell(comic, "LAM-GAT-A4", 2, 1200)
-	filler.sell(comic, "PEG-LUNA", 3, 300)
-	filler.sell(comic, "LLA-DRAG", 1, 800)
-	filler.sell(comic, "LAM-BOS-A3", 1, 1800)
+	filler.take(comic, map[string]int{"LAM-GAT-A5": 5, "LAM-BOS-A4": 2, "PEG-LUN-B": 12, "LLA-RAN": 6})
+	filler.sell(comic, "LAM-GAT-A5", 2, 1200)
+	filler.sell(comic, "PEG-LUN-B", 3, 300)
+	filler.sell(comic, "LLA-RAN", 1, 800)
+	filler.sell(comic, "LAM-BOS-A4", 1, 1800)
 	filler.spend(comic, "Stand", 6000)
 	filler.spend(comic, "Comida", 1450)
 
@@ -89,13 +89,13 @@ func (filler *filler) fill() error {
 func (filler *filler) orders(today calendar.Date) {
 	daysAgo := func(count int) time.Time { return sales.SoldAt(today.AddDays(-count), filler.stores.Now()) }
 	filler.order(sales.Draft{Channel: sales.InPerson, Customer: "Vecina del taller", SoldAt: daysAgo(0),
-		Lines: filler.lines("LLA-DRAG", 2, 800)})
+		Lines: filler.lines("LLA-RAN", 2, 800)})
 	filler.order(sales.Draft{Channel: sales.OnlineShop, Customer: "@lectora_de_comics", Note: "Pedido web 0007", SoldAt: daysAgo(3),
-		Lines: append(filler.lines("LAM-BOS-A4", 2, 1200), filler.lines("PEG-HONG", 1, 600)...), ShippingCharged: 450, ShippingCost: 380})
+		Lines: append(filler.lines("LAM-ZOR-A4", 2, 1500), filler.lines("PEG-OLA", 1, 600)...), ShippingCharged: 450, ShippingCost: 380})
 	filler.order(sales.Draft{Channel: sales.Social, Customer: "@ranita_ilustra", Note: "Encargo por DM", SoldAt: daysAgo(10),
 		Lines: filler.lines("Retrato digital · Busto", 1, 3500)})
 	filler.order(sales.Draft{Channel: sales.Marketplace, Note: "Etsy", SoldAt: daysAgo(40),
-		Lines: filler.lines("LAM-GAT-A3", 1, 2000), ShippingCharged: 500, ShippingCost: 420})
+		Lines: filler.lines("LAM-GAT-A4", 1, 2000), ShippingCharged: 500, ShippingCost: 420})
 }
 
 func (filler *filler) event(name, location string, start, end calendar.Date) string {

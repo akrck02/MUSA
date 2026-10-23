@@ -28,7 +28,7 @@ func TestRestockNamesTheVersionThatRunsLow(test *testing.T) {
 
 func TestAPriceRangeGoesFromCheapestToDearest(test *testing.T) {
 	product := Product{Variants: []Variant{{Price: 1500}, {Price: 800}}}
-	if got := PriceRangeWords(product); got != "8 € – 15 €" {
+	if got := PriceRangeWords(product); got != "8 – 15 €" {
 		test.Errorf("PriceRangeWords = %q", got)
 	}
 }

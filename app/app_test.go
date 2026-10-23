@@ -73,7 +73,7 @@ func TestCreatingAProductPutsItInTheCatalogue(t *testing.T) {
 	steps(t, window,
 		click(window, "Crear tu primer producto"),
 		click(window, "Producto físico"),
-		typeInto(window, "Lámina «Gato astronauta»", "Lámina de prueba"),
+		typeInto(window, "Gato astronauta", "Lámina de prueba"),
 		typeInto(window, "12,50", "15"),
 		click(window, "Guardar"),
 	)
@@ -132,7 +132,7 @@ func TestRecordingAnOrderTakesItsStockFromTheCatalogue(t *testing.T) {
 			recorded = sale
 		}
 	}
-	if recorded.Channel != sales.OnlineShop || len(recorded.Lines) != 1 || !strings.Contains(recorded.Lines[0].ProductName, "Chapa") {
+	if recorded.Channel != sales.OnlineShop || len(recorded.Lines) != 1 || !strings.Contains(recorded.Lines[0].ProductName, "Bosque") {
 		t.Errorf("recorded %+v", recorded)
 	}
 }
