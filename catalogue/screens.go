@@ -93,6 +93,13 @@ func (screens *Screens) product(id string) (Product, bool) {
 	return Product{}, false
 }
 
+// ShowRestock shows only the physical products that need restocking.
+func (screens *Screens) ShowRestock() {
+	screens.editor = nil
+	screens.kindTab, screens.tagTab = 0, 0
+	screens.query.LowStockOnly = true
+}
+
 // EditFirst opens the editor of the first product of the list with more than one version, or of
 // the first product when none has; nothing when the list is empty.
 func (screens *Screens) EditFirst() {

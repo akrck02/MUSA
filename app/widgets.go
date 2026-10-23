@@ -2,10 +2,12 @@ package app
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/akrck02/go-renderer/draw2d"
 	ui "github.com/akrck02/go-ui"
 
+	"github.com/Itros97/MUSA/catalogue"
 	"github.com/Itros97/MUSA/events"
 	"github.com/Itros97/MUSA/look"
 	"github.com/Itros97/MUSA/money"
@@ -14,7 +16,7 @@ import (
 
 // Measures of the home page's widgets, in pixels.
 const (
-	widgetHeight = 280
+	widgetHeight = 250
 	widgetBadge  = 64
 	bigFigure    = 2.6 // the month's figure, in times the text size
 	restockRows  = 3
@@ -31,10 +33,17 @@ func widget(context *ui.Context, content, links func()) {
 	})
 }
 
-// link is a quiet "see more" button at the bottom of a widget.
+// link is a quiet "see more" at the bottom of a widget: small bold words and an arrow after them.
 func link(context *ui.Context, words string) bool {
-	return context.FlatIconButton("arrow-right", words)
+	theme := context.Theme
+	return context.Clickable(words, ui.Layout{Height: ui.Fixed(theme.ControlHeight), Gap: 6, AlignY: ui.Center}, ui.Looks{}, func() {
+		context.Text(words, ui.TextStyle{Size: theme.SmallTextSize * linkScale, Weight: draw2d.Bold})
+		context.IconSized("arrow-right", theme.SmallTextSize, theme.Ink)
+	})
 }
+
+// linkScale is how much bigger than small text a widget's link is.
+const linkScale = 1.1
 
 // fairWidget is the fair to look at: today's, with a button to the stand, or the next one.
 func (program *App) fairWidget(context *ui.Context) {
@@ -111,16 +120,17 @@ func salesWords(count int) string {
 	return fmt.Sprintf("en %d ventas", count)
 }
 
-// restockWidget is the products running low, the emptiest in red.
+// restockWidget is the versions running low, each with its colour and what is left, the sold out
+// in red.
 func (program *App) restockWidget(context *ui.Context) {
 	theme := context.Theme
-	restock := program.today.restock
+	rows := restockRowsOf(program.today.restock)
 	widget(context, func() {
-		context.Text("Te quedan pocos", ui.TextStyle{Color: theme.InkSoft})
-		if len(restock) == 0 {
+		context.Text("Te quedan pocos", ui.TextStyle{Size: theme.SmallTextSize, Color: theme.InkSoft})
+		if len(rows) == 0 {
 			look.Paragraph(context, "Tienes de todo: nada se está acabando.", ui.TextStyle{})
 		}
-		for index, product := range restock {
+		for index, row := range rows {
 			if index == restockRows {
 				break
 			}
@@ -128,17 +138,44 @@ func (program *App) restockWidget(context *ui.Context) {
 				context.Separator()
 			}
 			context.Box(ui.Layout{Width: ui.Grow(), Gap: 10, AlignY: ui.Center}, func() {
-				context.Frame(ui.Layout{Width: ui.Grow()}, ui.Look{Clip: true}, func() { context.Text(product.Name, ui.TextStyle{}) })
+				side := ui.Fixed(swatchSide)
+				context.Frame(ui.Layout{Width: side, Height: side}, ui.Look{Fill: catalogue.PictureFill(theme, row.product), Radius: theme.ControlRadius / 2}, nil)
+				context.Frame(ui.Layout{Width: ui.Grow()}, ui.Look{Clip: true}, func() {
+					context.Text(row.words, ui.TextStyle{Size: theme.SmallTextSize})
+				})
 				colour := theme.Warning
-				if product.TotalStock() == 0 {
+				if row.left == 0 {
 					colour = theme.Danger
 				}
-				context.Text(fmt.Sprint(product.TotalStock()), ui.TextStyle{Weight: draw2d.Bold, Color: colour})
+				context.Text(fmt.Sprint(row.left), ui.TextStyle{Size: theme.SmallTextSize, Weight: draw2d.Bold, Color: colour})
 			})
 		}
 	}, func() {
-		if len(restock) > 0 && link(context, fmt.Sprintf("Ver los %d", len(restock))) {
+		if len(rows) > 0 && link(context, fmt.Sprintf("Ver los %d", len(rows))) {
 			program.Open(Catalogue)
+			program.catalogue.ShowRestock()
 		}
 	})
+}
+
+// swatchSide is the side of a version's colour in the restock widget, in pixels.
+const swatchSide = 26
+
+// restockRow is one version running low: its product, how it is called and what is left.
+type restockRow struct {
+	product, words string
+	left           int
+}
+
+// restockRowsOf lists the versions running low of products: "Gato astronauta A3", "Luna Mate".
+func restockRowsOf(products []catalogue.Product) []restockRow {
+	var rows []restockRow
+	for _, product := range products {
+		for _, variant := range product.Variants {
+			if variant.LowStock() {
+				rows = append(rows, restockRow{product: product.Name, words: strings.TrimSpace(product.Name + " " + variant.Name), left: variant.Stock})
+			}
+		}
+	}
+	return rows
 }

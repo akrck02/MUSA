@@ -105,7 +105,7 @@ func dayCell(context *ui.Context, day, today calendar.Date, name string, entries
 	theme := context.Theme
 	fill := theme.Sunken.WithAlpha(0.5)
 	if day == today {
-		fill = theme.Surface.Mix(theme.Primary, 0.12)
+		fill = theme.Sunken
 	}
 	ink := theme.Ink
 	if quiet {
