@@ -48,7 +48,23 @@ const darkPicture = 0.45
 // PictureFill is the colour of the picture of a work called name, in the theme being drawn: the
 // same work always gets the same one.
 func PictureFill(theme ui.Theme, name string) draw2d.Color {
-	fill := pictureFills[TagColorFor(TagKey(name))]
+	return dimmedOnDark(theme, pictureFills[TagColorFor(TagKey(name))])
+}
+
+// listFills are the colours of the pictures in a list, one after another, so neighbours never
+// share one: the author's design paints its cards in this order.
+var listFills = []draw2d.Color{
+	draw2d.MustHex("#E8C9B0"), draw2d.MustHex("#B9CFC4"), draw2d.MustHex("#C9C4E0"), draw2d.MustHex("#EBD9A8"),
+	draw2d.MustHex("#D9B8C4"), draw2d.MustHex("#B8CCE0"), draw2d.MustHex("#CFE0B8"), draw2d.MustHex("#E0C2A8"),
+}
+
+// ListFill is the colour of the picture at position in a list, in the theme being drawn.
+func ListFill(theme ui.Theme, position int) draw2d.Color {
+	return dimmedOnDark(theme, listFills[position%len(listFills)])
+}
+
+// dimmedOnDark keeps a picture's colour on the light theme and darkens it on the dark one.
+func dimmedOnDark(theme ui.Theme, fill draw2d.Color) draw2d.Color {
 	if look.Dark(theme) {
 		return draw2d.Color{fill[0] * darkPicture, fill[1] * darkPicture, fill[2] * darkPicture, 1}
 	}

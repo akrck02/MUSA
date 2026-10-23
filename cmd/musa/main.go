@@ -12,6 +12,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
+
+	"github.com/akrck02/go-renderer/opengl/overlay"
 
 	"github.com/akrck02/go-ui/window"
 
@@ -28,18 +31,43 @@ func main() {
 	place := flag.Int("place", 0, "the place to open on: 0 home, 1 catalogue, 2 fairs, 3 orders, 4 stand, 5 projects (for captures)")
 	page := flag.String("show", "", "a page inside the place to open on: product, fair, order or stand (for captures)")
 	tools := flag.Bool("tools", true, "show the development tools on the home page")
+	today := flag.String("today", "", "a day as 2026-11-04 to open on instead of today, for captures")
 	flag.Parse()
 	if !wasSet("dark") {
 		options.Dark = window.SystemPrefersDark()
 	}
+	// MUSA writes in the system's own font, as Bubble 4's system-ui does; without it, Go's fonts
+	// still read well, so a missing font is not worth stopping for.
+	options.Fonts, _ = overlay.SystemFonts()
 
-	if err := run(options, *demoMode, *path, app.Place(*place), *page, *tools); err != nil {
+	clock, err := clockFor(*today)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "musa:", err)
+		os.Exit(1)
+	}
+	if err := run(options, *demoMode, *path, app.Place(*place), *page, *tools, clock); err != nil {
 		fmt.Fprintln(os.Stderr, "musa:", err)
 		os.Exit(1)
 	}
 }
 
-func run(options window.Options, demoMode bool, path string, place app.Place, page string, tools bool) error {
+// middayHour is the hour a fixed day's clock shows: the middle of a working day.
+const middayHour = 12
+
+// clockFor is a clock stopped at noon of day ("2026-11-04"), or nil for the real one when day is empty.
+func clockFor(day string) (func() time.Time, error) {
+	if day == "" {
+		return nil, nil
+	}
+	date, err := time.ParseInLocation(time.DateOnly, day, time.Local)
+	if err != nil {
+		return nil, err
+	}
+	noon := date.Add(middayHour * time.Hour)
+	return func() time.Time { return noon }, nil
+}
+
+func run(options window.Options, demoMode bool, path string, place app.Place, page string, tools bool, clock func() time.Time) error {
 	if demoMode {
 		path = storage.InMemory
 	}
@@ -58,7 +86,7 @@ func run(options window.Options, demoMode bool, path string, place app.Place, pa
 		return err
 	}
 	defer database.Close()
-	program, err := app.New(database, app.Options{Dark: options.Dark, DevelopmentTools: tools, OpenLink: window.OpenLink})
+	program, err := app.New(database, app.Options{Dark: options.Dark, DevelopmentTools: tools, OpenLink: window.OpenLink, Now: clock})
 	if err != nil {
 		return err
 	}

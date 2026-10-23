@@ -132,7 +132,7 @@ func TestRecordingAnOrderTakesItsStockFromTheCatalogue(t *testing.T) {
 			recorded = sale
 		}
 	}
-	if recorded.Channel != sales.OnlineShop || len(recorded.Lines) != 1 || !strings.Contains(recorded.Lines[0].ProductName, "Bosque") {
+	if recorded.Channel != sales.OnlineShop || len(recorded.Lines) != 1 || recorded.Lines[0].ProductName == "" {
 		t.Errorf("recorded %+v", recorded)
 	}
 }

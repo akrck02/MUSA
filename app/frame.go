@@ -9,11 +9,17 @@ import (
 
 // Measures of the frame, in pixels, as in Bubble's showcase.
 const (
-	barHeight   = 88
-	barWidth    = 900 // the places' width on a wide window
-	pillWidth   = 64  // the soft pill behind the chosen place's icon
-	pillHeight  = 32
-	brandLetter = 0.14 // the brand's letter spacing, in ems
+	barHeight      = 87  // under a line of 1
+	barWidth       = 900 // the places' width on a wide window
+	pillWidth      = 64  // the soft pill behind the chosen place's icon
+	pillHeight     = 32
+	barIconSize    = 22
+	barLabelSize   = 13
+	brandLetter    = 0.14 // the brand's letter spacing, in ems
+	pageTop        = 24
+	pageSide       = 32
+	pageBottom     = 32
+	narrowPageSide = 16
 )
 
 // destination is a place as the bar shows it.
@@ -48,7 +54,7 @@ func (program *App) frame(context *ui.Context) {
 			if !look.Narrow(context) {
 				width = ui.Fixed(barWidth)
 			}
-			context.Box(ui.Layout{Width: width, Height: ui.Grow()}, func() {
+			context.Box(ui.Layout{Width: width, Height: ui.Grow(), AlignX: ui.SpaceAround, AlignY: ui.Center}, func() {
 				for _, each := range destinations {
 					program.barItem(context, each)
 				}
@@ -66,27 +72,27 @@ func (program *App) barItem(context *ui.Context, each destination) {
 	if chosen {
 		colour, weight, pill = theme.Ink, draw2d.Bold, theme.Sunken
 	}
-	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Grow(), Gap: 4, AlignX: ui.Center, AlignY: ui.Center}
-	looks := ui.Looks{Pressed: ui.Look{Fill: theme.Sunken}}
+	layout := ui.Layout{Direction: ui.Vertical, Gap: 4, AlignX: ui.Center, AlignY: ui.Center}
+	looks := ui.Looks{}
 	if context.Clickable(each.name+"##bar", layout, looks, func() {
 		context.Frame(ui.Layout{Width: ui.Fixed(pillWidth), Height: ui.Fixed(pillHeight), AlignX: ui.Center, AlignY: ui.Center},
 			ui.Look{Fill: pill, Radius: pillHeight / 2}, func() {
-				context.IconSized(each.icon, theme.IconSize, colour)
+				context.IconSized(each.icon, barIconSize, colour)
 			})
-		context.Text(each.name, ui.TextStyle{Size: theme.SmallTextSize, Weight: weight, Color: colour})
+		context.Text(each.name, ui.TextStyle{Size: barLabelSize, Weight: weight, Color: colour})
 	}) {
 		program.Open(each.place)
 	}
 }
 
 func (program *App) scrollingPage(context *ui.Context) {
-	theme := context.Theme
-	padding := theme.Padding * 1.6
+	side := float32(pageSide)
 	if look.Narrow(context) {
-		padding = theme.Padding
+		side = narrowPageSide
 	}
+	padding := ui.Padding{Top: pageTop, Left: side, Right: side, Bottom: pageBottom}
 	context.ScrollArea("page", ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func() {
-		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(padding), Gap: theme.Gap}, func() {
+		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: padding}, func() {
 			program.page(context)
 		})
 	})

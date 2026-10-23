@@ -73,13 +73,13 @@ func TestTheListIsFilteredBySearchKindTagsAndStock(t *testing.T) {
 		query Query
 		want  []string
 	}{
-		"sorted by name, archived hidden": {Query{}, []string{"Comisión busto", "Lámina Pikachu", "Pegatina"}},
-		"only archived":                   {Query{Archived: true}, []string{"Antigua"}},
-		"without case or accents":         {Query{Text: "LAMINA"}, []string{"Lámina Pikachu"}},
-		"by sku":                          {Query{Text: "peg-01"}, []string{"Pegatina"}},
-		"by kind":                         {Query{Kind: Digital}, []string{"Comisión busto"}},
-		"every tag chosen":                {Query{TagIDs: []string{pokemon.ID, christmas.ID}}, []string{"Lámina Pikachu"}},
-		"low stock":                       {Query{LowStockOnly: true}, []string{"Pegatina"}},
+		"in the given order, archived hidden": {Query{}, []string{"Pegatina", "Comisión busto", "Lámina Pikachu"}},
+		"only archived":                       {Query{Archived: true}, []string{"Antigua"}},
+		"without case or accents":             {Query{Text: "LAMINA"}, []string{"Lámina Pikachu"}},
+		"by sku":                              {Query{Text: "peg-01"}, []string{"Pegatina"}},
+		"by kind":                             {Query{Kind: Digital}, []string{"Comisión busto"}},
+		"every tag chosen":                    {Query{TagIDs: []string{pokemon.ID, christmas.ID}}, []string{"Lámina Pikachu"}},
+		"low stock":                           {Query{LowStockOnly: true}, []string{"Pegatina"}},
 	}
 	for name, each := range cases {
 		if got := names(Filter(all, each.query)); !slices.Equal(got, each.want) {

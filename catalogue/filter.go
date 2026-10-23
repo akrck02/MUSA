@@ -20,7 +20,8 @@ func (query Query) Filtering() bool {
 	return query.Text != "" || query.Kind != "" || len(query.TagIDs) > 0 || query.LowStockOnly || query.Archived
 }
 
-// Filter keeps the products that match every part of the query, sorted by name.
+// Filter keeps the products that match every part of the query, in the order they come: the
+// store gives them oldest first, so a new work goes to the end, where the artist expects it.
 func Filter(products []Product, query Query) []Product {
 	text := Fold(strings.TrimSpace(query.Text))
 	var matches []Product
@@ -29,9 +30,6 @@ func Filter(products []Product, query Query) []Product {
 			matches = append(matches, product)
 		}
 	}
-	slices.SortStableFunc(matches, func(first, second Product) int {
-		return strings.Compare(Fold(first.Name), Fold(second.Name))
-	})
 	return matches
 }
 

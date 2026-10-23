@@ -33,7 +33,8 @@ func readProductRows(rows storage.Querier, onlyID string) (map[string]*Product, 
 		FROM product p
 		LEFT JOIN physical_product pp ON pp.product_id = p.id
 		LEFT JOIN digital_product dp ON dp.product_id = p.id
-		WHERE p.deleted_at IS NULL AND (? = '' OR p.id = ?)`, onlyID, onlyID)
+		WHERE p.deleted_at IS NULL AND (? = '' OR p.id = ?)
+		ORDER BY p.created_at, p.rowid`, onlyID, onlyID)
 	if err != nil {
 		return nil, nil, storageFailed("read products", err)
 	}

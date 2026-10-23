@@ -15,7 +15,6 @@ import (
 
 // Measures of these pieces that are not tokens of the theme, in pixels, as in Bubble's CSS.
 const (
-	titleSize   = 32
 	figureSize  = 28
 	pillHeight  = 28
 	pillPadding = 10
@@ -45,23 +44,6 @@ func ClickableCard(context *ui.Context, label string, layout ui.Layout, content 
 
 func cardLook(theme ui.Theme) ui.Look {
 	return ui.Look{Fill: theme.Surface, Border: theme.Line, BorderWidth: cardBorder, Radius: theme.PanelRadius}
-}
-
-// PageHeader is the top of a page: its title and a soft line under it on the left, and the page's
-// actions on the right (actions may be nil).
-func PageHeader(context *ui.Context, title, subtitle string, actions func()) {
-	theme := context.Theme
-	context.Box(ui.Layout{Direction: Across(context), Width: ui.Grow(), Gap: theme.Gap, AlignY: ui.Center}, func() {
-		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Gap: 2}, func() {
-			context.Text(title, ui.TextStyle{Size: titleSize, Weight: draw2d.Bold})
-			if subtitle != "" {
-				Paragraph(context, subtitle, ui.TextStyle{Color: theme.InkSoft})
-			}
-		})
-		if actions != nil {
-			context.Box(ui.Layout{Gap: 8, AlignY: ui.Center}, actions)
-		}
-	})
 }
 
 // Figures is one quiet card holding a row of figures, so a summary reads as one thing rather
@@ -165,11 +147,11 @@ func Dark(theme ui.Theme) bool {
 	return background[0]+background[1]+background[2] < 1.5
 }
 
-// wordSpace is the room between two words of a paragraph, in ems.
-const wordSpace = 0.28
+// wordSpace is the room between two words of a paragraph, in ems: a space of the system's font.
+const wordSpace = 0.318
 
 // Paragraph writes text that breaks into lines to fit its box, word by word: go-ui's Text keeps
-// one line.
+// one line. Its lines are as far apart as the theme's line height says, as CSS's are.
 //
 // TODO(akrck02): ask go-ui for text that wraps, and use it here.
 func Paragraph(context *ui.Context, text string, style ui.TextStyle) {
@@ -177,20 +159,12 @@ func Paragraph(context *ui.Context, text string, style ui.TextStyle) {
 	if size == 0 {
 		size = context.Theme.TextSize
 	}
-	// Each word is its own line of text, as tall as the theme's line height; a paragraph keeps its
-	// lines closer, or the words of one sentence drift apart.
-	saved := context.Theme
-	context.Theme.LineHeight, context.Theme.HeadingLineHeight = paragraphLineHeight, paragraphLineHeight
-	defer func() { context.Theme = saved }()
-	context.Box(ui.Layout{Width: ui.Grow(), Wrap: true, Gap: size * wordSpace}, func() {
+	context.Box(ui.Layout{Width: ui.Grow(), Wrap: true, Gap: size * wordSpace, LineGap: ui.NoLineGap}, func() {
 		for _, word := range strings.Fields(text) {
 			context.Text(word, style)
 		}
 	})
 }
-
-// paragraphLineHeight is how tall a line of a paragraph is, as a multiple of its text size.
-const paragraphLineHeight = 1.2
 
 // narrowWidth is the window width under which MUSA lays itself out for a phone, in pixels.
 const narrowWidth = 760

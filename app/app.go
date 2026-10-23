@@ -13,7 +13,6 @@ import (
 	"github.com/Itros97/MUSA/customers"
 	"github.com/Itros97/MUSA/demo"
 	"github.com/Itros97/MUSA/events"
-	"github.com/Itros97/MUSA/look"
 	"github.com/Itros97/MUSA/projects"
 	"github.com/Itros97/MUSA/sales"
 	"github.com/Itros97/MUSA/stand"
@@ -44,6 +43,8 @@ type Options struct {
 	DevelopmentTools bool
 	// OpenLink opens a web address in the system's browser; nil where nothing can.
 	OpenLink func(link string) bool
+	// Now is the clock; nil for the real one. A fixed one lets captures show a chosen day.
+	Now func() time.Time
 }
 
 // App is everything MUSA remembers between frames.
@@ -77,6 +78,9 @@ func New(database *storage.Database, options Options) (*App, error) {
 		return nil, err
 	}
 	now := time.Now
+	if options.Now != nil {
+		now = options.Now
+	}
 	products := catalogue.NewStore(database, now, storage.NewID)
 	sold := sales.NewStore(database, products, now, storage.NewID)
 	fairs := events.NewStore(database, sold, now, storage.NewID)
@@ -85,7 +89,7 @@ func New(database *storage.Database, options Options) (*App, error) {
 	program := &App{
 		stores: demo.Stores{Database: database, Products: products, Sales: sold, Events: fairs, Customers: people,
 			Projects: commissions, Now: now, NewID: storage.NewID},
-		theme:   goui.Theme(design),
+		theme:   pageTheme(goui.Theme(design)),
 		options: options,
 	}
 	program.catalogue = catalogue.NewScreens(products, storage.NewID)
@@ -124,9 +128,6 @@ func (program *App) Open(place Place) {
 // Build draws one frame of MUSA; it is the function given to window.Run.
 func (program *App) Build(context *ui.Context) {
 	context.Theme = program.theme
-	if !look.Narrow(context) {
-		context.Theme = forTouch(context.Theme) // a tablet: bigger, for a finger at arm's length
-	}
 	if context.Back() && !program.back() {
 		program.Open(Home)
 	}

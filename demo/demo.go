@@ -44,7 +44,7 @@ func Fill(stores Stores) error {
 	if !empty {
 		return fmt.Errorf("%s: the database already has products or events", CodeNotEmpty)
 	}
-	filler := &filler{stores: stores, variants: map[string]string{}}
+	filler := &filler{stores: stores, variants: map[string]string{}, finalStock: map[string]int{}}
 	return filler.fill()
 }
 
@@ -53,7 +53,9 @@ func Fill(stores Stores) error {
 type filler struct {
 	stores   Stores
 	variants map[string]string
-	err      error
+	// finalStock is the stock each version, by its SKU, should end with.
+	finalStock map[string]int
+	err        error
 }
 
 func (filler *filler) fill() error {
@@ -83,6 +85,7 @@ func (filler *filler) fill() error {
 
 	filler.orders(today)
 	filler.projects(today)
+	filler.settleStock()
 	return filler.err
 }
 
@@ -93,7 +96,7 @@ func (filler *filler) orders(today calendar.Date) {
 	filler.order(sales.Draft{Channel: sales.OnlineShop, Customer: "@lectora_de_comics", Note: "Pedido web 0007", SoldAt: daysAgo(3),
 		Lines: append(filler.lines("LAM-ZOR-A4", 2, 1500), filler.lines("PEG-OLA", 1, 600)...), ShippingCharged: 450, ShippingCost: 380})
 	filler.order(sales.Draft{Channel: sales.Social, Customer: "@ranita_ilustra", Note: "Encargo por DM", SoldAt: daysAgo(10),
-		Lines: filler.lines("Retrato digital · Busto", 1, 3500)})
+		Lines: filler.lines("Retrato por encargo · ", 1, 3500)})
 	filler.order(sales.Draft{Channel: sales.Marketplace, Note: "Etsy", SoldAt: daysAgo(40),
 		Lines: filler.lines("LAM-GAT-A4", 1, 2000), ShippingCharged: 500, ShippingCost: 420})
 }

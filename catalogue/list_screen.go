@@ -2,6 +2,7 @@ package catalogue
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/akrck02/go-renderer/draw2d"
@@ -10,19 +11,25 @@ import (
 	"github.com/Itros97/MUSA/look"
 )
 
-// Measures of the list, in pixels.
+// Measures of the list, in pixels, as in the author's design.
 const (
 	cardMinimumWidth     = 300
-	cardPictureHeight    = 150
-	cardLetterSize       = 56
-	shownRestockNames    = 3
-	kindTabsWidth        = 340
-	searchFieldWidth     = 320
 	cardsOnAPhone        = 1
 	cardsWhenThereIsRoom = 4
-	cardNameScale        = 1.15
-	versionPillHeight    = 30
-	versionPillTextScale = 1.15
+	gridGap              = 18
+	searchFieldWidth     = 320
+	shownRestockNames    = 3
+	kindBarSpace         = 20
+	kindBarSpaceBelow    = 4
+	bannerSpaceAbove     = 12
+	bannerSpaceBelow     = 16
+	tagBarSpaceBelow     = 18
+	bannerRadius         = 16
+	bannerPaddingX       = 18
+	bannerPaddingY       = 14
+	bannerGap            = 16
+	bannerIconSide       = 44
+	bannerTitleSize      = 17
 )
 
 // kindTabs are the two halves of the catalogue, in the order of their tabs.
@@ -37,11 +44,11 @@ func (screens *Screens) drawList(context *ui.Context) {
 				context.TextFieldWith("search", &screens.query.Text, ui.TextFieldOptions{Placeholder: "Buscar por nombre o SKU"})
 			})
 		}
-		if context.IconButton("search", "##Buscar") {
+		if look.ToolButton(context, "search", "Buscar") {
 			screens.searching = !screens.searching
 			screens.query.Text = ""
 		}
-		if context.PrimaryIconButton("plus", "Nuevo producto") {
+		if look.MainButton(context, "plus", "Nuevo producto") {
 			screens.choosingKind = true
 		}
 	})
@@ -54,9 +61,13 @@ func (screens *Screens) drawList(context *ui.Context) {
 			screens.choosingKind = true
 		}
 	default:
+		look.Space(context, kindBarSpace)
 		screens.kindBar(context)
+		look.Space(context, kindBarSpaceBelow)
 		screens.restockBanner(context)
+		look.Space(context, bannerSpaceBelow)
 		screens.tagBar(context)
+		look.Space(context, tagBarSpaceBelow)
 		screens.cards(context, shown)
 	}
 	if screens.choosingKind {
@@ -112,12 +123,18 @@ func (screens *Screens) restockBanner(context *ui.Context) {
 		return
 	}
 	theme := context.Theme
-	look.Card(context, ui.Layout{Width: ui.Grow(), Padding: ui.Pad(theme.Padding), Gap: 14, AlignY: ui.Center}, func() {
-		look.Badge(context, "triangle-alert", theme.IconSize*1.6)
-		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Gap: 2}, func() {
+	look.Space(context, bannerSpaceAbove)
+	// The line takes room inside the box, as in CSS.
+	layout := ui.Layout{Width: ui.Grow(), Padding: ui.PadXY(bannerPaddingX+cardBorder, bannerPaddingY+cardBorder), Gap: bannerGap, AlignY: ui.Center}
+	context.Frame(layout, ui.Look{Fill: theme.Surface, Border: theme.Line, BorderWidth: cardBorder, Radius: bannerRadius}, func() {
+		side := ui.Fixed(bannerIconSide)
+		context.Frame(ui.Layout{Width: side, Height: side, AlignX: ui.Center, AlignY: ui.Center}, ui.Look{Fill: theme.Sunken, Radius: bannerIconSide / 2}, func() {
+			context.IconSized("triangle-alert", theme.IconSize, theme.Warning)
+		})
+		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow()}, func() {
 			context.Text(fmt.Sprintf("%d %s por reponer", len(names), map[bool]string{true: "producto", false: "productos"}[len(names) == 1]),
-				ui.TextStyle{Weight: draw2d.Bold})
-			context.Text(restockSummary(names), ui.TextStyle{Size: theme.SmallTextSize, Color: theme.InkSoft})
+				ui.TextStyle{Size: bannerTitleSize, Weight: draw2d.Bold})
+			context.Text(restockSummary(names), ui.TextStyle{Color: theme.InkSoft})
 		})
 		action := map[bool]string{true: "Ver todos", false: "Ver cuáles"}[screens.query.LowStockOnly]
 		if look.Link(context, action) {
@@ -134,7 +151,7 @@ func restockSummary(names []string) string {
 	return fmt.Sprintf("%s y %d más", strings.Join(names[:shownRestockNames], ", "), len(names)-shownRestockNames)
 }
 
-// tagsOfKind are the tags some product of the chosen kind carries.
+// tagsOfKind are the tags some product of the chosen kind carries, the most used first.
 func (screens *Screens) tagsOfKind() []Tag {
 	var used []Tag
 	for _, tag := range screens.tags {
@@ -142,6 +159,9 @@ func (screens *Screens) tagsOfKind() []Tag {
 			used = append(used, tag)
 		}
 	}
+	slices.SortStableFunc(used, func(first, second Tag) int {
+		return screens.countWithTag(second.ID) - screens.countWithTag(first.ID)
+	})
 	return used
 }
 
@@ -154,7 +174,7 @@ func (screens *Screens) tagBar(context *ui.Context) {
 	kind := kindTabs[screens.kindTab]
 	tabs := []look.Tab{{Label: "Todo", Count: len(Filter(screens.products, Query{Kind: kind})), HasCount: true}}
 	for _, tag := range screens.tagsOfKind() {
-		tabs = append(tabs, look.Tab{Label: tag.Name, Count: screens.countWithTag(tag.ID), HasCount: true})
+		tabs = append(tabs, look.Tab{Label: Plural(tag.Name), Count: screens.countWithTag(tag.ID), HasCount: true})
 	}
 	if archived := len(Filter(screens.products, Query{Kind: kind, Archived: true})); archived > 0 {
 		tabs = append(tabs, look.Tab{Label: "Archivados", Count: archived, HasCount: true})
@@ -164,36 +184,63 @@ func (screens *Screens) tagBar(context *ui.Context) {
 }
 
 func (screens *Screens) cards(context *ui.Context, shown []Product) {
-	theme := context.Theme
 	if len(shown) == 0 {
 		look.Empty(context, "search", "Nada por aquí", "Ningún producto coincide con la búsqueda.", "")
 		return
 	}
 	width, _ := context.Size()
 	columns := min(cardsWhenThereIsRoom, max(cardsOnAPhone, int(width/cardMinimumWidth)))
-	context.Box(ui.Layout{Width: ui.Grow(), Columns: columns, Gap: theme.Gap}, func() {
-		for _, product := range shown {
+	context.Box(ui.Layout{Width: ui.Grow(), Columns: columns, Gap: gridGap}, func() {
+		for position, product := range shown {
 			context.Push(product.ID)
-			screens.card(context, product)
+			screens.card(context, product, ListFill(context.Theme, position))
 			context.Pop()
 		}
 	})
 }
 
-// card is one product: its picture with its first tag, its name, its prices and one pill per
-// version with what is left. Tapping it opens the product; a version's pill changes its stock.
-func (screens *Screens) card(context *ui.Context, product Product) {
+// Measures of a product's card, in pixels, as in the author's design.
+const (
+	cardRadius        = 18
+	cardBorder        = 1
+	cardPictureHeight = 150
+	cardLetterSize    = 54
+	cardLetterAlpha   = 0.6
+	cardBadgeInset    = 10
+	cardBadgeSize     = 13
+	cardBadgePaddingX = 10
+	cardBadgePaddingY = 4
+	cardPaddingX      = 16
+	cardPaddingTop    = 14
+	cardPaddingBottom = 16
+	cardNameSize      = 18
+	cardPriceSize     = 15
+	cardPriceSpace    = 2
+	cardPillsSpace    = 12
+	versionGap        = 6
+	versionTextSize   = 14
+	versionPaddingX   = 11
+	versionPaddingY   = 5
+	versionCountSpace = 4
+	roundRadius       = 999
+)
+
+// card is one product: its picture in fill with its first tag, its name, its prices and one pill
+// per version with what is left. Tapping it opens the product; a version's pill changes its stock.
+func (screens *Screens) card(context *ui.Context, product Product, fill draw2d.Color) {
 	theme := context.Theme
-	normal := ui.Look{Fill: theme.Surface, Border: theme.Line, BorderWidth: 1, Radius: theme.PanelRadius}
+	normal := ui.Look{Fill: theme.Surface, Border: theme.Line, BorderWidth: cardBorder, Radius: cardRadius}
 	hovered := normal
 	hovered.Border = theme.ControlLine
-	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(1)}
+	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(cardBorder)}
+	padding := ui.Padding{Left: cardPaddingX, Right: cardPaddingX, Top: cardPaddingTop, Bottom: cardPaddingBottom}
 	if context.Clickable(product.Name, layout, ui.Looks{Normal: normal, Hovered: hovered, Pressed: hovered}, func() {
-		screens.cardPicture(context, product)
-		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(16), Gap: 4}, func() {
-			look.Paragraph(context, product.Name, ui.TextStyle{Size: theme.TextSize * cardNameScale, Weight: draw2d.Bold})
-			context.Text(PriceRangeWords(product), ui.TextStyle{Color: theme.InkSoft})
-			context.Box(ui.Layout{Height: ui.Fixed(6)}, nil)
+		screens.cardPicture(context, product, fill)
+		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: padding}, func() {
+			look.Paragraph(context, product.Name, ui.TextStyle{Size: cardNameSize, Weight: draw2d.Bold})
+			look.Space(context, cardPriceSpace)
+			context.Text(PriceRangeWords(product), ui.TextStyle{Size: cardPriceSize, Color: theme.InkSoft})
+			look.Space(context, cardPillsSpace)
 			screens.versionPills(context, product)
 		})
 	}) {
@@ -202,43 +249,51 @@ func (screens *Screens) card(context *ui.Context, product Product) {
 }
 
 // pictureShape is the top-rounded fill of a colour, kept from frame to frame.
-func (screens *Screens) pictureShape(theme ui.Theme, name string) *look.TopRounded {
+func (screens *Screens) pictureShape(fill draw2d.Color) *look.TopRounded {
 	if screens.shapes == nil {
-		screens.shapes = map[string]*look.TopRounded{}
+		screens.shapes = map[draw2d.Color]*look.TopRounded{}
 	}
-	shape, found := screens.shapes[name]
+	shape, found := screens.shapes[fill]
 	if !found {
-		shape = &look.TopRounded{}
-		screens.shapes[name] = shape
+		shape = &look.TopRounded{Fill: fill, Radius: cardRadius - cardBorder}
+		screens.shapes[fill] = shape
 	}
-	shape.Fill, shape.Radius = PictureFill(theme, name), theme.PanelRadius-1
 	return shape
 }
 
-// cardPicture is the coloured top of a card with the product's first letter and first tag.
-func (screens *Screens) cardPicture(context *ui.Context, product Product) {
-	theme := context.Theme
-	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Fixed(cardPictureHeight), Padding: ui.Pad(10)}
-	context.Frame(layout, ui.Look{Backdrop: screens.pictureShape(theme, product.Name)}, func() {
-		context.Box(ui.Layout{Width: ui.Grow(), Gap: 6}, func() {
+// cardPicture is the coloured top of a card with the product's first letter in the middle and
+// its first tag in a corner.
+func (screens *Screens) cardPicture(context *ui.Context, product Product, fill draw2d.Color) {
+	layout := ui.Layout{Direction: ui.Stacked, Width: ui.Grow(), Height: ui.Fixed(cardPictureHeight)}
+	context.Frame(layout, ui.Look{Backdrop: screens.pictureShape(fill)}, func() {
+		context.Box(ui.Layout{Width: ui.Grow(), Height: ui.Grow(), AlignX: ui.Center, AlignY: ui.Center}, func() {
+			context.Text(Initial(product.Name), ui.TextStyle{Size: cardLetterSize, Weight: draw2d.Bold, Color: draw2d.Color{1, 1, 1, cardLetterAlpha}})
+		})
+		context.Box(ui.Layout{Width: ui.Grow(), Height: ui.Grow(), Padding: ui.Pad(cardBadgeInset), Gap: versionGap}, func() {
 			if len(product.Tags) > 0 {
-				look.Pill(context, product.Tags[0].Name, look.Tone{Fill: theme.Surface, Ink: theme.Ink})
+				cardBadge(context, product.Tags[0].Name)
 			}
 			if product.Status == Draft {
-				look.Pill(context, "Borrador", look.Tone{Fill: theme.Surface, Ink: theme.InkSoft})
+				cardBadge(context, "Borrador")
 			}
-		})
-		context.Box(ui.Layout{Width: ui.Grow(), Height: ui.Grow(), AlignX: ui.Center, AlignY: ui.Center}, func() {
-			context.Text(Initial(product.Name), ui.TextStyle{Size: cardLetterSize, Weight: draw2d.Bold, Color: theme.Surface.WithAlpha(0.7)})
 		})
 	})
 }
 
+// cardBadge is a small soft label on a card's picture.
+func cardBadge(context *ui.Context, words string) {
+	theme := context.Theme
+	layout := ui.Layout{Padding: ui.PadXY(cardBadgePaddingX, cardBadgePaddingY)}
+	context.Frame(layout, ui.Look{Fill: theme.Surface, Radius: roundRadius}, func() {
+		context.Text(words, ui.TextStyle{Size: cardBadgeSize, Color: theme.InkSoft})
+	})
+}
+
 // versionPills shows each version with what is left, the count warm when it runs low and the
-// whole pill red when sold out; a digital product is made to order instead.
+// words red when sold out; a digital product is made to order instead.
 func (screens *Screens) versionPills(context *ui.Context, product Product) {
 	theme := context.Theme
-	context.Box(ui.Layout{Width: ui.Grow(), Gap: 6, Wrap: true}, func() {
+	context.Box(ui.Layout{Width: ui.Grow(), Gap: versionGap, Wrap: true}, func() {
 		if product.Kind == Digital {
 			look.Pill(context, "Por encargo", look.Neutral(theme))
 			return
@@ -257,21 +312,21 @@ func (screens *Screens) versionPills(context *ui.Context, product Product) {
 func versionPill(context *ui.Context, variant Variant) bool {
 	theme := context.Theme
 	name := nameOr(variant.Name, "Única")
-	fill, ink, countInk, weight := theme.Sunken, theme.Ink, theme.InkSoft, draw2d.Regular
+	ink, countInk, weight := theme.Ink, theme.InkSoft, draw2d.Regular
 	count := fmt.Sprint(variant.Stock)
 	switch {
 	case variant.Stock == 0:
-		fill, ink, countInk, count = theme.Danger.WithAlpha(0.1), theme.Danger, theme.Danger, "Agotado"
+		ink, countInk, count = theme.Danger, theme.Danger, "Agotado"
 	case variant.LowStock():
 		countInk, weight = theme.Warning, draw2d.Bold
 	}
-	normal := ui.Look{Fill: fill, Radius: versionPillHeight / 2}
+	normal := ui.Look{Fill: theme.Sunken, Radius: roundRadius}
 	pressed := normal
-	pressed.Border, pressed.BorderWidth = theme.ControlLine, 1
-	layout := ui.Layout{Height: ui.Fixed(versionPillHeight), Padding: ui.PadXY(10, 0), Gap: 6, AlignY: ui.Center}
+	pressed.Border, pressed.BorderWidth = theme.ControlLine, cardBorder
+	layout := ui.Layout{Padding: ui.PadXY(versionPaddingX, versionPaddingY), Gap: versionCountSpace, AlignY: ui.Center}
 	return context.Clickable(name, layout, ui.Looks{Normal: normal, Hovered: pressed, Pressed: pressed}, func() {
-		context.Text(name, ui.TextStyle{Size: theme.SmallTextSize * versionPillTextScale, Color: ink})
-		context.Text(count, ui.TextStyle{Size: theme.SmallTextSize * versionPillTextScale, Color: countInk, Weight: weight})
+		context.Text(name, ui.TextStyle{Size: versionTextSize, Color: ink})
+		context.Text(count, ui.TextStyle{Size: versionTextSize, Color: countInk, Weight: weight})
 	})
 }
 

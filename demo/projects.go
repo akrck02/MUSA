@@ -27,11 +27,11 @@ func (filler *filler) projects(today calendar.Date) {
 	bluesky := func(handle string) customers.Profile { return customers.Profile{NetworkID: "bluesky", Handle: handle} }
 	x := func(handle string) customers.Profile { return customers.Profile{NetworkID: "x", Handle: handle} }
 	for _, each := range []commission{
-		{"Retrato de familia", "Lucía", []customers.Profile{instagram("lucia.dibuja"), bluesky("lucia.bsky.social")}, projects.ToStart, 6, 4000, "Retrato digital · Busto"},
+		{"Retrato de familia", "Lucía", []customers.Profile{instagram("lucia.dibuja"), bluesky("lucia.bsky.social")}, projects.ToStart, 6, 4000, "Retrato por encargo · "},
 		{"Fondos con su perro", "Marcos", []customers.Profile{instagram("marcos_y_toby")}, projects.ToStart, 9, 1500, ""},
-		{"Retrato de pareja", "Ana", []customers.Profile{x("ana_lee"), instagram("ana.lee")}, projects.Drawing, 1, 4000, "Retrato digital · Busto"},
+		{"Retrato de pareja", "Ana", []customers.Profile{x("ana_lee"), instagram("ana.lee")}, projects.Drawing, 1, 4000, "Retrato por encargo · "},
 		{"Logo para tienda", "Taller Norte", []customers.Profile{instagram("tallernorte")}, projects.ToReview, -1, 6000, ""},
-		{"Retrato de gato", "Pablo", []customers.Profile{bluesky("pablo.bsky.social")}, projects.Delivered, -5, 4000, "Retrato digital · Busto"},
+		{"Retrato de gato", "Pablo", []customers.Profile{bluesky("pablo.bsky.social")}, projects.Delivered, -5, 4000, "Retrato por encargo · "},
 	} {
 		filler.commission(each, today)
 	}
