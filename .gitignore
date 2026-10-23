@@ -29,3 +29,5 @@ node_modules/
 
 # Local Android builds to copy to a phone
 buildsAndroid/
+go.work
+go.work.sum

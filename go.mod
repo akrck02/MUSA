@@ -30,8 +30,9 @@ require (
 // for Android and Bubble do, until they publish versions that work together (see
 // docs/02-get-started.md).
 replace (
-	github.com/akrck02/bubble => /tmp/bubble-hex
-	github.com/akrck02/bubble/goui => /tmp/bubble-hex/goui
+	github.com/akrck02/bubble => ../bubble
+	github.com/akrck02/bubble/goui => ../bubble/goui
 	github.com/akrck02/go-renderer => ../go-renderer
 	github.com/akrck02/go-ui => ../go-ui
 )
+
