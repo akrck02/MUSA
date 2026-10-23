@@ -200,6 +200,8 @@ func TestPayingInCashAtTheStandRecordsALocalSaleAndTakesTheStock(t *testing.T) {
 
 func TestGoingToTheStandFromTheHomePageOpensTodaysFair(t *testing.T) {
 	program, window := openApp(t, true)
+	program.Open(Home) // read the day again, now that the demo is in
+	window.Frame()
 	if !program.today.hasFair {
 		t.Fatal("the demo has no fair happening today")
 	}
