@@ -65,3 +65,35 @@ func TestADayWithoutItsYearReadsShort(t *testing.T) {
 		t.Errorf("DayWords = %q", words)
 	}
 }
+
+func TestAWeekStartsOnMonday(t *testing.T) {
+	wednesday := Date{Year: 2026, Month: time.November, Day: 4}
+	week := wednesday.Week()
+	if week[0] != (Date{Year: 2026, Month: time.November, Day: 2}) || week[6] != (Date{Year: 2026, Month: time.November, Day: 8}) {
+		t.Errorf("week %v", week)
+	}
+	if ShortWeekday(week[0]) != "lun" || ShortWeekday(wednesday) != "mié" || ShortWeekday(week[6]) != "dom" {
+		t.Errorf("names %s %s %s", ShortWeekday(week[0]), ShortWeekday(wednesday), ShortWeekday(week[6]))
+	}
+	if sunday := week[6]; sunday.WeekStart() != week[0] {
+		t.Errorf("a Sunday belongs to the week before: %v", sunday.WeekStart())
+	}
+}
+
+func TestAMonthGridHoldsWholeWeeks(t *testing.T) {
+	grid := Date{Year: 2026, Month: time.November, Day: 15}.MonthGrid()
+	// November 2026 starts on a Sunday and ends on a Monday: six weeks, from 26 October to 6 December.
+	if len(grid) != 42 || grid[0] != (Date{Year: 2026, Month: time.October, Day: 26}) || grid[41] != (Date{Year: 2026, Month: time.December, Day: 6}) {
+		t.Errorf("%d days, from %v to %v", len(grid), grid[0], grid[len(grid)-1])
+	}
+	if MonthWords(grid[10]) != "noviembre de 2026" {
+		t.Errorf("MonthWords = %q", MonthWords(grid[10]))
+	}
+}
+
+func TestADayIsWithinARangeThatIncludesItsEnds(t *testing.T) {
+	first, last := Date{Year: 2026, Month: 5, Day: 1}, Date{Year: 2026, Month: 5, Day: 3}
+	if !first.Within(first, last) || !last.Within(first, last) || last.AddDays(1).Within(first, last) {
+		t.Error("the ends of a range are not in it, or the day after is")
+	}
+}

@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/akrck02/go-renderer/draw2d"
 	ui "github.com/akrck02/go-ui"
 
 	"github.com/Itros97/MUSA/calendar"
@@ -16,79 +15,53 @@ import (
 // toastTime is how long a note about what a button did stays on screen.
 const toastTime = 3 * time.Second
 
-// homeState is what the home page remembers: the development tools' note and question.
+// homeState is what the home page remembers: the tab shown, the month the calendar shows, and the
+// development tools' note and question.
 type homeState struct {
+	tab         int           // index in homeTabs
+	month       calendar.Date // a day of the month the calendar shows; zero for this month
 	note        string
 	noteWarning bool
 	noteUntil   time.Time
 	askingWipe  bool
 }
 
-// section is a part of MUSA as the home page offers it: a big picture button with a plain name.
-type section struct {
-	place       Place
-	icon, title string
-	description string
-}
+// homeTabs are the two views of the home page.
+var homeTabs = []string{"Resumen", "Calendario"}
 
-var sections = []section{
-	{Stand, "store", "Abrir el puesto", "Cobra en una feria o en casa"},
-	{Catalogue, "palette", "Mis productos", "Tus láminas, pegatinas y demás"},
-	{Fairs, "tent", "Ferias", "Lo que llevas y lo que ganas"},
-	{Sales, "package", "Pedidos", "Lo que tienes que enviar, y lo vendido"},
-}
+// tabsWidth is the width of the home page's tabs, in pixels.
+const tabsWidth = 320
 
 func (program *App) drawHome(context *ui.Context) {
-	look.PageHeader(context, "Hola", calendar.LongWords(program.today.date), nil)
-	program.drawToday(context)
-	columns := 1
-	if look.Wide(context) {
-		columns = len(sections)
-	}
-	context.Box(ui.Layout{Width: ui.Grow(), Columns: columns, Gap: context.Theme.Gap}, func() {
-		for _, each := range sections {
-			program.sectionCard(context, each)
-		}
+	look.PageHeader(context, "Hola", calendar.LongWords(program.today.date), func() {
+		context.Box(ui.Layout{Width: ui.Fixed(tabsWidth)}, func() { context.Tabs("home", &program.home.tab, homeTabs...) })
 	})
-	program.drawMonth(context)
-	if program.options.DevelopmentTools {
-		program.developmentTools(context)
+	if program.today.loadErr != nil {
+		context.Toast("No se pudo leer lo de hoy", true)
 	}
-	studioFooter(context)
+	if program.home.tab == 1 {
+		program.drawMonthCalendar(context)
+	} else {
+		program.drawSummary(context)
+	}
 	if time.Now().Before(program.home.noteUntil) {
 		context.Toast(program.home.note, program.home.noteWarning)
 		context.RequestFrame(time.Until(program.home.noteUntil))
 	}
 }
 
-// sectionIcon is how big the picture of a section is, in pixels.
-const sectionIcon = 72
-
-// sectionCard is a big button with a picture: three side by side on a wide window, and on a
-// narrower one a full-width row each, the picture beside the words, so no word is ever cut.
-func (program *App) sectionCard(context *ui.Context, each section) {
-	theme := context.Theme
-	layout := ui.Layout{Width: ui.Grow(), Padding: ui.Pad(theme.Padding * 1.25), Gap: theme.Gap * 1.5, AlignY: ui.Center}
-	if look.Wide(context) {
-		layout.Direction, layout.AlignX = ui.Vertical, ui.Center
+// drawSummary is the home page at a glance: the fair, the month, what runs low, and this week.
+func (program *App) drawSummary(context *ui.Context) {
+	context.Grid(look.Columns(context, 3), func() {
+		program.fairWidget(context)
+		program.monthWidget(context)
+		program.restockWidget(context)
+	})
+	program.drawWeek(context)
+	if program.options.DevelopmentTools {
+		program.developmentTools(context)
 	}
-	if look.ClickableCard(context, each.title, layout, func() {
-		badge, title := float32(sectionIcon), theme.HeadingSize*1.2
-		if look.Narrow(context) {
-			badge, title = sectionIcon*0.75, theme.HeadingSize
-		}
-		look.Badge(context, each.icon, badge)
-		words := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Gap: 6, AlignX: layout.AlignX}
-		if look.Wide(context) {
-			words.Width = ui.Layout{}.Width
-		}
-		context.Box(words, func() {
-			context.Text(each.title, ui.TextStyle{Size: title, Weight: draw2d.Bold})
-			look.Paragraph(context, each.description, ui.TextStyle{Color: theme.InkSoft})
-		})
-	}) {
-		program.Open(each.place)
-	}
+	studioFooter(context)
 }
 
 func (program *App) developmentTools(context *ui.Context) {

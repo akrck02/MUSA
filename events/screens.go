@@ -110,7 +110,7 @@ func (screens *Screens) drawList(context *ui.Context) {
 	look.PageHeader(context, "Eventos", "Ferias y mercados: qué llevas, cuánto vendes y cuánto te cuesta ir", func() {
 		if context.PrimaryIconButton("plus", "Nuevo evento") {
 			today := calendar.Of(screens.now())
-			screens.editor = &eventEditor{draft: Draft{ID: screens.newID()}, start: calendar.Typed(today), end: calendar.Typed(today)}
+			screens.StartFair(today)
 		}
 	})
 	switch {
@@ -267,4 +267,9 @@ func (screens *Screens) Detail() Detail {
 		return Detail{}
 	}
 	return *screens.detail
+}
+
+// StartFair opens the editor of a new fair on day.
+func (screens *Screens) StartFair(day calendar.Date) {
+	screens.editor = &eventEditor{draft: Draft{ID: screens.newID()}, start: calendar.Typed(day), end: calendar.Typed(day)}
 }

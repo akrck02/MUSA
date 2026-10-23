@@ -61,3 +61,16 @@ func LongWords(date Date) string {
 	weekday := date.At(0, time.UTC).Weekday()
 	return fmt.Sprintf("%s, %d de %s", weekdayNames[weekday], date.Day, fullMonthNames[date.Month-1])
 }
+
+// shortWeekdays are the days as a calendar's heading writes them, Monday first.
+var shortWeekdays = [...]string{"lun", "mar", "mié", "jue", "vie", "sáb", "dom"}
+
+// ShortWeekday is the day of the week of date as a calendar's heading writes it: "mié".
+func ShortWeekday(date Date) string {
+	return shortWeekdays[(int(date.At(0, time.UTC).Weekday())+daysInWeek-1)%daysInWeek]
+}
+
+// MonthWords is a month and its year: "noviembre de 2026".
+func MonthWords(date Date) string {
+	return fmt.Sprintf("%s de %d", fullMonthNames[date.Month-1], date.Year)
+}

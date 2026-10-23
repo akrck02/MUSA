@@ -197,3 +197,17 @@ func TestPayingInCashAtTheStandRecordsALocalSaleAndTakesTheStock(t *testing.T) {
 		t.Errorf("stock %d after selling 1 of %d", stock, item.Left)
 	}
 }
+
+func TestGoingToTheStandFromTheHomePageOpensTodaysFair(t *testing.T) {
+	program, window := openApp(t, true)
+	if !program.today.hasFair {
+		t.Fatal("the demo has no fair happening today")
+	}
+	steps(t, window, click(window, "Ir al puesto"))
+	if program.place != Stand {
+		t.Fatalf("the place is %v, not the stand", program.place)
+	}
+	if _, err := window.Element(program.today.fair.Name); err != nil {
+		t.Error("the stand does not show the fair:", err)
+	}
+}

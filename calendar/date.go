@@ -54,3 +54,37 @@ func (date Date) Zero() bool { return date == Date{} }
 
 // CodeInvalidDate is the code of text that is not a stored date.
 const CodeInvalidDate = "calendar.invalid-date"
+
+// daysInWeek is how many days a week has.
+const daysInWeek = 7
+
+// WeekStart is the Monday of the week date is in: weeks start on Monday in Spain.
+func (date Date) WeekStart() Date {
+	sinceMonday := (int(date.At(0, time.UTC).Weekday()) + daysInWeek - 1) % daysInWeek
+	return date.AddDays(-sinceMonday)
+}
+
+// Week is the seven days of the week date is in, Monday first.
+func (date Date) Week() []Date {
+	start := date.WeekStart()
+	days := make([]Date, daysInWeek)
+	for index := range days {
+		days[index] = start.AddDays(index)
+	}
+	return days
+}
+
+// MonthGrid is the whole weeks that hold the month of date, Monday first: what a wall calendar
+// shows, with the last days of the month before and the first of the next filling the edges.
+func (date Date) MonthGrid() []Date {
+	first := Date{Year: date.Year, Month: date.Month, Day: 1}
+	next := first.AddMonths(1)
+	var days []Date
+	for day := first.WeekStart(); day.Before(next) || day.WeekStart() != day; day = day.AddDays(1) {
+		days = append(days, day)
+	}
+	return days
+}
+
+// Within tells whether date falls between first and last, both included.
+func (date Date) Within(first, last Date) bool { return !date.Before(first) && !last.Before(date) }

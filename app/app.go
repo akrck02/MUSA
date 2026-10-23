@@ -155,7 +155,7 @@ func (program *App) page(context *ui.Context) {
 func (program *App) Stores() demo.Stores { return program.stores }
 
 // Show opens one of the pages inside a place, for captures and tests: "product" (the first
-// product's editor), "fair" (the open fair's detail), "order" (a new order), "history" (the sales history), "stand" (selling
+// product's editor), "fair" (the open fair's detail), "order" (a new order), "history" (the sales history), "calendar" (the month on the home page), "stand" (selling
 // from the whole stock) or "stand-cash" (its cash dialog).
 func (program *App) Show(page string) {
 	switch page {
@@ -168,6 +168,9 @@ func (program *App) Show(page string) {
 	case "order":
 		program.Open(Sales)
 		program.sales.StartOrder()
+	case "calendar":
+		program.Open(Home)
+		program.home.tab = 1
 	case "history":
 		program.Open(Sales)
 		program.sales.ShowHistory()
