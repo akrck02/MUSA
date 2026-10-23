@@ -230,3 +230,20 @@ func TestEachErrorConstructorCarriesItsOwnCode(t *testing.T) {
 		}
 	}
 }
+
+func TestACustomersBasketIsOneSaleThatSaysHowItWasPaid(t *testing.T) {
+	test := newBench(t)
+	test.must(t)(test.events.MoveStock("e1", "v1", 6))
+	basket := []sales.LineDraft{{VariantID: "v1", Quantity: 2, UnitPrice: 900}, {VariantID: "v1", Quantity: 1, UnitPrice: 0}}
+	test.must(t)(test.events.SellLines("e1", basket, sales.Cash))
+	detail, _ := test.events.Detail("e1")
+	if len(detail.Sales) != 1 || len(detail.Sales[0].Lines) != 2 || detail.Sales[0].PaidWith != sales.Cash {
+		t.Fatalf("sales %+v", detail.Sales)
+	}
+	if test.line(t).Remaining() != 3 {
+		t.Errorf("remaining %d after selling 3 of 6", test.line(t).Remaining())
+	}
+	tooMany := []sales.LineDraft{{VariantID: "v1", Quantity: 2, UnitPrice: 900}, {VariantID: "v1", Quantity: 2, UnitPrice: 900}}
+	refusedWith(t, Refusal{Code: CodeExceedsRemaining, Available: 3})(test.events.SellLines("e1", tooMany, sales.Card))
+	refusedWith(t, Refusal{Code: CodeNothingToSell})(test.events.SellLines("e1", nil, sales.Card))
+}

@@ -58,7 +58,7 @@ func (store *Store) Record(draft Draft) (Sale, []Problem, error) {
 	if problems := stockProblems(draft.Lines, products); len(problems) > 0 {
 		return Sale{}, problems, nil
 	}
-	sale := Sale{ID: store.newID(), Channel: draft.Channel, Status: StatusOfNew(draft.Channel), Customer: strings.TrimSpace(draft.Customer),
+	sale := Sale{ID: store.newID(), Channel: draft.Channel, Status: StatusOfNew(draft.Channel), PaidWith: draft.PaidWith, Customer: strings.TrimSpace(draft.Customer),
 		Note: strings.TrimSpace(draft.Note), ShippingCharged: draft.ShippingCharged, ShippingCost: draft.ShippingCost, SoldAt: draft.SoldAt}
 	for _, line := range draft.Lines {
 		product := products[line.VariantID]
@@ -115,9 +115,9 @@ func InsertIn(rows storage.Querier, sale Sale) error {
 		sale.Status = StatusOfNew(sale.Channel)
 	}
 	at := storage.Milliseconds(sale.SoldAt)
-	_, err := rows.ExecContext(context.Background(), `INSERT INTO sale(id, channel, status, event_id, customer, note,
-		shipping_charged_cents, shipping_cost_cents, sold_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		sale.ID, sale.Channel, sale.Status, emptyIsNull(sale.EventID), sale.Customer, sale.Note, sale.ShippingCharged, sale.ShippingCost, at, at)
+	_, err := rows.ExecContext(context.Background(), `INSERT INTO sale(id, channel, status, paid_with, event_id, customer, note,
+		shipping_charged_cents, shipping_cost_cents, sold_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		sale.ID, sale.Channel, sale.Status, sale.PaidWith, emptyIsNull(sale.EventID), sale.Customer, sale.Note, sale.ShippingCharged, sale.ShippingCost, at, at)
 	if err != nil {
 		return storageFailed("record sale", err)
 	}
@@ -202,7 +202,7 @@ func stockProblems(lines []LineDraft, products map[string]catalogue.Product) []P
 
 func readSales(rows storage.Querier, eventID, onlyID string) ([]Sale, error) {
 	result, err := rows.QueryContext(context.Background(), `
-		SELECT id, channel, status, coalesce(event_id, ''), customer, note, shipping_charged_cents, shipping_cost_cents, sold_at
+		SELECT id, channel, status, paid_with, coalesce(event_id, ''), customer, note, shipping_charged_cents, shipping_cost_cents, sold_at
 		FROM sale WHERE deleted_at IS NULL AND (?1 = '' OR event_id = ?1) AND (?2 = '' OR id = ?2)
 		ORDER BY sold_at DESC`, eventID, onlyID)
 	if err != nil {
@@ -212,7 +212,7 @@ func readSales(rows storage.Querier, eventID, onlyID string) ([]Sale, error) {
 	for result.Next() {
 		var sale Sale
 		var soldAt int64
-		err := result.Scan(&sale.ID, &sale.Channel, &sale.Status, &sale.EventID, &sale.Customer, &sale.Note,
+		err := result.Scan(&sale.ID, &sale.Channel, &sale.Status, &sale.PaidWith, &sale.EventID, &sale.Customer, &sale.Note,
 			&sale.ShippingCharged, &sale.ShippingCost, &soldAt)
 		if err != nil {
 			result.Close() // the scan error is the one worth telling

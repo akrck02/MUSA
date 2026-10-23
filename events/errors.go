@@ -14,6 +14,7 @@ const (
 	CodeNegativePrice    Code = "events.negative-price"
 	CodeBlankConcept     Code = "events.blank-concept"
 	CodeNegativeAmount   Code = "events.negative-amount"
+	CodeNothingToSell    Code = "events.nothing-to-sell"
 	CodeEventClosed      Code = "events.event-closed"
 	CodeHasSales         Code = "events.has-sales"
 	CodeNotEnoughStock   Code = "events.not-enough-stock"

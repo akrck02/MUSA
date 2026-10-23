@@ -12,6 +12,7 @@ var (
 		CodeNegativePrice:   "El precio no puede ser negativo",
 		CodeBlankConcept:    "Escribe en qué fue el gasto",
 		CodeNegativeAmount:  "El importe no puede ser negativo",
+		CodeNothingToSell:   "Elige al menos un producto",
 		CodeEventClosed:     "El evento está cerrado",
 		CodeHasSales:        "Tiene ventas: ciérralo en vez de eliminarlo",
 	}

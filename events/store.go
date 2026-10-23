@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"slices"
 	"strings"
 	"time"
 
@@ -125,31 +126,55 @@ func (store *Store) ReturnStock(eventID, variantID string, quantity int) ([]Refu
 // Sell records quantity units of a variant on an open fair's stand sold at unitPrice, as a sale of
 // one line; the cost is copied from the variant as it is now.
 func (store *Store) Sell(eventID, variantID string, quantity int, unitPrice money.Money) ([]Refusal, error) {
-	var codes []Code
-	if quantity <= 0 {
-		codes = append(codes, CodeInvalidQuantity)
-	}
-	if unitPrice < 0 {
-		codes = append(codes, CodeNegativePrice)
-	}
-	if len(codes) > 0 {
-		return refusals(codes...), nil
+	return store.SellLines(eventID, []sales.LineDraft{{VariantID: variantID, Quantity: quantity, UnitPrice: unitPrice}}, "")
+}
+
+// SellLines records what one customer takes from an open fair's stand, paid with method, as one
+// sale; names and costs are copied from the stand. Lines of the same variant add up against what
+// is left of it.
+func (store *Store) SellLines(eventID string, lines []sales.LineDraft, method sales.Method) ([]Refusal, error) {
+	if refused := lineRefusals(lines); refused != nil {
+		return refused, nil
 	}
 	detail, refused, err := store.openDetail(eventID)
 	if err != nil || refused != nil {
 		return refused, err
 	}
-	line, found := detail.LineOf(variantID)
-	if !found {
-		return nil, notTaken(variantID)
+	sale := sales.Sale{ID: store.newID(), Channel: sales.AtEvent, EventID: eventID, PaidWith: method, SoldAt: store.now()}
+	wanted := map[string]int{}
+	for _, draft := range lines {
+		line, found := detail.LineOf(draft.VariantID)
+		if !found {
+			return nil, notTaken(draft.VariantID)
+		}
+		wanted[draft.VariantID] += draft.Quantity
+		if wanted[draft.VariantID] > line.Remaining() {
+			return []Refusal{{Code: CodeExceedsRemaining, Available: line.Remaining()}}, nil
+		}
+		sale.Lines = append(sale.Lines, sales.Line{ID: store.newID(), VariantID: draft.VariantID, ProductName: line.ProductName,
+			VariantName: line.VariantName, Quantity: draft.Quantity, UnitPrice: draft.UnitPrice, UnitCost: line.Cost})
 	}
-	if quantity > line.Remaining() {
-		return []Refusal{{Code: CodeExceedsRemaining, Available: line.Remaining()}}, nil
-	}
-	sale := sales.Sale{ID: store.newID(), Channel: sales.AtEvent, EventID: eventID, SoldAt: store.now(),
-		Lines: []sales.Line{{ID: store.newID(), VariantID: variantID, ProductName: line.ProductName,
-			VariantName: line.VariantName, Quantity: quantity, UnitPrice: unitPrice, UnitCost: line.Cost}}}
 	return nil, store.database.InTransaction(func(rows storage.Querier) error { return sales.InsertIn(rows, sale) })
+}
+
+// lineRefusals is what is wrong with the lines themselves, before looking at the stand.
+func lineRefusals(lines []sales.LineDraft) []Refusal {
+	var codes []Code
+	if len(lines) == 0 {
+		codes = append(codes, CodeNothingToSell)
+	}
+	for _, line := range lines {
+		if line.Quantity <= 0 && !slices.Contains(codes, CodeInvalidQuantity) {
+			codes = append(codes, CodeInvalidQuantity)
+		}
+		if line.UnitPrice < 0 && !slices.Contains(codes, CodeNegativePrice) {
+			codes = append(codes, CodeNegativePrice)
+		}
+	}
+	if len(codes) == 0 {
+		return nil
+	}
+	return refusals(codes...)
 }
 
 // Undo deletes one of a fair's sales, so its units are on the stand again; a closed fair keeps them.

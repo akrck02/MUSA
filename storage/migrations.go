@@ -12,6 +12,8 @@ import (
 var migrations = []string{
 	// Orders have a status. Sales recorded before it are taken as delivered: they were done.
 	"ALTER TABLE sale ADD COLUMN status TEXT NOT NULL DEFAULT 'DELIVERED'",
+	// Sales say how they were paid; older ones did not say.
+	"ALTER TABLE sale ADD COLUMN paid_with TEXT NOT NULL DEFAULT ''",
 }
 
 // migrate takes the steps a database has not taken yet, each in its own transaction.

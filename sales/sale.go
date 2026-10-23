@@ -60,11 +60,21 @@ func (status Status) Next() (next Status, found bool) {
 	return "", false
 }
 
+// Method is how a sale was paid.
+type Method string
+
+// The methods. The words are the ones stored in the database; empty means not said.
+const (
+	Cash Method = "CASH"
+	Card Method = "CARD"
+)
+
 // Sale is an order: one or more lines sold together through a channel.
 type Sale struct {
 	ID       string
 	Channel  Channel
 	Status   Status
+	PaidWith Method // empty when not said
 	EventID  string // empty outside fairs
 	Customer string
 	Note     string
@@ -114,6 +124,7 @@ func (sale Sale) Margin() money.Money { return sale.Total() - sale.Cost() }
 // Draft is what the order editor saves; names and costs are copied from the catalogue on saving.
 type Draft struct {
 	Channel         Channel
+	PaidWith        Method
 	Customer        string
 	Note            string
 	Lines           []LineDraft
