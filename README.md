@@ -4,10 +4,10 @@
 
 **A local-first inventory and business app for digital artists who also sell physical stock.**
 
-It keeps digital and physical products, variants, stock, prices and tags in a local SQLite database on the device. It needs no server or account, and runs on Android, desktop and iOS.
+It keeps products, stock, fairs, orders and the sales history in a local SQLite database on the device, and sells from a stand with a basket and «Cobrar». It needs no server or account. It is designed for an iPad, and runs on the desktop and Android.
 
-![Kotlin](https://img.shields.io/badge/Kotlin-2.4.20-7F52FF?logo=kotlin&logoColor=white)
-![Platforms](https://img.shields.io/badge/platforms-Android%20%7C%20Desktop%20%7C%20iOS-blue)
+![Go](https://img.shields.io/badge/Go-1.26-00ADD8?logo=go&logoColor=white)
+![Platforms](https://img.shields.io/badge/platforms-Desktop%20%7C%20Android-blue)
 ![Status](https://img.shields.io/badge/status-in%20development-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -22,61 +22,31 @@ AI assistant (Claude, by Anthropic) under my direction, in October 2026.** I dec
 and how it should behave; the AI wrote the code, the tests and this README. Every commit made this
 way carries a `Co-Authored-By: Claude` line.
 
-**Status: pending thorough review.** The shared module and the desktop app compile, and the shared
-JVM tests pass. The iOS build has not been tried yet. I have not yet reviewed it line by line.
+**Status: pending thorough review.** It builds and its tests pass on Linux. Android and the iPad
+have not been tried with this version yet. I have not yet reviewed it line by line.
 Treat it as a working draft, not as code I vouch for.
 
-> ⚠️ **Warning:** in early development, **not suitable for production use**. The database schema will change without migrations.
+> ⚠️ **Warning:** in early development, **not suitable for production use**. The database is migrated when it opens, but the tables will still change.
 
 ---
 
 ## 🚀 Quick start
 
-Requires JDK 17+ and, for Android, the Android SDK. iOS builds need a Mac with Xcode.
+Requires Go 1.26 and checkouts of Go UI, Go Renderer and Bubble beside this one.
 
 ```bash
-./gradlew :desktopApp:run            # run the desktop app
-./gradlew :desktopApp:runDemo        # run the desktop app on a throwaway database with toy data
-./gradlew :androidApp:installDebug   # install on a connected Android device or emulator
-./gradlew :shared:jvmTest            # run the shared tests on the JVM
+go run ./cmd/musa -demo   # the app, on a throwaway database with toy data
+go test ./...             # the tests
 ```
-
-For iOS, open `iosApp/` in Xcode on a Mac and run it from there.
 
 [More on getting started →](docs/02-get-started.md)
 
 ## 🧭 What is in it
 
-The app is built module by module. The first one is **inventory**:
-
-- Digital and physical products, with variants, stock, cost and sale price.
-- Tags with suggestions, search and filters on the product list.
-- Validation of product drafts before saving, and duplication of existing products.
-
-The second one is **events**:
-
-- Stock moved from the catalogue to a fair, and back when it closes.
-- Sales recorded on the spot, at the variant price or an edited one, and undone if needed.
-- Expenses, and a summary with gross, cost of goods and profit.
-
-The third one is **sales**:
-
-- Orders from every channel, with several products, customer, note and shipping amounts.
-- Physical stock taken from the catalogue on sale and given back on delete.
-- A list filtered by period and channel, with revenue, cost and margin.
-
-Accounts, marketplace, shipping and income-tax records will follow as separate modules.
-Data stays in a local `.db` file. Ids are UUIDs so that optional sync with a backend can be added later.
-
-## 🔍 How it works
-
-Kotlin Multiplatform with Compose Multiplatform for the UI and SQLDelight for storage. The shared
-module is split in three layers: `domain/` holds models, use cases and pure logic; `data/` holds
-the SQLDelight queries, mappers and repository implementations; `ui/` holds the screens and their
-ViewModels, which expose state as `StateFlow`. Koin wires the layers together, and each platform
-only provides its database driver and data directory.
-
-[More on the design →](docs/03-architecture.md)
+- **Mis productos**: physical and digital products, variants, stock, prices and tags.
+- **Ferias**: stock taken to a fair, its sales and expenses, and the profit.
+- **Puesto**: sell from a fair or the whole stock; pay in cash, with the change worked out, or by card.
+- **Pedidos**: orders to prepare and sent on a board; delivered ones and local sales in the history.
 
 ## 📚 Documentation
 
@@ -84,10 +54,10 @@ only provides its database driver and data directory.
 |---|---|
 | [Overview](docs/01-overview.md) | What MUSA does today and what it does not do. |
 | [Get started](docs/02-get-started.md) | Build, run and test it, and where the data is stored. |
-| [Architecture](docs/03-architecture.md) | The domain, data and ui layers and how they are wired. |
+| [Architecture](docs/03-architecture.md) | One package per idea, and how they depend on each other. |
 | [Inventory](docs/04-inventory.md) | Products, variants, validation rules, filters and duplication. |
 | [Events](docs/06-events.md) | Stock taken to a fair, sales, expenses, profit and closing. |
-| [Sales](docs/07-sales.md) | Orders from every channel, shipping, margin and the sales list. |
+| [Sales](docs/07-sales.md) | Orders, their status, the board and the sales history. |
 | [Roadmap](docs/05-roadmap.md) | The modules still to come and the plan for sync. |
 
 [Read the docs online →](https://itros97.github.io/MUSA/)

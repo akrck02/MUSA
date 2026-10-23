@@ -1,29 +1,40 @@
 # Architecture
 ---
 
-MUSA uses Kotlin Multiplatform with Compose Multiplatform for the UI and SQLDelight for storage.
-Almost all the code lives in the `shared` module. The `androidApp`, `desktopApp` and `iosApp`
-projects are thin entry points.
+This page is for whoever wants to change MUSA: by the end you know where each thing lives and why.
 
-## Layers
+## One package per idea
 
-The shared code under `org.softwareanvil.musa` is split in three layers:
+MUSA is one Go module. Each package is a thing the artist works with, and holds all of it: the
+model, the rules, the store that reads and writes it, and its screens.
 
-| Layer     | Holds                                                                            |
-|-----------|----------------------------------------------------------------------------------|
-| `domain/` | Models, repository interfaces, use cases and pure logic such as validation and filtering. |
-| `data/`   | SQLDelight queries, mappers between rows and models, and repository implementations. |
-| `ui/`     | Compose screens and their ViewModels, which expose state as `StateFlow`.         |
+| Package     | Holds |
+|-------------|-------|
+| `catalogue` | Products, variants, stock and tags. |
+| `events`    | Fairs: the stock taken to them, their sales and expenses. |
+| `sales`     | Orders from every channel, their status, and the sales history. |
+| `stand`     | The stand: the basket, «Cobrar» and where it sells from. |
+| `cash`      | Paying in cash: what was handed over and the change. |
+| `calendar`, `money` | Days without time zones, and euros as whole cents. |
+| `storage`   | The SQLite connection, the schema and its migrations. |
+| `look`      | The pieces every screen shares, on top of Bubble 4. |
+| `app`       | The frame, the navigation and the home page. |
+| `cmd/musa`  | The program: reads its flags, opens the database, opens the window. |
 
-Dependencies point inwards: `ui` and `data` depend on `domain`, and `domain` depends on nothing.
+Dependencies point one way: `money` and `calendar` know nothing else; `catalogue` builds on them;
+`sales` on the catalogue; `events` on sales; `stand` on all three; `app` on everything.
 
-## Wiring
+## Screens
 
-Koin connects the layers in `di/`. Each platform only provides two things: its SQLite driver
-and the folder where the database lives. Clocks and id generators are injected, so the domain
-logic can be tested with fixed values.
+Screens are drawn with Go UI every frame, from the state the package keeps (immediate mode). There
+are no view models: a screen reads its store, keeps what it shows, and asks the store again when
+something changes.
+
+## Errors
+
+Every error has a code (`sales.already-delivered`) declared in its package's `errors.go`. Programs
+check codes, never text. What the artist reads lives apart, in `words.go`, in Spanish.
 
 ## Ids
 
-Every product, variant and tag has a UUID generated on the device. This keeps the door open to
-syncing with a backend later without renumbering anything.
+Every row has a UUID made on the device, so a later sync never has to renumber anything.

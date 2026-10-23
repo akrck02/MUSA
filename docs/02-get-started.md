@@ -1,59 +1,53 @@
 # Get started
 ---
 
+This page is for whoever wants to run MUSA on their computer: by the end it is open, with toy data in it.
+
 ## Requirements
 
-- JDK 17 or newer.
-- For Android, the Android SDK and a device or emulator.
-- For iOS, a Mac with Xcode.
+- Go 1.26 or newer.
+- Checkouts of Go UI, Go Renderer and Bubble beside this one (`../go-ui`, `../go-renderer`,
+  `../bubble`), until they publish versions that work together. `go.mod` points at them.
+- On Linux, the usual OpenGL and X11 development packages that GLFW needs.
 
 ## Run the app
 
 ```bash
-./gradlew :desktopApp:run            # run the desktop app
-./gradlew :androidApp:installDebug   # install on a connected Android device or emulator
+go run ./cmd/musa                     # the app, over your own database
+go run ./cmd/musa -demo               # a throwaway database in memory, filled with toy data
+go run ./cmd/musa -database my.db     # another database file
 ```
 
-## Try it with toy data
+The demo lives only in memory: close the window and it is gone, so you can break things freely.
 
-```bash
-./gradlew :desktopApp:runDemo        # run the desktop app on a database full of made-up data
-```
-
-The demo uses its own file, `musa-demo.db`, next to the real one. It is deleted and filled again every
-time the demo starts, so you can break things freely. It holds ten products (some low on stock, one sold
-out), an event that closed last month, one happening today, one coming up, and four orders from other channels. Your real `musa.db` is never
-touched.
-
-## Development tools
-
-Development builds show a **Herramientas de prueba** card at the bottom of the home screen: the Android
-debug build (`installDebug`) and the desktop app launched from Gradle (`run` or `runDemo`). Release builds
-and packaged installers never show it.
-
-- **Rellenar con datos de prueba** loads the same toy data as `runDemo`. It only works on an empty database,
-  so the made-up SKUs never clash with real ones.
-- **Vaciar base de datos** deletes every product, tag, event, sale and expense after asking for confirmation.
-  It really deletes the rows and cannot be undone.
-
-For iOS, open `iosApp/` in Xcode on a Mac and run it from there.
+For a phone, Go UI for Android's `go-ui-apk` packages the same program as an APK.
 
 ## Run the tests
 
 ```bash
-./gradlew :shared:jvmTest            # run the shared tests on the JVM
+gofmt -l .        # prints nothing when everything is formatted
+go vet ./...
+go test ./...
 ```
+
+The screen tests drive the real app in a window that lives in memory, so they need no display.
+
+## Development tools
+
+The home screen shows a **Herramientas de prueba** card (turn it off with `-tools=false`):
+
+- **Rellenar con datos de prueba** loads the demo's toy data. It only works on an empty database.
+- **Vaciar base de datos** deletes every row after asking. It cannot be undone.
 
 ## Where the data lives
 
-The database is a single file called `musa.db` (`musa-demo.db` for the demo). On desktop it is stored in the per-user data folder of each system:
+The database is one file, `musa.db`, in MUSA's folder inside the user's configuration folder:
 
-| System  | Folder                                        |
-|---------|-----------------------------------------------|
-| Linux   | `$XDG_DATA_HOME/MUSA` or `~/.local/share/MUSA` |
-| macOS   | `~/Library/Application Support/MUSA`          |
-| Windows | `%APPDATA%\MUSA`                              |
+| System  | Folder                                    |
+|---------|-------------------------------------------|
+| Linux   | `$XDG_CONFIG_HOME/musa` or `~/.config/musa` |
+| macOS   | `~/Library/Application Support/musa`      |
+| Windows | `%AppData%\musa`                          |
 
-On Android and iOS it lives in the app's private storage.
-
-> ⚠️ The schema still changes without migrations. Delete `musa.db` if the app fails to open after an update.
+On Android it lives in the app's private storage. An older database is brought up to date when it
+opens: each change to the tables is a numbered migration in `storage/migrations.go`.

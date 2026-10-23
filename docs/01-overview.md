@@ -2,7 +2,7 @@
 ---
 
 MUSA is a local-first inventory and business app for digital artists who also sell physical stock.
-It runs on Android, desktop and iOS from one Kotlin Multiplatform codebase.
+It is written in Go with Go UI and Bubble 4, and runs on the desktop and on Android; the iPad is the device it is designed for.
 
 ## What it does today
 
