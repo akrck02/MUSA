@@ -28,16 +28,27 @@ A draft is checked before it is saved. It is rejected when:
 A physical variant is low on stock when it is sold out, or when its stock is at or below its minimum.
 A product is low on stock when any of its variants is.
 
-## Searching and filtering
+## Mis productos
 
-The product list shows active and draft products, or only archived ones. It can be narrowed by:
-
-- Text, matched against name, description and SKUs, ignoring case and accents.
-- Kind (physical or digital).
-- Tags. A product must have every selected tag.
-- Low stock only.
-
+The list has two halves, **Físico** and **Digital**, each a tab with how many products it holds.
+Under them, a tab per tag narrows the list (with **Archivados** last, when something is archived),
+and the magnifier opens a search over names, descriptions and SKUs that ignores case and accents.
 Results are sorted by name.
+
+On the physical side, a note says how many versions need restocking and names the first few
+(«A3 de Lámina «Gato»»); «Ver cuáles» shows only those products.
+
+Each card is a coloured picture (the first tag's colour and the work's first letter, until products
+have photos), the name, the prices from cheapest to dearest and one pill per version with what is
+left: warm when it runs low, red when it is sold out. Tapping a pill changes that stock.
+
+## The product's page
+
+The picture, the name and the tags sit on the left; the kind is shown with a lock, because it never
+changes. On the right, **Versiones** is a table: each version's name, price, what it costs the
+artist and its stock, with − and + and a «Pocos» warning. Everything set once (description,
+status, material or delivery, each version's SKU, warning level, weight and size, and the margin)
+is folded under **Más detalles**.
 
 ## Duplicating
 

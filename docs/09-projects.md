@@ -39,5 +39,9 @@ Instagram, Bluesky and X come with MUSA. Each network has a link pattern, such a
 `https://x.com/{user}`, and a handle becomes a link by putting it where `{user}` is (the «@» is
 left out). Tapping a network's button on a card opens the profile in the browser.
 
+**Redes**, at the top of the board, lists the networks to rename, add or remove. A link without
+`{user}` is not saved, since no profile could be reached with it. Removing a network removes the
+handles customers had on it.
+
 Trello will come later (proposal 4): the board is ready to mirror one, but MUSA works the same
 without it.

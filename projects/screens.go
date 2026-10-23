@@ -30,6 +30,7 @@ type Screens struct {
 	choices  []productChoice
 	loadErr  error
 	editor   *editor
+	settings *networkSettings // the networks sheet, while open
 
 	note        string
 	noteWarning bool
@@ -87,18 +88,21 @@ func digitalChoices(products *catalogue.Store) ([]productChoice, error) {
 	return choices, nil
 }
 
-// Back closes the editor; false when only the board was open.
+// Back closes the editor or the networks sheet; false when only the board was open.
 func (screens *Screens) Back() bool {
-	if screens.editor == nil {
+	if screens.editor == nil && screens.settings == nil {
 		return false
 	}
-	screens.editor = nil
+	screens.editor, screens.settings = nil, nil
 	return true
 }
 
 // Draw draws the board, and the editor over it when one is open.
 func (screens *Screens) Draw(context *ui.Context) {
 	look.PageHeader(context, "Proyectos", screens.subtitle(), func() {
+		if context.IconButton("at-sign", "Redes") {
+			screens.openNetworks()
+		}
 		if context.PrimaryIconButton("plus", "Nuevo proyecto") {
 			screens.startProject(ToStart)
 		}
@@ -110,6 +114,9 @@ func (screens *Screens) Draw(context *ui.Context) {
 	screens.drawBoard(context)
 	if screens.editor != nil {
 		screens.drawEditor(context)
+	}
+	if screens.settings != nil {
+		screens.drawNetworks(context)
 	}
 	if time.Now().Before(screens.noteUntil) {
 		context.Toast(screens.note, screens.noteWarning)

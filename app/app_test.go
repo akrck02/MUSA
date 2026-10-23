@@ -8,6 +8,7 @@ import (
 	"github.com/akrck02/go-ui/uitest"
 
 	"github.com/Itros97/MUSA/catalogue"
+	"github.com/Itros97/MUSA/customers"
 	"github.com/Itros97/MUSA/demo"
 	"github.com/Itros97/MUSA/money"
 	"github.com/Itros97/MUSA/projects"
@@ -232,5 +233,25 @@ func TestANewProjectIsSavedWithItsCustomerAndTheirNetwork(t *testing.T) {
 	person, _, _ := program.stores.Customers.Find(saved[0].CustomerID)
 	if handle, found := person.Handle("instagram"); person.Name != "Marta" || !found || handle != "@marta" {
 		t.Errorf("customer %+v", person)
+	}
+}
+
+func TestTheArtistCanAddASocialNetwork(t *testing.T) {
+	program, window := openApp(t, false)
+	program.Open(Projects)
+	window.Frame()
+	steps(t, window, click(window, "Redes"),
+		typeInto(window, "Nueva red", "Mastodon"),
+		typeInto(window, "https://ejemplo.com/{user}", "https://mastodon.social/@{user}"),
+		click(window, "Guardar redes"))
+	networks, err := program.stores.Customers.Networks()
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := slices.ContainsFunc(networks, func(network customers.Network) bool {
+		return network.Name == "Mastodon" && network.Link("@ana") == "https://mastodon.social/@ana"
+	})
+	if !found {
+		t.Errorf("networks %+v", networks)
 	}
 }
