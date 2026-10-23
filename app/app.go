@@ -9,6 +9,7 @@ import (
 	"github.com/akrck02/bubble/goui"
 	ui "github.com/akrck02/go-ui"
 
+	"github.com/Itros97/MUSA/calendar"
 	"github.com/Itros97/MUSA/catalogue"
 	"github.com/Itros97/MUSA/customers"
 	"github.com/Itros97/MUSA/demo"
@@ -93,6 +94,11 @@ func New(database *storage.Database, options Options) (*App, error) {
 		options: options,
 	}
 	program.catalogue = catalogue.NewScreens(products, storage.NewID)
+	program.catalogue.CountSalesWith(func() (map[string]int, error) {
+		made, err := sold.All()
+		today := calendar.Of(now())
+		return sales.UnitsSince(made, calendar.Date{Year: today.Year, Month: today.Month, Day: 1}.At(0, now().Location())), err
+	})
 	program.fairs = events.NewScreens(fairs, products, storage.NewID, now)
 	program.sales = sales.NewScreens(sold, products, storage.NewID, now)
 	program.sales.NameEvents(func(id string) string {
@@ -179,6 +185,9 @@ func (program *App) Show(page string) {
 	case "product":
 		program.Open(Catalogue)
 		program.catalogue.EditFirst()
+	case "digital":
+		program.Open(Catalogue)
+		program.catalogue.ShowDigital()
 	case "fair":
 		program.Open(Fairs)
 		program.fairs.OpenFirstOpen()

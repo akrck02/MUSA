@@ -82,3 +82,26 @@ func ProblemWords(problem Problem) string {
 	}
 	return string(problem.Code)
 }
+
+// DeliveryWords is how long a digital product takes to reach the buyer: «Al momento» when it is
+// ready, or «7 días».
+func DeliveryWords(days int) string {
+	switch days {
+	case 0:
+		return "Al momento"
+	case 1:
+		return "1 día"
+	}
+	return fmt.Sprintf("%d días", days)
+}
+
+// SoldWords says how many times a product sold this month: «Vendido 8 veces este mes».
+func SoldWords(units int) string {
+	switch units {
+	case 0:
+		return "Sin ventas este mes"
+	case 1:
+		return "Vendido 1 vez este mes"
+	}
+	return fmt.Sprintf("Vendido %d veces este mes", units)
+}

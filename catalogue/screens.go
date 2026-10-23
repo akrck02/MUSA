@@ -18,9 +18,14 @@ type Screens struct {
 	newID func() string
 
 	products []Product
-	tags     []Tag
-	query    Query
-	loadErr  error
+	// positions are where each product, by its ID, stands in the whole catalogue: its colour
+	positions map[string]int
+	// unitsSold counts the units of each version, by its ID, sold this month; nil when unknown
+	unitsSold     func() (map[string]int, error)
+	soldThisMonth map[string]int
+	tags          []Tag
+	query         Query
+	loadErr       error
 
 	kindTab   int                               // index in kindTabs
 	tagTab    int                               // 0 for every tag, then each tag of the kind, then the archived
@@ -41,12 +46,40 @@ func NewScreens(store *Store, newID func() string) *Screens {
 	return &Screens{store: store, newID: newID}
 }
 
+// CountSalesWith makes the list say how many times each digital product sold this month, from
+// count: the units of each version, by its ID, sold this month.
+func (screens *Screens) CountSalesWith(count func() (map[string]int, error)) {
+	screens.unitsSold = count
+}
+
 // Reload reads the catalogue again.
 func (screens *Screens) Reload() {
 	screens.products, screens.loadErr = screens.store.All()
 	if screens.loadErr == nil {
 		screens.tags, screens.loadErr = screens.store.Tags()
 	}
+	if screens.loadErr == nil && screens.unitsSold != nil {
+		screens.soldThisMonth, screens.loadErr = screens.unitsSold()
+	}
+	screens.positions = make(map[string]int, len(screens.products))
+	for position, product := range screens.products {
+		screens.positions[product.ID] = position
+	}
+}
+
+// soldOf is how many units of product sold this month.
+func (screens *Screens) soldOf(product Product) int {
+	units := 0
+	for _, variant := range product.Variants {
+		units += screens.soldThisMonth[variant.ID]
+	}
+	return units
+}
+
+// ShowDigital opens the list on the digital products.
+func (screens *Screens) ShowDigital() {
+	screens.editor = nil
+	screens.kindTab, screens.tagTab = 1, 0
 }
 
 // Back closes what is open over the list; false when only the list was open.

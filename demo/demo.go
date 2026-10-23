@@ -84,6 +84,7 @@ func (filler *filler) fill() error {
 	filler.event("Mercado de Navidad", "Centro cultural", today.AddDays(50), today.AddDays(52))
 
 	filler.orders(today)
+	filler.downloads(today)
 	filler.projects(today)
 	filler.settleStock()
 	return filler.err
@@ -99,6 +100,39 @@ func (filler *filler) orders(today calendar.Date) {
 		Lines: filler.lines("Retrato por encargo · ", 1, 3500)})
 	filler.order(sales.Draft{Channel: sales.Marketplace, Note: "Etsy", SoldAt: daysAgo(40),
 		Lines: filler.lines("LAM-GAT-A4", 1, 2000), ShippingCharged: 500, ShippingCost: 420})
+}
+
+// downloads are this month's sales of the digital works, already delivered: a download reaches
+// the buyer at once.
+func (filler *filler) downloads(today calendar.Date) {
+	monthStart := calendar.Date{Year: today.Year, Month: today.Month, Day: 1}
+	soldOn := func(day calendar.Date) time.Time { return sales.SoldAt(day, filler.stores.Now()) }
+	for _, download := range []struct {
+		key      string
+		quantity int
+		cents    money.Money
+		day      int
+	}{
+		{"Pack de pinceles · ", 10, 1200, 0}, {"Pack de pinceles · ", 8, 1200, 1}, {"Pack de pinceles · ", 5, 1200, 2},
+		{"Fondos para móvil · ", 5, 500, 0}, {"Fondos para móvil · ", 3, 500, 2},
+		{"Retrato por encargo · ", 1, 4000, 1},
+	} {
+		filler.delivered(sales.Draft{Channel: sales.OnlineShop, SoldAt: soldOn(monthStart.AddDays(download.day)),
+			Lines: filler.lines(download.key, download.quantity, download.cents)})
+	}
+}
+
+// delivered records an order and moves it along until it is delivered.
+func (filler *filler) delivered(draft sales.Draft) {
+	if filler.err != nil {
+		return
+	}
+	sale, problems, err := filler.stores.Sales.Record(draft)
+	filler.stop(len(problems), problems, err)
+	for step := 0; step < 2 && filler.err == nil; step++ {
+		problems, err := filler.stores.Sales.Advance(sale.ID)
+		filler.stop(len(problems), problems, err)
+	}
 }
 
 func (filler *filler) event(name, location string, start, end calendar.Date) string {

@@ -29,7 +29,7 @@ func main() {
 	demoMode := flag.Bool("demo", false, "open a throwaway database in memory, filled with toy data")
 	path := flag.String("database", "", "the database file; empty for the one in the app's folder")
 	place := flag.Int("place", 0, "the place to open on: 0 home, 1 catalogue, 2 fairs, 3 orders, 4 stand, 5 projects (for captures)")
-	page := flag.String("show", "", "a page inside the place to open on: product, fair, order or stand (for captures)")
+	page := flag.String("show", "", "a page inside the place to open on: product, digital, fair, order, history, calendar, project, networks or stand… (for captures)")
 	tools := flag.Bool("tools", true, "show the development tools on the home page")
 	today := flag.String("today", "", "a day as 2026-11-04 to open on instead of today, for captures")
 	flag.Parse()

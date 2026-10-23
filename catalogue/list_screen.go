@@ -64,6 +64,10 @@ func (screens *Screens) drawList(context *ui.Context) {
 		look.Space(context, kindBarSpace)
 		screens.kindBar(context)
 		look.Space(context, kindBarSpaceBelow)
+		if screens.query.Kind == Digital {
+			screens.digitalList(context, shown)
+			break
+		}
 		screens.restockBanner(context)
 		look.Space(context, bannerSpaceBelow)
 		screens.tagBar(context)
@@ -191,9 +195,9 @@ func (screens *Screens) cards(context *ui.Context, shown []Product) {
 	width, _ := context.Size()
 	columns := min(cardsWhenThereIsRoom, max(cardsOnAPhone, int(width/cardMinimumWidth)))
 	context.Box(ui.Layout{Width: ui.Grow(), Columns: columns, Gap: gridGap}, func() {
-		for position, product := range shown {
+		for _, product := range shown {
 			context.Push(product.ID)
-			screens.card(context, product, ListFill(context.Theme, position))
+			screens.card(context, product, ListFill(context.Theme, screens.positions[product.ID]))
 			context.Pop()
 		}
 	})
@@ -210,6 +214,8 @@ const (
 	cardBadgeSize     = 13
 	cardBadgePaddingX = 10
 	cardBadgePaddingY = 4
+	cardBadgeGap      = 6
+	cardBadgeIconSize = 14
 	cardPaddingX      = 16
 	cardPaddingTop    = 14
 	cardPaddingBottom = 16
@@ -240,6 +246,10 @@ func (screens *Screens) card(context *ui.Context, product Product, fill draw2d.C
 			look.Paragraph(context, product.Name, ui.TextStyle{Size: cardNameSize, Weight: draw2d.Bold})
 			look.Space(context, cardPriceSpace)
 			context.Text(PriceRangeWords(product), ui.TextStyle{Size: cardPriceSize, Color: theme.InkSoft})
+			if product.Kind == Digital {
+				screens.digitalFacts(context, product)
+				return
+			}
 			look.Space(context, cardPillsSpace)
 			screens.versionPills(context, product)
 		})
@@ -270,21 +280,27 @@ func (screens *Screens) cardPicture(context *ui.Context, product Product, fill d
 			context.Text(Initial(product.Name), ui.TextStyle{Size: cardLetterSize, Weight: draw2d.Bold, Color: draw2d.Color{1, 1, 1, cardLetterAlpha}})
 		})
 		context.Box(ui.Layout{Width: ui.Grow(), Height: ui.Grow(), Padding: ui.Pad(cardBadgeInset), Gap: versionGap}, func() {
-			if len(product.Tags) > 0 {
-				cardBadge(context, product.Tags[0].Name)
+			switch {
+			case product.Kind == Digital:
+				cardBadge(context, "cloud", "Digital")
+			case len(product.Tags) > 0:
+				cardBadge(context, "", product.Tags[0].Name)
 			}
 			if product.Status == Draft {
-				cardBadge(context, "Borrador")
+				cardBadge(context, "", "Borrador")
 			}
 		})
 	})
 }
 
-// cardBadge is a small soft label on a card's picture.
-func cardBadge(context *ui.Context, words string) {
+// cardBadge is a small soft label on a card's picture, with an icon before it when icon is set.
+func cardBadge(context *ui.Context, icon, words string) {
 	theme := context.Theme
-	layout := ui.Layout{Padding: ui.PadXY(cardBadgePaddingX, cardBadgePaddingY)}
+	layout := ui.Layout{Padding: ui.PadXY(cardBadgePaddingX, cardBadgePaddingY), Gap: cardBadgeGap, AlignY: ui.Center}
 	context.Frame(layout, ui.Look{Fill: theme.Surface, Radius: roundRadius}, func() {
+		if icon != "" {
+			context.IconSized(icon, cardBadgeIconSize, theme.InkSoft)
+		}
 		context.Text(words, ui.TextStyle{Size: cardBadgeSize, Color: theme.InkSoft})
 	})
 }
@@ -327,6 +343,67 @@ func versionPill(context *ui.Context, variant Variant) bool {
 	return context.Clickable(name, layout, ui.Looks{Normal: normal, Hovered: pressed, Pressed: pressed}, func() {
 		context.Text(name, ui.TextStyle{Size: versionTextSize, Color: ink})
 		context.Text(count, ui.TextStyle{Size: versionTextSize, Color: countInk, Weight: weight})
+	})
+}
+
+// Measures of the digital products' list, in pixels, as in the author's design.
+const (
+	digitalColumns    = 3
+	digitalHintSpace  = 6
+	digitalGridSpace  = 20
+	digitalHintSize   = 15
+	factsSpace        = 14
+	factsGap          = 10
+	factRadius        = 12
+	factPaddingX      = 12
+	factPaddingY      = 10
+	factLabelSize     = 13
+	factValueSize     = 16
+	digitalSoldSpace  = 6
+	digitalPhoneLimit = 2
+)
+
+// digitalList is the digital products: nothing to count, so a line saying so and a card each.
+func (screens *Screens) digitalList(context *ui.Context, shown []Product) {
+	theme := context.Theme
+	look.Space(context, digitalHintSpace)
+	context.Text("Sin stock que contar: se venden tantas veces como quieras.", ui.TextStyle{Size: digitalHintSize, Color: theme.InkSoft})
+	look.Space(context, digitalGridSpace)
+	if len(shown) == 0 {
+		look.Empty(context, "search", "Nada por aquí", "Ningún producto coincide con la búsqueda.", "")
+		return
+	}
+	width, _ := context.Size()
+	columns := min(digitalColumns, max(cardsOnAPhone, int(width/cardMinimumWidth)))
+	context.Box(ui.Layout{Width: ui.Grow(), Columns: columns, Gap: gridGap}, func() {
+		for _, product := range shown {
+			context.Push(product.ID)
+			screens.card(context, product, ListFill(theme, screens.positions[product.ID]))
+			context.Pop()
+		}
+	})
+}
+
+// digitalFacts are a digital product's format and delivery side by side, and how many times it
+// sold this month.
+func (screens *Screens) digitalFacts(context *ui.Context, product Product) {
+	theme := context.Theme
+	look.Space(context, factsSpace)
+	context.Box(ui.Layout{Width: ui.Grow(), Columns: 2, Gap: factsGap}, func() {
+		fact(context, "Formato", nameOr(product.DeliveryFormat, "—"))
+		fact(context, "Entrega", DeliveryWords(product.TurnaroundDays))
+	})
+	look.Space(context, digitalSoldSpace)
+	context.Text(SoldWords(screens.soldOf(product)), ui.TextStyle{Size: digitalHintSize, Color: theme.InkSoft})
+}
+
+// fact is a label and its value in a sunken well.
+func fact(context *ui.Context, label, value string) {
+	theme := context.Theme
+	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.PadXY(factPaddingX, factPaddingY)}
+	context.Frame(layout, ui.Look{Fill: theme.Sunken, Radius: factRadius}, func() {
+		context.Text(label, ui.TextStyle{Size: factLabelSize, Color: theme.InkSoft})
+		context.Text(value, ui.TextStyle{Size: factValueSize, Weight: draw2d.Bold})
 	})
 }
 

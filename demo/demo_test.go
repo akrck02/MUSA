@@ -38,8 +38,9 @@ func TestDemoDataFillsEveryModule(t *testing.T) {
 	fairs, _ := stores.Events.All()
 	orders, _ := stores.Sales.All()
 	commissions, _ := stores.Projects.All()
-	// Products: twenty-one physical and three digital. Sales: four at each fair, four orders, and the delivered project's.
-	if len(products) != 21+3 || len(fairs) != 3 || len(orders) != 4+4+4+1 || len(commissions) != 5 {
+	// Products: twenty-one physical and three digital. Sales: four at each fair, four orders, six
+	// downloads, and the delivered project's.
+	if len(products) != 21+3 || len(fairs) != 3 || len(orders) != 4+4+4+6+1 || len(commissions) != 5 {
 		t.Errorf("%d products, %d fairs, %d sales, %d projects", len(products), len(fairs), len(orders), len(commissions))
 	}
 	if fairs[len(fairs)-1].Status != events.Closed {

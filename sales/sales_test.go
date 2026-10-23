@@ -286,3 +286,16 @@ func TestTheHistorySeparatesLocalSalesFromOrdersThatTravelled(t *testing.T) {
 		t.Errorf("local %v, sent %v", local, sent)
 	}
 }
+
+func TestUnitsSinceCountsOnlyTheSalesFromThatMomentOn(t *testing.T) {
+	start := time.Date(2026, 11, 1, 0, 0, 0, 0, time.UTC)
+	made := []Sale{
+		{SoldAt: start.Add(time.Hour), Lines: []Line{{VariantID: "brushes", Quantity: 2}, {VariantID: "wallpapers", Quantity: 1}}},
+		{SoldAt: start, Lines: []Line{{VariantID: "brushes", Quantity: 3}}},
+		{SoldAt: start.Add(-time.Hour), Lines: []Line{{VariantID: "brushes", Quantity: 10}}},
+	}
+	units := UnitsSince(made, start)
+	if units["brushes"] != 5 || units["wallpapers"] != 1 {
+		t.Errorf("units %v", units)
+	}
+}

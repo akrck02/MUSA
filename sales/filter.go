@@ -140,3 +140,18 @@ func Done(sales []Sale) []Sale {
 	}
 	return kept
 }
+
+// UnitsSince counts the units of each version, by its ID, that the sales made at or after since
+// sold.
+func UnitsSince(sales []Sale, since time.Time) map[string]int {
+	units := map[string]int{}
+	for _, sale := range sales {
+		if sale.SoldAt.Before(since) {
+			continue
+		}
+		for _, line := range sale.Lines {
+			units[line.VariantID] += line.Quantity
+		}
+	}
+	return units
+}

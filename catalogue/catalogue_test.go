@@ -149,3 +149,16 @@ func TestCountsAndCentimetresAreReadAsTyped(t *testing.T) {
 		t.Error("FormatCentimetres")
 	}
 }
+
+func TestADigitalProductSaysWhenItArrivesAndHowOftenItSold(t *testing.T) {
+	for days, want := range map[int]string{0: "Al momento", 1: "1 día", 7: "7 días"} {
+		if got := DeliveryWords(days); got != want {
+			t.Errorf("%d days: %q, not %q", days, got, want)
+		}
+	}
+	for units, want := range map[int]string{0: "Sin ventas este mes", 1: "Vendido 1 vez este mes", 23: "Vendido 23 veces este mes"} {
+		if got := SoldWords(units); got != want {
+			t.Errorf("%d units: %q, not %q", units, got, want)
+		}
+	}
+}
