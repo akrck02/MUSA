@@ -2,6 +2,7 @@ package catalogue
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/akrck02/go-renderer/draw2d"
 	ui "github.com/akrck02/go-ui"
@@ -12,10 +13,11 @@ import (
 
 // editor is the product editor: the form and what the last save attempt found wrong.
 type editor struct {
-	form       form
-	problems   []Problem
-	unreadable map[string]string
-	asking     string // "delete" while the delete question is open
+	form        form
+	problems    []Problem
+	unreadable  map[string]string
+	asking      string // "delete" while the delete question is open
+	detailsOpen bool   // «Más detalles» is unfolded
 }
 
 func newEditor(edited form) editor { return editor{form: edited, unreadable: map[string]string{}} }
@@ -33,46 +35,63 @@ func (editing *editor) problemFor(code Code, variantID, field string) string {
 	return ""
 }
 
+// Measures of the editor, in pixels.
+const (
+	editorSideWidth   = 400
+	moneyFieldWidth   = 130
+	stockColumnWidth  = 230
+	sectionTitleScale = 1.4
+)
+
 func (screens *Screens) drawEditor(context *ui.Context) {
-	editing := screens.editor
-	edited := &editing.form
+	edited := &screens.editor.form
 	title := "Nuevo producto"
 	if !edited.isNew {
 		title = edited.product.Name
 	}
-	look.PageHeader(context, title, kindWords[edited.product.Kind], func() {
+	look.PageHeader(context, title, "", func() {
 		if context.FlatIconButton("arrow-left", "Volver") {
 			screens.editor = nil
 		}
 		if !edited.isNew {
 			screens.editorMenu(context)
 		}
-		if context.PrimaryIconButton("check", "Guardar") {
+		if context.PrimaryButton("Guardar") {
 			screens.save()
 		}
 	})
 	if screens.editor == nil {
 		return
 	}
-	screens.basics(context)
-	screens.tagSection(context)
-	screens.details(context)
-	screens.variantSection(context)
-	if editing.asking == "delete" {
+	side := ui.Fixed(editorSideWidth)
+	if look.Narrow(context) {
+		side = ui.Grow()
+	}
+	context.Box(ui.Layout{Direction: look.Across(context), Width: ui.Grow(), Gap: context.Theme.Gap * 1.5, AlignY: ui.Start}, func() {
+		context.Box(ui.Layout{Direction: ui.Vertical, Width: side, Gap: context.Theme.Gap}, func() {
+			screens.basics(context)
+			screens.tagSection(context)
+		})
+		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Gap: context.Theme.Gap}, func() {
+			screens.variantSection(context)
+			screens.moreDetails(context)
+		})
+	})
+	if screens.editor.asking == "delete" {
 		screens.askDelete(context)
 	}
 }
 
 func (screens *Screens) editorMenu(context *ui.Context) {
 	edited := &screens.editor.form
-	context.MenuButton("ellipsis", "##Más acciones", func() {
-		if context.MenuItem("copy", "Duplicar", "") {
-			id, err := screens.store.Duplicate(edited.product.ID, edited.product.Name+" (copia)")
-			screens.tell(err, "Copia creada como borrador")
-			if copied, found := screens.product(id); err == nil && found {
-				screens.edit(copied)
-			}
+	if context.Button("Duplicar") {
+		id, err := screens.store.Duplicate(edited.product.ID, edited.product.Name+" (copia)")
+		screens.tell(err, "Copia creada como borrador")
+		if copied, found := screens.product(id); err == nil && found {
+			screens.edit(copied)
 		}
+	}
+	context.MenuButton("ellipsis", "##Más acciones", func() {
 		archived := edited.product.Status == Archived
 		if context.MenuItem("archive", map[bool]string{true: "Restaurar", false: "Archivar"}[archived], "") {
 			screens.tell(screens.store.SetArchived(edited.product.ID, !archived), map[bool]string{true: "Restaurado", false: "Archivado"}[archived])
@@ -122,21 +141,41 @@ func (screens *Screens) save() {
 	screens.editor = nil
 }
 
+// basics is the picture, the name and the kind, which never changes once made.
 func (screens *Screens) basics(context *ui.Context) {
 	editing := screens.editor
 	edited := &editing.form
-	look.Section(context, "Lo básico", func() {
-		look.Field(context, "Nombre", "name", &edited.name, "Lámina «Gato astronauta»", editing.problemFor(CodeBlankName, "", ""))
-		look.Field(context, "Descripción", "description", &edited.description, "Opcional", "")
-		context.Text("Estado", ui.TextStyle{Size: context.Theme.SmallTextSize, Weight: draw2d.Bold})
-		context.Tabs("status", &edited.status, statusWords[Draft], statusWords[Active], statusWords[Archived])
+	theme := context.Theme
+	shown := edited.product
+	shown.Name = edited.name
+	for _, name := range edited.tags[:min(1, len(edited.tags))] {
+		shown.Tags = []Tag{{Name: name, Color: TagColorFor(TagKey(name))}}
+	}
+	editorPicture(context, shown)
+	look.Field(context, "Nombre", "name", &edited.name, "Lámina «Gato astronauta»", editing.problemFor(CodeBlankName, "", ""))
+	context.Box(ui.Layout{Gap: 6, AlignY: ui.Center}, func() {
+		context.IconSized("lock", theme.SmallTextSize, theme.InkSoft)
+		context.Text("Producto "+strings.ToLower(kindWords[shown.Kind])+" · el tipo no se cambia",
+			ui.TextStyle{Size: theme.SmallTextSize, Color: theme.InkSoft})
 	})
+}
+
+// editorPicture is the product's picture, square, with its first letter until it has a photo.
+func editorPicture(context *ui.Context, product Product) {
+	theme := context.Theme
+	tone := TagTone(theme, PictureColor(product))
+	layout := ui.Layout{Width: ui.Grow(), Height: ui.Fixed(editorSideWidth * 0.75), AlignX: ui.Center, AlignY: ui.Center}
+	context.Frame(layout, ui.Look{Fill: tone.Fill, Radius: theme.PanelRadius}, func() {
+		context.Text(Initial(nameOr(product.Name, "?")), ui.TextStyle{Size: cardLetterSize * 2, Weight: draw2d.Bold, Color: theme.Surface.WithAlpha(0.7)})
+	})
+	// TODO(akrck02): a photo of the work, chosen from the device's pictures (proposal 3, R12).
 }
 
 func (screens *Screens) tagSection(context *ui.Context) {
 	edited := &screens.editor.form
 	theme := context.Theme
-	look.Section(context, "Etiquetas", func() {
+	look.Label(context, "Etiquetas")
+	func() {
 		if len(edited.tags) > 0 {
 			context.Box(ui.Layout{Width: ui.Grow(), Gap: 6, Wrap: true}, func() {
 				for index, name := range edited.tags {
@@ -167,7 +206,7 @@ func (screens *Screens) tagSection(context *ui.Context) {
 				}
 			})
 		}
-	})
+	}()
 }
 
 func (edited *form) addTag(name string) {
@@ -175,75 +214,130 @@ func (edited *form) addTag(name string) {
 	edited.tagTyped = ""
 }
 
-func (screens *Screens) details(context *ui.Context) {
-	editing := screens.editor
-	edited := &editing.form
-	if edited.product.Kind == Physical {
-		look.Section(context, "Material", func() {
-			look.Field(context, "De qué está hecho", "material", &edited.material, "Papel de algodón 300 g", "")
-		})
-		return
-	}
-	look.Section(context, "Entrega", func() {
-		context.Box(ui.Layout{Width: ui.Grow(), Columns: look.Columns(context, 2), Gap: context.Theme.Gap}, func() {
-			look.Field(context, "Formato", "delivery", &edited.delivery, "PNG 4000 px", "")
-			look.Field(context, "Plazo en días", "turnaround", &edited.turnaround, "14",
-				firstOf(editing.unreadable["turnaround"], editing.problemFor(CodeNegativeTurnaround, "", "")))
-		})
-	})
-}
-
+// variantSection is the table of versions: each with its name, price, cost and stock.
 func (screens *Screens) variantSection(context *ui.Context) {
 	editing := screens.editor
 	edited := &editing.form
 	theme := context.Theme
-	look.Section(context, "Variantes", func() {
-		look.Paragraph(context, "Tamaños, formatos o niveles de detalle, cada uno con su precio. Con una sola, no hace falta nombre.",
-			ui.TextStyle{Color: theme.InkSoft})
+	look.Card(context, ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(theme.Padding), Gap: theme.Gap}, func() {
+		context.Text("Versiones", ui.TextStyle{Size: theme.TextSize * sectionTitleScale, Weight: draw2d.Bold})
+		look.Paragraph(context, "Cada versión tiene su precio y su stock. Con una sola, no hace falta nombre.", ui.TextStyle{Color: theme.InkSoft})
 		if words := editing.problemFor(CodeNoVariants, "", ""); words != "" {
 			context.Text(words, ui.TextStyle{Color: theme.Danger})
 		}
 		for index := range edited.variants {
 			context.Push(edited.variants[index].id)
-			if screens.variantCard(context, &edited.variants[index]) {
+			removed := screens.variantRow(context, &edited.variants[index])
+			context.Pop()
+			if removed {
 				edited.variants = append(edited.variants[:index:index], edited.variants[index+1:]...)
-				context.Pop()
 				break
 			}
-			context.Pop()
 		}
-		if context.IconButton("plus", "Añadir variante") {
-			stock := ""
-			if edited.product.Kind == Physical {
-				stock = "0"
-			}
-			edited.variants = append(edited.variants, variantForm{id: screens.newID(), stock: stock})
+		if context.FlatIconButton("plus", "Añadir versión") {
+			edited.variants = append(edited.variants, variantForm{id: screens.newID(), stock: "0"})
 		}
 	})
 }
 
-// variantCard draws one variant's fields; it returns true on the frame it is removed.
-func (screens *Screens) variantCard(context *ui.Context, typed *variantForm) bool {
+// variantRow is one version's line; it returns true on the frame it is removed.
+func (screens *Screens) variantRow(context *ui.Context, typed *variantForm) bool {
 	editing := screens.editor
-	theme := context.Theme
 	id := typed.id
 	removed := false
-	look.Card(context, ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(12), Gap: theme.Gap}, func() {
-		context.Box(ui.Layout{Width: ui.Grow(), Gap: 8, AlignY: ui.End}, func() {
-			look.Field(context, "Nombre", "variant-name", &typed.name, "A4, Busto…",
-				firstOf(editing.problemFor(CodeBlankVariantName, id, ""), editing.problemFor(CodeDuplicateVariantName, id, "")))
-			removed = len(editing.form.variants) > 1 && context.FlatIconButton("trash-2", "##Quitar variante")
-		})
-		context.Box(ui.Layout{Width: ui.Grow(), Columns: look.Columns(context, 3), Gap: theme.Gap, AlignY: ui.Start}, func() {
+	context.Box(ui.Layout{Width: ui.Grow(), Gap: 12, AlignY: ui.End}, func() {
+		look.Field(context, "Versión", "variant-name", &typed.name, "A4, Mate, Busto…",
+			firstOf(editing.problemFor(CodeBlankVariantName, id, ""), editing.problemFor(CodeDuplicateVariantName, id, "")))
+		context.Box(ui.Layout{Width: ui.Fixed(moneyFieldWidth)}, func() {
 			look.Field(context, "Precio (€)", "price", &typed.price, "12,50", editing.problemFor(CodeNegativePrice, id, "price"))
-			look.Field(context, "Coste (€)", "cost", &typed.cost, "3,50", editing.problemFor(CodeNegativeCost, id, "cost"))
-			marginWords(context, typed)
+		})
+		context.Box(ui.Layout{Width: ui.Fixed(moneyFieldWidth)}, func() {
+			look.Field(context, "Te cuesta (€)", "cost", &typed.cost, "3,50", editing.problemFor(CodeNegativeCost, id, "cost"))
 		})
 		if editing.form.product.Kind == Physical {
-			screens.physicalFields(context, typed)
+			stockColumn(context, typed)
 		}
+		removed = len(editing.form.variants) > 1 && context.FlatIconButton("trash-2", "##Quitar versión")
 	})
 	return removed
+}
+
+// stockColumn is − count + for a version's stock, with «Pocos» when it reaches the warning.
+func stockColumn(context *ui.Context, typed *variantForm) {
+	theme := context.Theme
+	context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Fixed(stockColumnWidth), Gap: 4}, func() {
+		context.Text("En stock", ui.TextStyle{Size: theme.SmallTextSize, Weight: draw2d.Bold})
+		count, err := strconv.Atoi(typed.stock)
+		if err != nil {
+			context.TextFieldWith("stock", &typed.stock, ui.TextFieldOptions{Placeholder: "0"})
+			return
+		}
+		context.Box(ui.Layout{Gap: 8, AlignY: ui.Center}, func() {
+			count += stepper(context, count)
+			typed.stock = strconv.Itoa(count)
+			minimum, _ := strconv.Atoi(typed.minimum) // an unreadable minimum is told when saving
+			if (Variant{Stock: count, MinimumStock: minimum}).LowStock() {
+				context.Text(map[bool]string{true: "Agotado", false: "Pocos"}[count == 0], ui.TextStyle{Size: theme.SmallTextSize, Weight: draw2d.Bold, Color: theme.Warning})
+			}
+		})
+	})
+}
+
+// moreDetails folds away what is set once: the description, the status, what it is made of or how
+// it is delivered, and each version's SKU, warning and measures.
+func (screens *Screens) moreDetails(context *ui.Context) {
+	editing := screens.editor
+	theme := context.Theme
+	look.Card(context, ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(theme.Padding), Gap: theme.Gap}, func() {
+		layout := ui.Layout{Width: ui.Grow(), AlignY: ui.Center}
+		if context.Clickable("Más detalles", layout, ui.Looks{}, func() {
+			context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Gap: 2}, func() {
+				context.Text("Más detalles", ui.TextStyle{})
+				context.Text(screens.detailsSummary(), ui.TextStyle{Size: theme.SmallTextSize, Color: theme.InkSoft})
+			})
+			context.IconSized(map[bool]string{true: "chevron-up", false: "chevron-down"}[editing.detailsOpen], theme.IconSize, theme.InkSoft)
+		}) {
+			editing.detailsOpen = !editing.detailsOpen
+		}
+		if editing.detailsOpen {
+			screens.details(context)
+		}
+	})
+}
+
+func (screens *Screens) detailsSummary() string {
+	if screens.editor.form.product.Kind == Physical {
+		return "Descripción, estado, SKU, medidas, peso y aviso de stock bajo"
+	}
+	return "Descripción, estado, formato y plazo de entrega"
+}
+
+func (screens *Screens) details(context *ui.Context) {
+	editing := screens.editor
+	edited := &editing.form
+	theme := context.Theme
+	look.Field(context, "Descripción", "description", &edited.description, "Opcional", "")
+	look.Label(context, "Estado")
+	context.Tabs("status", &edited.status, statusWords[Draft], statusWords[Active], statusWords[Archived])
+	if edited.product.Kind == Digital {
+		context.Box(ui.Layout{Width: ui.Grow(), Columns: look.Columns(context, 2), Gap: theme.Gap}, func() {
+			look.Field(context, "Formato", "delivery", &edited.delivery, "PNG 4000 px", "")
+			look.Field(context, "Plazo en días", "turnaround", &edited.turnaround, "14",
+				firstOf(editing.unreadable["turnaround"], editing.problemFor(CodeNegativeTurnaround, "", "")))
+		})
+	} else {
+		look.Field(context, "Material", "material", &edited.material, "Papel de algodón 300 g", "")
+	}
+	for index := range edited.variants {
+		typed := &edited.variants[index]
+		context.Push(typed.id)
+		context.Text(nameOr(typed.name, "Única"), ui.TextStyle{Weight: draw2d.Bold})
+		marginWords(context, typed)
+		if edited.product.Kind == Physical {
+			screens.physicalFields(context, typed)
+		}
+		context.Pop()
+	}
 }
 
 // marginWords shows what each unit leaves, as the artist types the price and the cost.
@@ -276,7 +370,6 @@ func (screens *Screens) physicalFields(context *ui.Context, typed *variantForm) 
 	id := typed.id
 	context.Box(ui.Layout{Width: ui.Grow(), Columns: look.Columns(context, 3), Gap: theme.Gap, AlignY: ui.Start}, func() {
 		look.Field(context, "SKU", "sku", &typed.sku, "LAM-GAT-A4", editing.problemFor(CodeDuplicateSKU, id, "sku"))
-		look.Field(context, "Stock", "stock", &typed.stock, "0", editing.problemFor(CodeNegativeStock, id, "stock"))
 		look.Field(context, "Avisar con", "minimum", &typed.minimum, "Opcional", editing.problemFor(CodeNegativeMinimumStock, id, "minimum"))
 	})
 	context.Box(ui.Layout{Width: ui.Grow(), Columns: look.Columns(context, 4), Gap: theme.Gap, AlignY: ui.Start}, func() {
