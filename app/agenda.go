@@ -66,19 +66,37 @@ const chipHeight = 26
 // tint, a project in the warning colour's and an order in the positive colour's.
 func entryChip(context *ui.Context, entry agendaEntry) {
 	theme := context.Theme
-	fill := theme.Positive.WithAlpha(0.16)
-	switch {
-	case entry.fair:
-		fill = theme.Surface.Mix(theme.Primary, 0.14)
-	case entry.project:
-		fill = theme.Warning.WithAlpha(0.18)
-	}
+	fill := entryFill(theme, entry)
 	layout := ui.Layout{Width: ui.Grow(), Height: ui.Fixed(chipHeight), Padding: ui.PadXY(8, 0), Gap: 6, AlignY: ui.Center}
 	context.Frame(layout, ui.Look{Fill: fill, Radius: chipHeight / 2, Clip: true}, func() {
 		context.IconSized(entry.icon, theme.SmallTextSize, theme.Ink)
 		context.Text(entry.words, ui.TextStyle{Size: theme.SmallTextSize, Weight: draw2d.Medium})
 	})
 }
+
+// entryFill is the colour of an entry: a fair in the accent's tint, a project in the warning
+// colour's and an order in the positive colour's.
+func entryFill(theme ui.Theme, entry agendaEntry) draw2d.Color {
+	switch {
+	case entry.fair:
+		return theme.Surface.Mix(theme.Primary, 0.14)
+	case entry.project:
+		return theme.Warning.WithAlpha(0.18)
+	}
+	return theme.Positive.WithAlpha(0.16)
+}
+
+// entryBar is an entry in the month's table: its words on a small plain bar.
+func entryBar(context *ui.Context, entry agendaEntry) {
+	theme := context.Theme
+	layout := ui.Layout{Width: ui.Grow(), Height: ui.Fixed(barChipHeight), Padding: ui.PadXY(6, 0), AlignY: ui.Center}
+	context.Frame(layout, ui.Look{Fill: entryFill(theme, entry), Radius: theme.ControlRadius / 2, Clip: true}, func() {
+		context.Text(entry.words, ui.TextStyle{Size: theme.SmallTextSize})
+	})
+}
+
+// barChipHeight is the height of an entry in the month's table, in pixels.
+const barChipHeight = 22
 
 // dayCell is one day of the calendar: its name when given, its number, and its entries, at most
 // shown of them and "+N" for the rest. Today stands on the accent's tint; days of another month
