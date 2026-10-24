@@ -49,7 +49,7 @@ type Screens struct {
 	loadErr     error
 	tag         int                               // index in tags()
 	icons       map[string]string                 // each tag's icon, by its folded name
-	packing     *packing                          // set while choosing what to take to an event
+	preparing   *preparing                        // set while choosing what to take to an event
 	addProducts func()                            // opens the catalogue; nil until the app gives it
 	asking      []Item                            // the versions of the product whose version is asked
 	search      look.Search                       // by product or version
@@ -123,8 +123,8 @@ func (screens *Screens) Back() bool {
 	switch {
 	case screens.step != browsing:
 		screens.step = browsing
-	case screens.packing != nil:
-		screens.leavePacking()
+	case screens.preparing != nil:
+		screens.leavePreparing()
 	case screens.source != nil:
 		screens.Choose(nil)
 	default:
@@ -143,7 +143,7 @@ func (screens *Screens) nothingToSell(context *ui.Context) {
 	if atAFair {
 		if look.Empty(context, "package-open", "No hay nada para vender", "Aún no has llevado stock a este evento.", "Configurar stock") {
 			back := screens.source
-			screens.Pack(fair.Event, func() { screens.Choose(back) })
+			screens.Prepare(fair.Event, func() { screens.Choose(back) })
 		}
 		return
 	}
@@ -159,7 +159,7 @@ func (screens *Screens) BasketQuantity(variantID string) int {
 
 // Choose opens a stand; nil goes back to the choice of stands. The basket starts empty.
 func (screens *Screens) Choose(source Source) {
-	screens.source, screens.tag, screens.step, screens.packing = source, 0, browsing, nil
+	screens.source, screens.tag, screens.step, screens.preparing = source, 0, browsing, nil
 	screens.basket.Clear()
 	screens.Reload()
 }
@@ -369,11 +369,11 @@ func (screens *Screens) drawRegister(context *ui.Context) {
 		return
 	}
 	tags := screens.tags()
-	if screens.packing != nil {
-		screens.packingHeader(context)
+	if screens.preparing != nil {
+		screens.preparingHeader(context)
 	}
 	if screens.source == nil {
-		return // the header left the packing
+		return // the header left the preparing
 	}
 	screens.top(context, tags)
 	look.Space(context, topSpaceBelow)
@@ -395,7 +395,7 @@ func (screens *Screens) drawRegister(context *ui.Context) {
 // top is where the stand sells from with «Cambiar», a tab per tag, and the search and «+».
 func (screens *Screens) top(context *ui.Context, tags []string) {
 	context.Box(ui.Layout{Width: ui.Grow(), AlignY: ui.Center}, func() {
-		if screens.packing == nil {
+		if screens.preparing == nil {
 			screens.where(context)
 			look.Space(context, whereSpace)
 			context.Frame(ui.Layout{Width: ui.Fixed(1), Height: ui.Fixed(dividerHeight)}, ui.Look{Fill: context.Theme.Line}, nil)
@@ -413,7 +413,7 @@ func (screens *Screens) top(context *ui.Context, tags []string) {
 		context.Box(ui.Layout{Gap: toolsGap}, func() {
 			look.SearchField(context, &screens.search, "Buscar producto")
 			look.SearchButton(context, &screens.search)
-			if screens.packing == nil && look.ToolButton(context, "plus", "Venta libre") {
+			if screens.preparing == nil && look.ToolButton(context, "plus", "Venta libre") {
 				screens.tell(false, "Pronto: vender algo que no está en el catálogo")
 			}
 		})
@@ -524,12 +524,12 @@ func (screens *Screens) basketBar(context *ui.Context, count int) {
 	padding := ui.Padding{Left: basketPaddingLeft, Right: basketPadding, Top: basketPadding, Bottom: basketPadding}
 	context.Frame(ui.Layout{Padding: padding, Gap: basketGap, AlignY: ui.Center}, ui.Look{Fill: theme.Primary, Radius: roundRadius, Shadow: true}, func() {
 		icon, action := "shopping-bag", "Cobrar"
-		if screens.packing != nil {
+		if screens.preparing != nil {
 			icon, action = "luggage", "Llevar al evento"
 		}
 		context.IconSized(icon, basketIconSize, light)
 		context.Text(piecesWords(count), ui.TextStyle{Size: basketTextSize, Weight: draw2d.Medium, Color: light, LineHeight: normal})
-		if screens.packing == nil {
+		if screens.preparing == nil {
 			context.Text(money.Format(screens.basket.Total()), ui.TextStyle{Size: basketTotalSize, Weight: draw2d.Bold, Color: light, LineHeight: normal})
 		}
 		pill := ui.Look{Fill: light, Radius: roundRadius}
@@ -538,8 +538,8 @@ func (screens *Screens) basketBar(context *ui.Context, count int) {
 			context.Text(action, ui.TextStyle{Size: basketTextSize, Weight: draw2d.Bold, Color: theme.Primary, LineHeight: normal})
 		})
 		switch {
-		case clicked && screens.packing != nil:
-			screens.packAll()
+		case clicked && screens.preparing != nil:
+			screens.takeAll()
 		case clicked:
 			screens.step = choosingMethod
 		}

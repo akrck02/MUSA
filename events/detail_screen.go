@@ -199,8 +199,8 @@ func (screens *Screens) stockCard(context *ui.Context, open bool) {
 // takeMore opens the choice of what to take to the event: the stand's, when the app gave it, or
 // the sheet.
 func (screens *Screens) takeMore() {
-	if screens.pack != nil {
-		screens.pack(screens.detail.Event)
+	if screens.prepare != nil {
+		screens.prepare(screens.detail.Event)
 		return
 	}
 	screens.sheet = sheet{kind: takeSheet, quantity: "1", choices: screens.stockChoices()}

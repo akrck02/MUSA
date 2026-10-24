@@ -34,7 +34,7 @@ type Screens struct {
 	chosenLine    string // the stock row showing «Llevar más» and «Devolver»; "" for none
 	// openStand opens the stand of an event, which this package cannot reach: the app gives it.
 	openStand func(Event)
-	pack      func(Event) // opens the choice of what to take to an event
+	prepare   func(Event) // opens the choice of what to take to an event
 
 	note        string
 	noteWarning bool
@@ -294,9 +294,9 @@ func (screens *Screens) StartFair(day calendar.Date) {
 	screens.editor = &eventEditor{draft: Draft{ID: screens.newID()}, start: calendar.Typed(day), end: calendar.Typed(day)}
 }
 
-// PackWith gives the events what opens the choice of stock to take to one, as the stand chooses
+// PrepareWith gives the events what opens the choice of stock to take to one, as the stand chooses
 // what to sell.
-func (screens *Screens) PackWith(pack func(Event)) { screens.pack = pack }
+func (screens *Screens) PrepareWith(prepare func(Event)) { screens.prepare = prepare }
 
 // OpenStandWith tells the event's page how to open the stand of an event, for its «Abrir el
 // puesto».

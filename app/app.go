@@ -111,9 +111,9 @@ func New(database *storage.Database, options Options) (*App, error) {
 		program.Open(Stand)
 		program.stand.Choose(stand.Fair{Event: event, Events: fairs, Products: products})
 	})
-	program.fairs.PackWith(func(event events.Event) {
+	program.fairs.PrepareWith(func(event events.Event) {
 		program.Open(Stand)
-		program.stand.Pack(event, func() {
+		program.stand.Prepare(event, func() {
 			program.Open(Fairs)
 			program.fairs.OpenFair(event.ID)
 		})

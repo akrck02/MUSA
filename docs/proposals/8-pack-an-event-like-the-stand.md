@@ -31,10 +31,10 @@ selling, in the other direction.
 
 ## Design
 
-The stand gains a packing mode (`stand/packing.go`) rather than a second grid: `Pack(event,
+The stand gains a preparing mode (`stand/preparing.go`) rather than a second grid: `Prepare(event,
 done)` opens the whole stock with a header «Preparar …», the case says «en la maleta», and the bar
 says «Llevar al evento», which moves each line with `events.Store.MoveStock`. The events page
-calls it through `PackWith`, given by the app; the old take sheet stays as the fallback when no
+calls it through `PrepareWith`, given by the app; the old take sheet stays as the fallback when no
 one gives it. «Configurar stock» on an empty fair's stand packs and comes back to that stand.
 
 ## Tasks
@@ -44,7 +44,7 @@ one gives it. «Configurar stock» on an empty fair's stand packs and comes back
 
 ## Result
 
-- Built as proposed. Tests: `TestPackedPiecesMoveToTheEvent`, `TestLeavingThePackingMovesNothing`,
+- Built as proposed. Tests: `TestPackedPiecesMoveToTheEvent`, `TestLeavingThePreparingMovesNothing`,
   `TestAFairWithNothingTakenOffersToSetUpItsStock`.
 - The lines move one by one: if one is refused (the catalogue ran out meanwhile), the ones before
   it stay moved and the stand says why.

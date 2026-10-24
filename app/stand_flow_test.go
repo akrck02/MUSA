@@ -175,7 +175,7 @@ func TestAFairWithNothingTakenOffersToSetUpItsStock(t *testing.T) {
 	settle(window)
 	steps(t, window, click(window, "Configurar stock"))
 	settle(window)
-	if !program.stand.Packing() {
+	if !program.stand.Preparing() {
 		t.Errorf("«Configurar stock» does not open the choice of what to take")
 	}
 }

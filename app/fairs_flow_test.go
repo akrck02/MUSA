@@ -75,13 +75,13 @@ func TestAnExpenseIsAddedToAFair(t *testing.T) {
 	}
 }
 
-// packOne opens the choice of what to take to the open fair and puts one piece in the case.
-func packOne(t *testing.T, program *App, window *uitest.Window) {
+// prepareOne opens the choice of what to take to the open fair and puts one piece in the case.
+func prepareOne(t *testing.T, program *App, window *uitest.Window) {
 	t.Helper()
 	steps(t, window, click(window, "Llevar"))
 	settle(window)
-	if !program.stand.Packing() || program.place != Stand {
-		t.Fatalf("«Llevar» does not open the stand's grid to pack")
+	if !program.stand.Preparing() || program.place != Stand {
+		t.Fatalf("«Llevar» does not open the stand's grid to prepare")
 	}
 	items, err := stand.WholeStock{Products: program.stores.Products}.Items()
 	if err != nil {
@@ -93,7 +93,7 @@ func packOne(t *testing.T, program *App, window *uitest.Window) {
 func TestPackedPiecesMoveToTheEvent(t *testing.T) {
 	program, window, name := openFair(t)
 	before, _ := fairNamed(t, program, name)
-	packOne(t, program, window)
+	prepareOne(t, program, window)
 	steps(t, window, click(window, "Llevar al evento"))
 	settle(window)
 	after, _ := fairNamed(t, program, name)
@@ -105,10 +105,10 @@ func TestPackedPiecesMoveToTheEvent(t *testing.T) {
 	}
 }
 
-func TestLeavingThePackingMovesNothing(t *testing.T) {
+func TestLeavingThePreparingMovesNothing(t *testing.T) {
 	program, window, name := openFair(t)
 	before, _ := fairNamed(t, program, name)
-	packOne(t, program, window)
+	prepareOne(t, program, window)
 	steps(t, window, click(window, "Volver"))
 	settle(window)
 	after, _ := fairNamed(t, program, name)
