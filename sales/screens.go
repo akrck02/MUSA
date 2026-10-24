@@ -92,7 +92,7 @@ func (screens *Screens) drawList(context *ui.Context) {
 	for index, words := range views {
 		tabs[index] = look.Tab{Label: words}
 	}
-	look.PillTabs(context, "view", &screens.view, tabs)
+	look.PillTabs(context, "view", &screens.view, tabs, look.GroupTabs)
 	switch {
 	case screens.loadErr != nil:
 		look.Empty(context, "triangle-alert", "No se pudieron leer los pedidos", screens.loadErr.Error(), "")

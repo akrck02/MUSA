@@ -155,11 +155,20 @@ const wordSpace = 0.318
 //
 // TODO(akrck02): ask go-ui for text that wraps, and use it here.
 func Paragraph(context *ui.Context, text string, style ui.TextStyle) {
+	paragraph(context, text, style, ui.Start)
+}
+
+// CentredParagraph is a Paragraph whose lines stand in the middle of its box.
+func CentredParagraph(context *ui.Context, text string, style ui.TextStyle) {
+	paragraph(context, text, style, ui.Center)
+}
+
+func paragraph(context *ui.Context, text string, style ui.TextStyle, align ui.Align) {
 	size := style.Size
 	if size == 0 {
 		size = context.Theme.TextSize
 	}
-	context.Box(ui.Layout{Width: ui.Grow(), Wrap: true, Gap: size * wordSpace, LineGap: ui.NoLineGap}, func() {
+	context.Box(ui.Layout{Width: ui.Grow(), Wrap: true, Gap: size * wordSpace, LineGap: ui.NoLineGap, AlignX: align}, func() {
 		for _, word := range strings.Fields(text) {
 			context.Text(word, style)
 		}

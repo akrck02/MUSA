@@ -48,11 +48,15 @@ type Screens struct {
 	newID    func() string
 	now      func() time.Time
 
-	fairs   []events.Event
-	source  Source
-	items   []Item
-	loadErr error
-	tag     int // 0 every tag, then 1 + index in tags()
+	fairs     []events.Event
+	source    Source
+	items     []Item
+	loadErr   error
+	tag       int // index in tags()
+	searching bool
+	search    string
+	shapes    map[draw2d.Color]*look.TopRounded // the pictures' fills, kept so drawing them allocates nothing
+	fade      *look.Fade                        // under the floating basket
 
 	basket   Basket
 	step     step
@@ -66,8 +70,10 @@ type Screens struct {
 
 // receipt is what the last sale took and gave back, for the dialog that closes it.
 type receipt struct {
+	saleID        string
 	total, change money.Money
 	method        sales.Method
+	taken         []Taken
 }
 
 // NewScreens sells from the open fairs kept in fairs, or from the catalogue in products.
@@ -227,66 +233,125 @@ func (screens *Screens) choiceCard(context *ui.Context, icon, title, subtitle st
 	})
 }
 
-// drawRegister is the stand itself: its name, the tags and the products; the basket floats over.
+// Measures of the stand's top, in pixels, as in the author's design.
+const (
+	topSpaceBelow  = 16
+	whereSide      = 48
+	whereRadius    = 12
+	whereIconSize  = 24
+	whereGap       = 12
+	whereSpace     = 18
+	whereNameSize  = 19
+	whereLineScale = 1.25
+	whereLinkSize  = 15
+	dividerHeight  = 40
+	dividerSpace   = 12
+	toolsGap       = 10
+	tilesGap       = 18
+	tilesColumns   = 6
+)
+
+// drawRegister is the stand itself: where it sells from, the tags and the products; the basket
+// floats over.
 func (screens *Screens) drawRegister(context *ui.Context) {
-	theme := context.Theme
 	if screens.loadErr != nil {
 		look.Empty(context, "triangle-alert", "No se pudo leer el puesto", screens.loadErr.Error(), "")
 		return
 	}
 	tags := screens.tags()
-	context.Box(ui.Layout{Width: ui.Grow(), Gap: 14, AlignY: ui.Center}, func() {
-		look.Badge(context, map[bool]string{true: "package", false: "tent"}[screens.source.Name() == WholeStock{}.Name()], choiceBadge*0.8)
-		context.Box(ui.Layout{Direction: ui.Vertical, Gap: 2}, func() {
-			context.Text(screens.source.Name(), ui.TextStyle{Weight: draw2d.Bold})
-			if look.Link(context, "Cambiar") {
-				screens.Choose(nil)
-			}
-		})
-		context.Frame(ui.Layout{Width: ui.Fixed(1), Height: ui.Fixed(theme.ControlHeight)}, ui.Look{Fill: theme.Line}, nil)
-		if len(tags) > 0 {
-			tabs := []look.Tab{{Label: "Todo"}}
-			for _, tag := range tags {
-				tabs = append(tabs, look.Tab{Label: tag})
-			}
-			look.PillTabs(context, "tag", &screens.tag, tabs)
-		}
-	})
+	screens.top(context, tags)
+	look.Space(context, topSpaceBelow)
 	if len(screens.items) == 0 {
 		look.Empty(context, "package-open", "No hay nada para vender", "Lleva stock a la feria, o añade productos al catálogo.", "")
 		return
 	}
 	width, _ := context.Size()
-	context.Grid(max(2, int(width/tileWidth)), func() {
-		for _, item := range screens.shown(tags) {
+	columns := min(tilesColumns, max(2, int(width/tileWidth)))
+	context.Box(ui.Layout{Width: ui.Grow(), Columns: columns, Gap: tilesGap}, func() {
+		for position, item := range screens.shown(tags) {
 			context.Push(item.VariantID)
-			screens.tile(context, item)
+			screens.tile(context, item, catalogue.ListFill(context.Theme, position))
 			context.Pop()
 		}
 	})
 }
 
-// tags is every tag of the stand's items, in the order they first appear.
+// top is where the stand sells from with «Cambiar», a tab per tag, and the search and «+».
+func (screens *Screens) top(context *ui.Context, tags []string) {
+	context.Box(ui.Layout{Width: ui.Grow(), AlignY: ui.Center}, func() {
+		screens.where(context)
+		look.Space(context, whereSpace)
+		context.Frame(ui.Layout{Width: ui.Fixed(1), Height: ui.Fixed(dividerHeight)}, ui.Look{Fill: context.Theme.Line}, nil)
+		look.Space(context, dividerSpace)
+		context.Box(ui.Layout{Width: ui.Grow()}, func() {
+			if len(tags) > 0 {
+				tabs := make([]look.Tab, len(tags))
+				for index, tag := range tags {
+					tabs[index] = look.Tab{Icon: catalogue.TagIcon(tag), Label: catalogue.Plural(tag)}
+				}
+				look.PillTabs(context, "tag", &screens.tag, tabs, look.LargeTabs)
+			}
+		})
+		context.Box(ui.Layout{Gap: toolsGap}, func() {
+			if look.ToolButton(context, "search", "Buscar") {
+				screens.searching = !screens.searching
+			}
+			if look.ToolButton(context, "plus", "Venta libre") {
+				screens.tell(false, "Pronto: vender algo que no está en el catálogo")
+			}
+		})
+	})
+}
+
+// where is the stand's picture, its name and «Cambiar», which goes back to the choice of stands.
+func (screens *Screens) where(context *ui.Context) {
+	theme := context.Theme
+	context.Box(ui.Layout{Gap: whereGap, AlignY: ui.Center}, func() {
+		side := ui.Fixed(whereSide)
+		context.Frame(ui.Layout{Width: side, Height: side, AlignX: ui.Center, AlignY: ui.Center}, ui.Look{Fill: theme.Sunken, Radius: whereRadius}, func() {
+			context.IconSized(screens.sourceIcon(), whereIconSize, theme.Primary)
+		})
+		context.Box(ui.Layout{Direction: ui.Vertical}, func() {
+			context.Text(screens.source.Name(), ui.TextStyle{Size: whereNameSize, Weight: draw2d.Bold, LineHeight: whereLineScale})
+			if look.QuietLink(context, "Cambiar", whereLinkSize, whereLineScale) {
+				screens.Choose(nil)
+			}
+		})
+	})
+}
+
+// sourceIcon is a box for the whole stock and a tent for a fair.
+func (screens *Screens) sourceIcon() string {
+	if screens.source.Name() == (WholeStock{}).Name() {
+		return "package"
+	}
+	return "tent"
+}
+
+// tags is every tag of the stand's items, the one with most items first.
 func (screens *Screens) tags() []string {
 	var tags []string
+	counts := map[string]int{}
 	for _, item := range screens.items {
 		for _, tag := range item.Tags {
-			if !slices.Contains(tags, tag) {
+			if counts[tag] == 0 {
 				tags = append(tags, tag)
 			}
+			counts[tag]++
 		}
 	}
+	slices.SortStableFunc(tags, func(first, second string) int { return counts[second] - counts[first] })
 	return tags
 }
 
-// shown is the items of the chosen tag, or all of them.
+// shown is the items of the chosen tag, or all of them when there are no tags.
 func (screens *Screens) shown(tags []string) []Item {
-	if screens.tag == 0 || screens.tag > len(tags) {
+	if screens.tag >= len(tags) {
 		return screens.items
 	}
 	var shown []Item
 	for _, item := range screens.items {
-		if slices.Contains(item.Tags, tags[screens.tag-1]) {
+		if slices.Contains(item.Tags, tags[screens.tag]) {
 			shown = append(shown, item)
 		}
 	}
@@ -294,37 +359,64 @@ func (screens *Screens) shown(tags []string) []Item {
 }
 
 // DrawBasketBar is the basket floating at the bottom right of the stand, over the products while
-// they scroll: how many pieces, their total and «Cobrar». It draws nothing while the basket is empty.
-func (screens *Screens) DrawBasketBar(context *ui.Context) {
+// they scroll into a fade: how many pieces, their total and «Cobrar». above is how tall the app's
+// bar under it is. It draws nothing while the basket is empty.
+func (screens *Screens) DrawBasketBar(context *ui.Context, above float32) {
 	count := screens.basket.Count()
-	if screens.source == nil || count == 0 || screens.step != browsing {
+	// It stays under a payment dialog too, dimmed with the rest of the stand, and leaves with the
+	// sale.
+	if screens.source == nil || count == 0 {
 		return
 	}
 	theme := context.Theme
-	light := theme.OnPrimary
-	options := ui.LayerOptions{AlignX: ui.End, AlignY: ui.End, Padding: ui.Padding{Right: basketMargin / 3, Bottom: basketMargin}}
+	if screens.fade == nil {
+		screens.fade = &look.Fade{Solid: fadeSolid}
+	}
+	screens.fade.Colour = theme.Background
+	fadeOptions := ui.LayerOptions{AlignY: ui.End, Width: ui.Grow(), Padding: ui.Padding{Bottom: above}}
+	context.Overlay("fade", fadeOptions, func() {
+		context.Frame(ui.Layout{Width: ui.Grow(), Height: ui.Fixed(fadeHeight)}, ui.Look{Backdrop: screens.fade}, nil)
+	})
+	options := ui.LayerOptions{AlignX: ui.End, AlignY: ui.End, Padding: ui.Padding{Right: basketRight, Bottom: above + basketAbove}}
 	context.Overlay("basket", options, func() {
-		layout := ui.Layout{Padding: ui.Padding{Left: 22, Right: 6, Top: 6, Bottom: 6}, Gap: 14, AlignY: ui.Center}
-		context.Frame(layout, ui.Look{Fill: theme.Primary, Radius: basketHeight / 2, Shadow: true}, func() {
-			context.IconSized("shopping-basket", theme.IconSize, light)
-			context.Text(piecesWords(count), ui.TextStyle{Color: light})
-			context.Text(money.Format(screens.basket.Total()), ui.TextStyle{Size: theme.TextSize * 1.2, Weight: draw2d.Bold, Color: light})
-			pill := ui.Look{Fill: theme.Surface, Radius: basketHeight / 2}
-			button := ui.Layout{Height: ui.Fixed(basketHeight - 12), Padding: ui.PadXY(22, 0), AlignY: ui.Center}
-			if context.Clickable("Cobrar", button, ui.Looks{Normal: pill, Hovered: pill, Pressed: pill}, func() {
-				context.Text("Cobrar", ui.TextStyle{Weight: draw2d.Bold})
-			}) {
-				screens.step = choosingMethod
-			}
-		})
+		screens.basketBar(context, count)
 	})
 }
 
-// Measures of the floating basket, in pixels.
+// Measures of the floating basket, in pixels, as in the author's design.
 const (
-	basketHeight = 60
-	basketMargin = 100 // above the app's bar
+	basketRight       = 32
+	basketAbove       = 22
+	basketPadding     = 10
+	basketPaddingLeft = 24
+	basketGap         = 14
+	basketIconSize    = 22
+	basketTextSize    = 19
+	basketTotalSize   = 22
+	basketButtonX     = 26
+	basketButtonY     = 14
+	fadeHeight        = 120
+	fadeSolid         = 0.6
 )
+
+func (screens *Screens) basketBar(context *ui.Context, count int) {
+	theme := context.Theme
+	light := theme.OnPrimary
+	normal := ui.LettersLineHeight
+	padding := ui.Padding{Left: basketPaddingLeft, Right: basketPadding, Top: basketPadding, Bottom: basketPadding}
+	context.Frame(ui.Layout{Padding: padding, Gap: basketGap, AlignY: ui.Center}, ui.Look{Fill: theme.Primary, Radius: roundRadius, Shadow: true}, func() {
+		context.IconSized("shopping-bag", basketIconSize, light)
+		context.Text(piecesWords(count), ui.TextStyle{Size: basketTextSize, Weight: draw2d.Medium, Color: light, LineHeight: normal})
+		context.Text(money.Format(screens.basket.Total()), ui.TextStyle{Size: basketTotalSize, Weight: draw2d.Bold, Color: light, LineHeight: normal})
+		pill := ui.Look{Fill: light, Radius: roundRadius}
+		button := ui.Layout{Padding: ui.PadXY(basketButtonX, basketButtonY), AlignY: ui.Center}
+		if context.Clickable("Cobrar", button, ui.Looks{Normal: pill, Hovered: pill, Pressed: pill}, func() {
+			context.Text("Cobrar", ui.TextStyle{Size: basketTextSize, Weight: draw2d.Bold, Color: theme.Primary, LineHeight: normal})
+		}) {
+			screens.step = choosingMethod
+		}
+	})
+}
 
 func piecesWords(count int) string {
 	switch count {
@@ -334,12 +426,27 @@ func piecesWords(count int) string {
 	return fmt.Sprintf("%d artículos", count)
 }
 
-// ShowBasket puts the first item twice and the second once in the basket, for captures of the stand.
+// ChooseTodaysFair opens the stand of an open fair happening today; false when there is none.
+func (screens *Screens) ChooseTodaysFair() bool {
+	screens.Reload()
+	today := calendar.Of(screens.now())
+	for _, fair := range screens.fairs {
+		if today.Within(fair.StartDate, fair.EndDate) {
+			screens.chooseFair(fair)
+			return true
+		}
+	}
+	return false
+}
+
+// ShowBasket puts the first item shown twice and the second once in the basket, for captures of
+// the stand.
 func (screens *Screens) ShowBasket() {
+	shown := screens.shown(screens.tags())
 	for index, times := range []int{2, 1} {
 		for range times {
-			if index < len(screens.items) {
-				screens.basket.Add(screens.items[index])
+			if index < len(shown) {
+				screens.basket.Add(shown[index])
 			}
 		}
 	}
@@ -351,12 +458,32 @@ func (screens *Screens) ShowPaymentChoice() {
 	screens.step = choosingMethod
 }
 
-// ShowCashPayment opens the cash dialog over ShowBasket's basket with 20 € handed over, for
-// captures of the stand.
-func (screens *Screens) ShowCashPayment() {
+// ShowCashPayment opens the cash dialog over ShowBasket's basket with the pieces given handed
+// over, for captures of the stand.
+func (screens *Screens) ShowCashPayment(given ...money.Money) {
 	screens.ShowBasket()
 	screens.received.Clear()
-	screens.received.Add(2000)
-	screens.received.Add(2000)
+	for _, piece := range given {
+		screens.received.Add(piece)
+	}
 	screens.step = payingCash
 }
+
+// ShowCardPayment opens the card dialog over ShowBasket's basket, for captures.
+func (screens *Screens) ShowCardPayment() {
+	screens.ShowBasket()
+	screens.step = payingCard
+}
+
+// ShowPaid sells ShowBasket's basket for the given cash and opens the dialog that closes the sale,
+// for captures.
+func (screens *Screens) ShowPaid(given money.Money) {
+	screens.ShowBasket()
+	screens.received.Clear()
+	screens.received.Add(given)
+	change, _ := cash.Change(screens.basket.Total(), screens.received)
+	screens.sell(sales.Cash, change)
+}
+
+// Selling tells whether a stand is open, rather than the choice of stands.
+func (screens *Screens) Selling() bool { return screens.source != nil }

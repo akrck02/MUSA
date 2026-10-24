@@ -12,3 +12,11 @@ func TestATagsTabNamesItInThePlural(t *testing.T) {
 		}
 	}
 }
+
+func TestATagOfACommonKindOfWorkHasItsOwnIcon(t *testing.T) {
+	for name, want := range map[string]string{"Pegatina": "sticky-note", "Láminas": "printer", "llavero": "key", "Acuarela": "tag"} {
+		if got := TagIcon(name); got != want {
+			t.Errorf("the icon of %q is %q, not %q", name, got, want)
+		}
+	}
+}

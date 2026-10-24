@@ -133,28 +133,34 @@ func (store *Store) Sell(eventID, variantID string, quantity int, unitPrice mone
 // sale; names and costs are copied from the stand. Lines of the same variant add up against what
 // is left of it.
 func (store *Store) SellLines(eventID string, lines []sales.LineDraft, method sales.Method) ([]Refusal, error) {
+	_, refused, err := store.RecordSale(eventID, lines, method)
+	return refused, err
+}
+
+// RecordSale is SellLines that also gives back the sale it recorded, so it can be undone.
+func (store *Store) RecordSale(eventID string, lines []sales.LineDraft, method sales.Method) (sales.Sale, []Refusal, error) {
 	if refused := lineRefusals(lines); refused != nil {
-		return refused, nil
+		return sales.Sale{}, refused, nil
 	}
 	detail, refused, err := store.openDetail(eventID)
 	if err != nil || refused != nil {
-		return refused, err
+		return sales.Sale{}, refused, err
 	}
 	sale := sales.Sale{ID: store.newID(), Channel: sales.AtEvent, EventID: eventID, PaidWith: method, SoldAt: store.now()}
 	wanted := map[string]int{}
 	for _, draft := range lines {
 		line, found := detail.LineOf(draft.VariantID)
 		if !found {
-			return nil, notTaken(draft.VariantID)
+			return sales.Sale{}, nil, notTaken(draft.VariantID)
 		}
 		wanted[draft.VariantID] += draft.Quantity
 		if wanted[draft.VariantID] > line.Remaining() {
-			return []Refusal{{Code: CodeExceedsRemaining, Available: line.Remaining()}}, nil
+			return sales.Sale{}, []Refusal{{Code: CodeExceedsRemaining, Available: line.Remaining()}}, nil
 		}
 		sale.Lines = append(sale.Lines, sales.Line{ID: store.newID(), VariantID: draft.VariantID, ProductName: line.ProductName,
 			VariantName: line.VariantName, Quantity: draft.Quantity, UnitPrice: draft.UnitPrice, UnitCost: line.Cost})
 	}
-	return nil, store.database.InTransaction(func(rows storage.Querier) error { return sales.InsertIn(rows, sale) })
+	return sale, nil, store.database.InTransaction(func(rows storage.Querier) error { return sales.InsertIn(rows, sale) })
 }
 
 // lineRefusals is what is wrong with the lines themselves, before looking at the stand.

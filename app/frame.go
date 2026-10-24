@@ -17,6 +17,7 @@ const (
 	barLabelSize   = 13
 	brandLetter    = 0.14 // the brand's letter spacing, in ems
 	pageTop        = 24
+	registerTop    = 20 // the stand while selling: its top bar sits higher
 	pageSide       = 32
 	pageBottom     = 32
 	narrowPageSide = 16
@@ -44,7 +45,7 @@ func (program *App) frame(context *ui.Context) {
 	context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Grow(), Padding: ui.Padding{Top: insets.Top}}, func() {
 		program.scrollingPage(context)
 		if program.place == Stand {
-			program.stand.DrawBasketBar(context)
+			program.stand.DrawBasketBar(context, barHeight+1+insets.Bottom) // the bar and the line over it
 		}
 		context.Separator()
 		bar := ui.Layout{Width: ui.Grow(), Height: ui.Fixed(barHeight + insets.Bottom), Padding: ui.Padding{Bottom: insets.Bottom}, AlignX: ui.Center}
@@ -90,7 +91,11 @@ func (program *App) scrollingPage(context *ui.Context) {
 	if look.Narrow(context) {
 		side = narrowPageSide
 	}
-	padding := ui.Padding{Top: pageTop, Left: side, Right: side, Bottom: pageBottom}
+	top := float32(pageTop)
+	if program.place == Stand && program.stand.Selling() {
+		top = registerTop
+	}
+	padding := ui.Padding{Top: top, Left: side, Right: side, Bottom: pageBottom}
 	context.ScrollArea("page", ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func() {
 		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: padding}, func() {
 			program.page(context)

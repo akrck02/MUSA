@@ -95,3 +95,19 @@ func (basket Basket) Words() string {
 	}
 	return strings.Join(parts, ", ")
 }
+
+// Taken is one line of what a customer took, as a receipt reads it: "2 × Luna · Mate" and what
+// those cost together.
+type Taken struct {
+	Words  string
+	Amount money.Money
+}
+
+// Taken lists what the basket holds, a line per item, for the receipt.
+func (basket Basket) Taken() []Taken {
+	taken := make([]Taken, len(basket.entries))
+	for index, each := range basket.entries {
+		taken[index] = Taken{Words: fmt.Sprintf("%d × %s", each.quantity, each.item.Label), Amount: each.item.Price * money.Money(each.quantity)}
+	}
+	return taken
+}

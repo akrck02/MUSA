@@ -56,6 +56,7 @@ func PictureFill(theme ui.Theme, name string) draw2d.Color {
 var listFills = []draw2d.Color{
 	draw2d.MustHex("#E8C9B0"), draw2d.MustHex("#B9CFC4"), draw2d.MustHex("#C9C4E0"), draw2d.MustHex("#EBD9A8"),
 	draw2d.MustHex("#D9B8C4"), draw2d.MustHex("#B8CCE0"), draw2d.MustHex("#CFE0B8"), draw2d.MustHex("#E0C2A8"),
+	draw2d.MustHex("#C4D4D9"), draw2d.MustHex("#E3B8B0"), draw2d.MustHex("#BFC9B0"), draw2d.MustHex("#D6C8E8"),
 }
 
 // ListFill is the colour of the picture at position in a list, in the theme being drawn.

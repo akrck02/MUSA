@@ -71,3 +71,14 @@ func TestTheChangeIsSaidInNotesAndCoins(test *testing.T) {
 		}
 	}
 }
+
+func TestTheReceiptListsEachItemWithWhatItCost(t *testing.T) {
+	var basket Basket
+	moon := Item{VariantID: "moon", Label: "Luna · Mate", Price: 300, Left: 5}
+	basket.Add(moon)
+	basket.Add(moon)
+	taken := basket.Taken()
+	if len(taken) != 1 || taken[0].Words != "2 × Luna · Mate" || taken[0].Amount != 600 {
+		t.Errorf("taken %+v", taken)
+	}
+}

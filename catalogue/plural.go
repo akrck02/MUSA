@@ -37,3 +37,25 @@ func pluralWord(word string) string {
 	}
 	return word + "es"
 }
+
+// tagIcons are the icons of the kinds of work an artist usually sells, by the folded name of their
+// tag: a sheet with a corner for a sticker, a printer for a print, a key for a key ring.
+var tagIcons = map[string]string{
+	"pegatina": "sticky-note", "lamina": "printer", "llavero": "key", "chapa": "badge", "iman": "magnet",
+	"postal": "mail", "poster": "image", "camiseta": "shirt", "taza": "coffee", "libro": "book-open", "fanzine": "book-open",
+}
+
+// TagIcon is the icon of a tag: one for the kinds of work an artist usually sells, in the singular
+// or the plural, and a plain tag for the rest.
+func TagIcon(name string) string {
+	folded := Fold(strings.TrimSpace(name))
+	if icon, found := tagIcons[folded]; found {
+		return icon
+	}
+	for singular, icon := range tagIcons {
+		if Plural(singular) == folded {
+			return icon
+		}
+	}
+	return "tag"
+}

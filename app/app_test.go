@@ -109,7 +109,7 @@ func TestSellingAtAFairLeavesFewerOnTheStand(t *testing.T) {
 	window.Frame()
 	before := program.fairs.Detail().Stock[0]
 	// One touch sells one at the stand's price, with no sheet to confirm: undo is offered instead.
-	steps(t, window, click(window, "Vender 1 · "+money.Format(before.Price)))
+	steps(t, window, clickIn(window, before.VariantID, "Vender 1 · "+money.Format(before.Price)))
 	after := program.fairs.Detail().Stock[0]
 	if after.Remaining() != before.Remaining()-1 {
 		t.Errorf("remaining %d, then %d", before.Remaining(), after.Remaining())
@@ -121,14 +121,14 @@ func TestRecordingAnOrderTakesItsStockFromTheCatalogue(t *testing.T) {
 	before, _ := program.stores.Sales.All()
 	program.Open(Sales)
 	window.Frame()
-	steps(t, window, click(window, "Nuevo pedido"), typeInto(window, "Opcional", "Ana"), click(window, "Guardar"))
+	steps(t, window, click(window, "Nuevo pedido"), typeInto(window, "Opcional", "Nora"), click(window, "Guardar"))
 	after, _ := program.stores.Sales.All()
 	if len(after) != len(before)+1 {
 		t.Fatalf("%d sales, then %d", len(before), len(after))
 	}
 	var recorded sales.Sale
 	for _, sale := range after {
-		if sale.Customer == "Ana" {
+		if sale.Customer == "Nora" {
 			recorded = sale
 		}
 	}
@@ -143,7 +143,7 @@ func TestAnOrderMovesAlongTheBoardAndThenToTheHistory(t *testing.T) {
 	window.Frame()
 	before, _ := program.stores.Sales.All()
 	onTheWay := sales.OnTheWay(before)
-	index := slices.IndexFunc(onTheWay, func(sale sales.Sale) bool { return sale.Customer != "" })
+	index := slices.IndexFunc(onTheWay, func(sale sales.Sale) bool { return sale.Customer != "" && sale.Status == sales.ToPrepare })
 	if index < 0 {
 		t.Fatal("the demo has no order with a customer on the way")
 	}
@@ -184,7 +184,7 @@ func TestPayingInCashAtTheStandRecordsALocalSaleAndTakesTheStock(t *testing.T) {
 	item := items[0]
 	steps(t, window, clickIn(window, item.VariantID, item.Label+" · "+money.Format(item.Price)), click(window, "Cobrar"), click(window, "Pagar en efectivo"),
 		click(window, money.Format(5000)), click(window, "Confirmar"))
-	if _, err := window.Element("Siguiente cliente"); err != nil {
+	if _, err := window.Element("Seguir vendiendo"); err != nil {
 		t.Fatal("the sale did not close:", err)
 	}
 	after, _ := program.stores.Sales.All()
@@ -253,5 +253,26 @@ func TestTheArtistCanAddASocialNetwork(t *testing.T) {
 	})
 	if !found {
 		t.Errorf("networks %+v", networks)
+	}
+}
+
+func TestUndoingACashSaleAtTheStandGivesItsPiecesBack(t *testing.T) {
+	program, window := openApp(t, true)
+	program.Show("stand")
+	window.Frame()
+	before, _ := program.stores.Sales.All()
+	items, err := stand.WholeStock{Products: program.stores.Products}.Items()
+	if err != nil || len(items) == 0 {
+		t.Fatalf("no product on the stand (%v)", err)
+	}
+	item := items[0]
+	steps(t, window, clickIn(window, item.VariantID, item.Label+" · "+money.Format(item.Price)), click(window, "Cobrar"),
+		click(window, "Pagar en efectivo"), click(window, "Justo"), click(window, "Confirmar"), click(window, "Deshacer el cobro"))
+	after, _ := program.stores.Sales.All()
+	if len(after) != len(before) {
+		t.Errorf("%d sales, then %d after undoing", len(before), len(after))
+	}
+	if stock, _, _ := program.stores.Products.Stock(item.VariantID); stock != item.Left {
+		t.Errorf("stock %d, not the %d it had before the sale", stock, item.Left)
 	}
 }

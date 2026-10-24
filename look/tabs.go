@@ -16,10 +16,7 @@ const (
 	segmentPaddingY     = 12
 	segmentGap          = 10
 	segmentTextSize     = 19
-	pillTabPaddingX     = 18
-	pillTabPaddingY     = 10
-	pillTabGap          = 8
-	pillTabTextSize     = 18
+	segmentIconSize     = 20
 	tabCountSize        = 14
 	pillRadius          = 999
 )
@@ -53,7 +50,7 @@ func Segmented(context *ui.Context, name string, selected *int, tabs []Tab) bool
 			}
 			layout := ui.Layout{Padding: ui.PadXY(segmentPaddingX, segmentPaddingY), Gap: segmentGap, AlignY: ui.Center}
 			if context.Clickable(tab.Label, layout, ui.Looks{Normal: normal, Hovered: hovered, Pressed: hovered}, func() {
-				tabWords(context, tab, chosen, segmentTextSize)
+				tabWords(context, tab, chosen, segmentTextSize, segmentIconSize)
 			}) && !chosen {
 				*selected, changed = index, true
 			}
@@ -63,18 +60,34 @@ func Segmented(context *ui.Context, name string, selected *int, tabs []Tab) bool
 	return changed
 }
 
+// PillSize is how big the tabs of a row of PillTabs are.
+type PillSize struct {
+	TextSize, IconSize float32
+	// PaddingX and PaddingY are the room around a tab's words; Gap is between its icon, words
+	// and count.
+	PaddingX, PaddingY, Gap float32
+	// Between is the room between two tabs.
+	Between float32
+}
+
+// GroupTabs are the tabs of the groups of a list («Todo», «Láminas»…).
+var GroupTabs = PillSize{TextSize: 18, IconSize: 20, PaddingX: 18, PaddingY: 10, Gap: 8, Between: 8}
+
+// LargeTabs are the tabs a page is browsed by, big for a quick finger: the stand's.
+var LargeTabs = PillSize{TextSize: 20, IconSize: 22, PaddingX: 22, PaddingY: 12, Gap: 10, Between: 8}
+
 // PillTabs is a row of quiet tabs where the chosen one stands in a pill with a fine line: the
 // groups of a list («Todo», «Láminas»…). It wraps when they do not fit, and returns true on the
 // frame the choice changes.
-func PillTabs(context *ui.Context, name string, selected *int, tabs []Tab) bool {
+func PillTabs(context *ui.Context, name string, selected *int, tabs []Tab, size PillSize) bool {
 	theme := context.Theme
 	changed := false
 	context.Push(name)
-	context.Box(ui.Layout{Width: ui.Grow(), Gap: pillTabGap, Wrap: true}, func() {
+	context.Box(ui.Layout{Width: ui.Grow(), Gap: size.Between, Wrap: true}, func() {
 		for index, tab := range tabs {
 			chosen := index == *selected
 			// Only the chosen tab has a line, and it is that much wider; the row is as tall as it.
-			normal, side := ui.Look{Radius: pillRadius}, float32(pillTabPaddingX)
+			normal, side := ui.Look{Radius: pillRadius}, size.PaddingX
 			if chosen {
 				normal = ui.Look{Fill: theme.Surface, Border: theme.Line, BorderWidth: cardBorder, Radius: pillRadius}
 				side += cardBorder
@@ -83,9 +96,9 @@ func PillTabs(context *ui.Context, name string, selected *int, tabs []Tab) bool 
 			if !chosen {
 				hovered.Fill = theme.Sunken
 			}
-			layout := ui.Layout{Padding: ui.PadXY(side, pillTabPaddingY+cardBorder), Gap: pillTabGap, AlignY: ui.Center}
+			layout := ui.Layout{Padding: ui.PadXY(side, size.PaddingY+cardBorder), Gap: size.Gap, AlignY: ui.Center}
 			if context.Clickable(tab.Label, layout, ui.Looks{Normal: normal, Hovered: hovered, Pressed: hovered}, func() {
-				tabWords(context, tab, chosen, pillTabTextSize)
+				tabWords(context, tab, chosen, size.TextSize, size.IconSize)
 			}) && !chosen {
 				*selected, changed = index, true
 			}
@@ -95,14 +108,14 @@ func PillTabs(context *ui.Context, name string, selected *int, tabs []Tab) bool 
 	return changed
 }
 
-func tabWords(context *ui.Context, tab Tab, chosen bool, size float32) {
+func tabWords(context *ui.Context, tab Tab, chosen bool, size, iconSize float32) {
 	theme := context.Theme
 	ink := theme.InkSoft
 	if chosen {
 		ink = theme.Ink
 	}
 	if tab.Icon != "" {
-		context.IconSized(tab.Icon, theme.IconSize, ink)
+		context.IconSized(tab.Icon, iconSize, ink)
 	}
 	context.Text(tab.Label, ui.TextStyle{Size: size, Weight: draw2d.Medium, Color: ink, LineHeight: ui.LettersLineHeight})
 	if tab.HasCount {
@@ -137,3 +150,19 @@ func Link(context *ui.Context, words string) bool {
 		context.Frame(ui.Layout{Width: ui.Grow(), Height: ui.Fixed(1)}, ui.Look{Fill: theme.Ink}, nil)
 	})
 }
+
+// QuietLink is soft, underlined words that act, of a size and a line height, under a name
+// («Cambiar»). It returns true on the frame it is clicked.
+func QuietLink(context *ui.Context, words string, size, lineHeight float32) bool {
+	theme := context.Theme
+	style := ui.TextStyle{Size: size, Color: theme.InkSoft, LineHeight: lineHeight}
+	return context.Clickable(words, ui.Layout{Direction: ui.Stacked, AlignY: ui.End}, ui.Looks{}, func() {
+		context.Text(words, style)
+		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Padding{Bottom: size * underlineDrop}}, func() {
+			context.Frame(ui.Layout{Width: ui.Grow(), Height: ui.Fixed(1)}, ui.Look{Fill: theme.InkSoft}, nil)
+		})
+	})
+}
+
+// underlineDrop is how far above the bottom of a line its underline runs, in ems.
+const underlineDrop = 0.25

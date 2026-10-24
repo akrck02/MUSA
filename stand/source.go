@@ -4,6 +4,7 @@
 package stand
 
 import (
+	"slices"
 	"time"
 
 	"github.com/Itros97/MUSA/calendar"
@@ -31,7 +32,10 @@ type Item struct {
 type Source interface {
 	Name() string
 	Items() ([]Item, error)
-	Sell(lines []sales.LineDraft, method sales.Method) (refusal string, err error)
+	// Sell records the lines as one sale and gives back its ID, for Undo.
+	Sell(lines []sales.LineDraft, method sales.Method) (saleID, refusal string, err error)
+	// Undo takes back a sale Sell recorded: its pieces return to the stand.
+	Undo(saleID string) (refusal string, err error)
 }
 
 // Fair sells the stock taken to one open fair; its sales belong to the fair.
@@ -44,12 +48,19 @@ type Fair struct {
 // Name is the fair's name.
 func (fair Fair) Name() string { return fair.Event.Name }
 
-// Items is what is on the fair's stand, with the tags of each product.
+// Items is what is on the fair's stand, with the tags of each product, in the catalogue's order.
 func (fair Fair) Items() ([]Item, error) {
 	detail, err := fair.Events.Detail(fair.Event.ID)
 	if err != nil {
 		return nil, err
 	}
+	order, err := catalogueOrder(fair.Products)
+	if err != nil {
+		return nil, err
+	}
+	slices.SortStableFunc(detail.Stock, func(first, second events.StockLine) int {
+		return order[first.VariantID] - order[second.VariantID]
+	})
 	var items []Item
 	for _, line := range detail.Stock {
 		product, _, err := fair.Products.FindByVariant(line.VariantID)
@@ -64,8 +75,17 @@ func (fair Fair) Items() ([]Item, error) {
 }
 
 // Sell records the basket as one of the fair's sales.
-func (fair Fair) Sell(lines []sales.LineDraft, method sales.Method) (string, error) {
-	refused, err := fair.Events.SellLines(fair.Event.ID, lines, method)
+func (fair Fair) Sell(lines []sales.LineDraft, method sales.Method) (string, string, error) {
+	sale, refused, err := fair.Events.RecordSale(fair.Event.ID, lines, method)
+	if err != nil || len(refused) == 0 {
+		return sale.ID, "", err
+	}
+	return "", events.RefusalWords(refused[0]), nil
+}
+
+// Undo takes back one of the fair's sales.
+func (fair Fair) Undo(saleID string) (string, error) {
+	refused, err := fair.Events.Undo(saleID)
 	if err != nil || len(refused) == 0 {
 		return "", err
 	}
@@ -82,7 +102,24 @@ type WholeStock struct {
 // Name is what the artist calls selling from the whole catalogue.
 func (WholeStock) Name() string { return "Todo el stock" }
 
-// Items is every active physical variant with stock in the catalogue.
+// catalogueOrder is where each version, by its ID, stands in the catalogue: the order the artist
+// made them in.
+func catalogueOrder(products *catalogue.Store) (map[string]int, error) {
+	all, err := products.All()
+	if err != nil {
+		return nil, err
+	}
+	order := map[string]int{}
+	for _, product := range all {
+		for _, variant := range product.Variants {
+			order[variant.ID] = len(order)
+		}
+	}
+	return order, nil
+}
+
+// Items is every active physical variant in the catalogue, the sold-out ones too, so the artist
+// sees at a glance what she has run out of.
 func (stock WholeStock) Items() ([]Item, error) {
 	products, err := stock.Products.All()
 	if err != nil {
@@ -94,21 +131,28 @@ func (stock WholeStock) Items() ([]Item, error) {
 			continue
 		}
 		for _, variant := range product.Variants {
-			if variant.Stock > 0 {
-				items = append(items, Item{VariantID: variant.ID, Label: sales.ItemLabel(product.Name, variant.Name),
-					Name: product.Name, Version: variant.Name,
-					Price: variant.Price, Left: variant.Stock, Tags: tagNames(product.Tags)})
-			}
+			items = append(items, Item{VariantID: variant.ID, Label: sales.ItemLabel(product.Name, variant.Name),
+				Name: product.Name, Version: variant.Name,
+				Price: variant.Price, Left: variant.Stock, Tags: tagNames(product.Tags)})
 		}
 	}
 	return items, nil
 }
 
 // Sell records the basket as a local sale, delivered at once.
-func (stock WholeStock) Sell(lines []sales.LineDraft, method sales.Method) (string, error) {
+func (stock WholeStock) Sell(lines []sales.LineDraft, method sales.Method) (string, string, error) {
 	now := stock.Now()
-	_, problems, err := stock.Sales.Record(sales.Draft{Channel: sales.InPerson, PaidWith: method, Lines: lines,
+	sale, problems, err := stock.Sales.Record(sales.Draft{Channel: sales.InPerson, PaidWith: method, Lines: lines,
 		SoldAt: sales.SoldAt(calendar.Of(now), now)})
+	if err != nil || len(problems) == 0 {
+		return sale.ID, "", err
+	}
+	return "", sales.ProblemWords(problems[0]), nil
+}
+
+// Undo deletes a local sale and gives its pieces back to the catalogue.
+func (stock WholeStock) Undo(saleID string) (string, error) {
+	problems, err := stock.Sales.Delete(saleID)
 	if err != nil || len(problems) == 0 {
 		return "", err
 	}

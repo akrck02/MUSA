@@ -97,7 +97,7 @@ func (screens *Screens) historyFilters(context *ui.Context) {
 		for index, words := range kinds {
 			tabs[index] = look.Tab{Label: words}
 		}
-		context.Box(ui.Layout{Width: ui.Grow()}, func() { look.PillTabs(context, "kind", &screens.kind, tabs) })
+		context.Box(ui.Layout{Width: ui.Grow()}, func() { look.PillTabs(context, "kind", &screens.kind, tabs, look.GroupTabs) })
 		context.Box(ui.Layout{Width: ui.Fixed(periodWidth)}, func() { context.Select("period", &screens.period, periods) })
 	})
 }

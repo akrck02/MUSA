@@ -1,6 +1,7 @@
 package demo
 
 import (
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -38,12 +39,12 @@ func TestDemoDataFillsEveryModule(t *testing.T) {
 	fairs, _ := stores.Events.All()
 	orders, _ := stores.Sales.All()
 	commissions, _ := stores.Projects.All()
-	// Products: twenty-one physical and three digital. Sales: four at each fair, four orders, six
-	// downloads, and the delivered project's.
-	if len(products) != 21+3 || len(fairs) != 3 || len(orders) != 4+4+4+6+1 || len(commissions) != 5 {
+	// Products: twenty-one physical and three digital. Fairs: one closed, one today, three to come.
+	// Sales: three at last month's fair, two today, eight orders, and the delivered project's.
+	if len(products) != 21+3 || len(fairs) != 5 || len(orders) != 3+2+8+1 || len(commissions) != 5 {
 		t.Errorf("%d products, %d fairs, %d sales, %d projects", len(products), len(fairs), len(orders), len(commissions))
 	}
-	if fairs[len(fairs)-1].Status != events.Closed {
+	if !slices.ContainsFunc(fairs, func(fair events.Event) bool { return fair.Status == events.Closed }) {
 		t.Error("last month's fair is not closed")
 	}
 	lowStock := catalogue.Filter(products, catalogue.Query{LowStockOnly: true})

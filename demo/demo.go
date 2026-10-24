@@ -1,6 +1,6 @@
 // Package demo fills an empty database with a made-up studio, to try MUSA without typing a
-// catalogue first: prints, stickers, merch and two commissions, a closed fair from last month, one
-// happening today, one coming up and four orders. It goes through the same stores as the screens.
+// catalogue first: the works, fairs and orders of the author's design, a closed fair from last
+// month, one happening today and three to come. It goes through the same stores as the screens.
 package demo
 
 import (
@@ -61,75 +61,79 @@ type filler struct {
 func (filler *filler) fill() error {
 	filler.catalogue()
 	today := calendar.Of(filler.stores.Now())
-
-	autumn := filler.event("Mercadillo de otoño", "Plaza Mayor", today.AddDays(-30), today.AddDays(-29))
-	filler.take(autumn, map[string]int{"LAM-GAT-A5": 6, "PEG-LUN-B": 15, "PEG-NUB": 10})
-	filler.sell(autumn, "LAM-GAT-A5", 4, 1200)
-	filler.sell(autumn, "LAM-GAT-A5", 1, 1000)
-	filler.sell(autumn, "PEG-LUN-B", 9, 300)
-	filler.sell(autumn, "PEG-NUB", 6, 250)
-	filler.spend(autumn, "Stand", 4000)
-	filler.spend(autumn, "Gasolina", 2200)
-	filler.refused(filler.stores.Events.Close(autumn))
-
-	comic := filler.event("Feria del cómic", "Pabellón 3", today, today.AddDays(1))
-	filler.take(comic, map[string]int{"LAM-GAT-A5": 5, "LAM-BOS-A4": 2, "PEG-LUN-B": 12, "LLA-RAN": 6})
-	filler.sell(comic, "LAM-GAT-A5", 2, 1200)
-	filler.sell(comic, "PEG-LUN-B", 3, 300)
-	filler.sell(comic, "LLA-RAN", 1, 800)
-	filler.sell(comic, "LAM-BOS-A4", 1, 1800)
-	filler.spend(comic, "Stand", 6000)
-	filler.spend(comic, "Comida", 1450)
-
-	filler.event("Mercado de Navidad", "Centro cultural", today.AddDays(50), today.AddDays(52))
-
+	filler.fairs(today)
 	filler.orders(today)
-	filler.downloads(today)
 	filler.projects(today)
 	filler.settleStock()
 	return filler.err
 }
 
-func (filler *filler) orders(today calendar.Date) {
-	daysAgo := func(count int) time.Time { return sales.SoldAt(today.AddDays(-count), filler.stores.Now()) }
-	filler.order(sales.Draft{Channel: sales.InPerson, Customer: "Vecina del taller", SoldAt: daysAgo(0),
-		Lines: filler.lines("LLA-RAN", 2, 800)})
-	filler.order(sales.Draft{Channel: sales.OnlineShop, Customer: "@lectora_de_comics", Note: "Pedido web 0007", SoldAt: daysAgo(3),
-		Lines: append(filler.lines("LAM-ZOR-A4", 2, 1500), filler.lines("PEG-OLA", 1, 600)...), ShippingCharged: 450, ShippingCost: 380})
-	filler.order(sales.Draft{Channel: sales.Social, Customer: "@ranita_ilustra", Note: "Encargo por DM", SoldAt: daysAgo(10),
-		Lines: filler.lines("Retrato por encargo · ", 1, 3500)})
-	filler.order(sales.Draft{Channel: sales.Marketplace, Note: "Etsy", SoldAt: daysAgo(40),
-		Lines: filler.lines("LAM-GAT-A4", 1, 2000), ShippingCharged: 500, ShippingCost: 420})
+// piece is some units of a version, by its SKU, in the order a stand shows them.
+type piece struct {
+	sku   string
+	units int
 }
 
-// downloads are this month's sales of the digital works, already delivered: a download reaches
-// the buyer at once.
-func (filler *filler) downloads(today calendar.Date) {
-	monthStart := calendar.Date{Year: today.Year, Month: today.Month, Day: 1}
-	soldOn := func(day calendar.Date) time.Time { return sales.SoldAt(day, filler.stores.Now()) }
-	for _, download := range []struct {
-		key      string
-		quantity int
-		cents    money.Money
-		day      int
-	}{
-		{"Pack de pinceles · ", 10, 1200, 0}, {"Pack de pinceles · ", 8, 1200, 1}, {"Pack de pinceles · ", 5, 1200, 2},
-		{"Fondos para móvil · ", 5, 500, 0}, {"Fondos para móvil · ", 3, 500, 2},
-		{"Retrato por encargo · ", 1, 4000, 1},
-	} {
-		filler.delivered(sales.Draft{Channel: sales.OnlineShop, SoldAt: soldOn(monthStart.AddDays(download.day)),
-			Lines: filler.lines(download.key, download.quantity, download.cents)})
+// fairs are a closed one from last month, the one on today with its first sales, and three to come.
+func (filler *filler) fairs(today calendar.Date) {
+	summer := filler.event("Mercadillo de verano", "Plaza Mayor", today.AddDays(-30), today.AddDays(-29))
+	filler.take(summer, []piece{{"LAM-GAT-A5", 6}, {"PEG-LUN-B", 15}, {"PEG-NUB", 10}})
+	filler.sell(summer, "LAM-GAT-A5", 5, 800)
+	filler.sell(summer, "PEG-LUN-B", 9, 300)
+	filler.sell(summer, "PEG-NUB", 6, 300)
+	filler.spend(summer, "Stand", 4000)
+	filler.spend(summer, "Gasolina", 2200)
+	filler.refused(filler.stores.Events.Close(summer))
+
+	// Forty-two pieces, as the author's design counts them.
+	autumn := filler.event("Mercado de Otoño", "Paseo del Río", today, today)
+	filler.take(autumn, []piece{{"LAM-GAT-A5", 4}, {"PEG-LUN-M", 3}, {"LLA-RAN", 4}, {"PEG-OLA", 6},
+		{"PEG-CAF", 2}, {"PEG-PLA", 5}, {"LAM-ZOR-A5", 3}, {"PEG-NUB", 8}, {"PEG-CER", 4}, {"PEG-CAC", 3}})
+	filler.sellLines(autumn, []piece{{"LAM-GAT-A5", 2}, {"LLA-RAN", 1}})
+	filler.sellLines(autumn, []piece{{"PEG-LUN-M", 1}})
+	filler.spend(autumn, "Stand", 3500)
+
+	harbour := filler.event("Feria del Puerto", "Muelle Norte", today.AddDays(3), today.AddDays(3))
+	filler.take(harbour, []piece{{"LAM-BOS-A4", 6}, {"PEG-NUB", 10}, {"LLA-TAC", 8}, {"LAM-KOI-A4", 8}, {"LAM-DON-A4", 10}})
+	filler.event("Feria del Libro", "Recinto Ferial", today.AddDays(17), today.AddDays(18))
+	filler.event("Mercadillo de Invierno", "Centro cultural", today.AddDays(38), today.AddDays(39))
+}
+
+// orders are two to prepare, two on their way and the month's history: a shop's order already
+// delivered and two sales in hand.
+func (filler *filler) orders(today calendar.Date) {
+	daysAgo := func(count int) time.Time { return sales.SoldAt(today.AddDays(-count), filler.stores.Now()) }
+	etsy := func(customer string, days int, lines []sales.LineDraft) sales.Draft {
+		return sales.Draft{Channel: sales.Marketplace, Note: "Etsy", Customer: customer, SoldAt: daysAgo(days), Lines: lines}
 	}
+	filler.order(etsy("Lucía", 1, append(filler.lines("LAM-ZOR-A4", 1, 1500), filler.lines("LAM-GAT-A5", 1, 800)...)))
+	filler.order(etsy("Marcos", 0, filler.lines("LAM-GAT-A4", 1, 1200)))
+	filler.sent(etsy("Ana", 3, filler.lines("LAM-BOS-A4", 1, 1000)))
+	filler.sent(etsy("Pablo", 4, filler.lines("LAM-ZOR-A5", 1, 800)))
+	filler.delivered(etsy("Sara", 1, filler.lines("LAM-BOS-A4", 1, 1000)))
+	filler.order(sales.Draft{Channel: sales.InPerson, Customer: "Hugo", SoldAt: daysAgo(2), Lines: filler.lines("PEG-OLA", 2, 300)})
+	filler.order(sales.Draft{Channel: sales.InPerson, Customer: "Taller Norte", SoldAt: daysAgo(3),
+		Lines: append(append(filler.lines("LAM-GAT-A3", 1, 1500), filler.lines("LAM-BOS-A4", 1, 1000)...), filler.lines("LLA-RAN", 1, 600)...)})
+	filler.delivered(etsy("Irene", 40, filler.lines("LAM-GAT-A4", 1, 1200)))
+}
+
+// sent records an order and marks it prepared, so it is on its way.
+func (filler *filler) sent(draft sales.Draft) {
+	filler.advanced(draft, 1)
 }
 
 // delivered records an order and moves it along until it is delivered.
 func (filler *filler) delivered(draft sales.Draft) {
+	filler.advanced(draft, 2)
+}
+
+func (filler *filler) advanced(draft sales.Draft, steps int) {
 	if filler.err != nil {
 		return
 	}
 	sale, problems, err := filler.stores.Sales.Record(draft)
 	filler.stop(len(problems), problems, err)
-	for step := 0; step < 2 && filler.err == nil; step++ {
+	for step := 0; step < steps && filler.err == nil; step++ {
 		problems, err := filler.stores.Sales.Advance(sale.ID)
 		filler.stop(len(problems), problems, err)
 	}
@@ -141,10 +145,25 @@ func (filler *filler) event(name, location string, start, end calendar.Date) str
 	return id
 }
 
-func (filler *filler) take(eventID string, units map[string]int) {
-	for sku, quantity := range units {
-		filler.refused(filler.stores.Events.MoveStock(eventID, filler.variants[sku], quantity))
+func (filler *filler) take(eventID string, pieces []piece) {
+	for _, each := range pieces {
+		filler.refused(filler.stores.Events.MoveStock(eventID, filler.variants[each.sku], each.units))
 	}
+}
+
+// sellLines sells some pieces at a fair to one customer, at the stand's prices.
+func (filler *filler) sellLines(eventID string, pieces []piece) {
+	if filler.err != nil {
+		return
+	}
+	detail, err := filler.stores.Events.Detail(eventID)
+	filler.stop(0, nil, err)
+	var lines []sales.LineDraft
+	for _, each := range pieces {
+		line, _ := detail.LineOf(filler.variants[each.sku])
+		lines = append(lines, sales.LineDraft{ID: filler.stores.NewID(), VariantID: line.VariantID, Quantity: each.units, UnitPrice: line.Price})
+	}
+	filler.refused(filler.stores.Events.SellLines(eventID, lines, sales.Cash))
 }
 
 func (filler *filler) sell(eventID, sku string, quantity int, cents money.Money) {

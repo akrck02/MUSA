@@ -29,6 +29,7 @@ const (
 	bannerPaddingY       = 14
 	bannerGap            = 16
 	bannerIconSide       = 44
+	bannerIconSize       = 22
 	bannerTitleSize      = 17
 )
 
@@ -133,7 +134,7 @@ func (screens *Screens) restockBanner(context *ui.Context) {
 	context.Frame(layout, ui.Look{Fill: theme.Surface, Border: theme.Line, BorderWidth: cardBorder, Radius: bannerRadius}, func() {
 		side := ui.Fixed(bannerIconSide)
 		context.Frame(ui.Layout{Width: side, Height: side, AlignX: ui.Center, AlignY: ui.Center}, ui.Look{Fill: theme.Sunken, Radius: bannerIconSide / 2}, func() {
-			context.IconSized("triangle-alert", theme.IconSize, theme.Warning)
+			context.IconSized("triangle-alert", bannerIconSize, theme.Warning)
 		})
 		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow()}, func() {
 			context.Text(fmt.Sprintf("%d %s por reponer", len(names), map[bool]string{true: "producto", false: "productos"}[len(names) == 1]),
@@ -184,7 +185,7 @@ func (screens *Screens) tagBar(context *ui.Context) {
 		tabs = append(tabs, look.Tab{Label: "Archivados", Count: archived, HasCount: true})
 	}
 	screens.tagTab = min(screens.tagTab, len(tabs)-1)
-	look.PillTabs(context, "tag", &screens.tagTab, tabs)
+	look.PillTabs(context, "tag", &screens.tagTab, tabs, look.GroupTabs)
 }
 
 func (screens *Screens) cards(context *ui.Context, shown []Product) {

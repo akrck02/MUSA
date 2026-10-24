@@ -19,6 +19,7 @@ const (
 	mainButtonPaddingY = 14
 	mainButtonGap      = 10
 	mainButtonTextSize = 18
+	headerIconSize     = 22
 )
 
 // PageHeader is the top of a page: its title and a soft line under it on the left, and the page's
@@ -54,7 +55,7 @@ func ToolButton(context *ui.Context, icon, label string) bool {
 	side := ui.Fixed(toolButtonSide)
 	layout := ui.Layout{Width: side, Height: side, AlignX: ui.Center, AlignY: ui.Center}
 	clicked := context.Clickable(label, layout, ui.Looks{Normal: normal, Hovered: hovered, Pressed: hovered}, func() {
-		context.IconSized(icon, theme.IconSize, theme.Ink)
+		context.IconSized(icon, headerIconSize, theme.Ink)
 	})
 	context.Describe(ui.Description{Role: ui.ButtonRole, Label: label})
 	return clicked
@@ -69,7 +70,7 @@ func MainButton(context *ui.Context, icon, words string) bool {
 	hovered.Fill = theme.Primary.Mix(theme.Ink, hoverDarkening)
 	layout := ui.Layout{Padding: ui.PadXY(mainButtonPaddingX, mainButtonPaddingY), Gap: mainButtonGap, AlignY: ui.Center}
 	clicked := context.Clickable(words, layout, ui.Looks{Normal: normal, Hovered: hovered, Pressed: hovered}, func() {
-		context.IconSized(icon, theme.IconSize, theme.OnPrimary)
+		context.IconSized(icon, headerIconSize, theme.OnPrimary)
 		context.Text(words, ui.TextStyle{Size: mainButtonTextSize, Weight: draw2d.Bold, Color: theme.OnPrimary, LineHeight: ui.LettersLineHeight})
 	})
 	context.Describe(ui.Description{Role: ui.ButtonRole, Label: words})

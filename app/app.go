@@ -206,16 +206,35 @@ func (program *App) Show(page string) {
 	case "history":
 		program.Open(Sales)
 		program.sales.ShowHistory()
-	case "stand", "stand-basket", "stand-pay", "stand-cash":
+	case "stand", "stand-basket":
 		program.Open(Stand)
 		program.stand.Choose(stand.WholeStock{Sales: program.stores.Sales, Products: program.stores.Products, Now: program.stores.Now})
-		switch page {
-		case "stand-basket":
+		if page == "stand-basket" {
 			program.stand.ShowBasket()
-		case "stand-pay":
-			program.stand.ShowPaymentChoice()
-		case "stand-cash":
-			program.stand.ShowCashPayment()
 		}
+	default:
+		program.showFairStand(page)
+	}
+}
+
+// showFairStand opens today's fair on the stand at a step of a sale, for the captures of the
+// author's design: "fair" with a basket, "fair-pay", "fair-cash", "fair-short", "fair-card" and
+// "fair-paid".
+func (program *App) showFairStand(page string) {
+	steps := map[string]func(){
+		"fair-stand": program.stand.ShowBasket,
+		"fair-pay":   program.stand.ShowPaymentChoice,
+		"fair-cash":  func() { program.stand.ShowCashPayment(1000, 1000) },
+		"fair-short": func() { program.stand.ShowCashPayment(500) },
+		"fair-card":  program.stand.ShowCardPayment,
+		"fair-paid":  func() { program.stand.ShowPaid(2000) },
+	}
+	show, found := steps[page]
+	if !found {
+		return
+	}
+	program.Open(Stand)
+	if program.stand.ChooseTodaysFair() {
+		show()
 	}
 }
