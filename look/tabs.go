@@ -45,9 +45,7 @@ func Segmented(context *ui.Context, name string, selected *int, tabs []Tab, size
 	track := ui.Look{Fill: theme.Sunken, Radius: size.TrackRadius}
 	pillLook := ui.Look{Fill: theme.Surface, Radius: size.Radius, Shadow: true}
 	pill, sliding := slideTo(context, name, tabs[*selected].Label, pillLook)
-	if sliding {
-		track.Backdrop = pill
-	}
+	track.Backdrop = pill
 	context.Push(name)
 	context.Frame(ui.Layout{Padding: ui.Pad(size.TrackPadding)}, track, func() {
 		for index, tab := range tabs {
@@ -99,9 +97,7 @@ func PillTabs(context *ui.Context, name string, selected *int, tabs []Tab, size 
 	pillLook := ui.Look{Fill: theme.Surface, Border: theme.Line, BorderWidth: cardBorder, Radius: pillRadius}
 	row := ui.Look{}
 	pill, sliding := slideTo(context, name, tabs[*selected].Label, pillLook)
-	if sliding {
-		row.Backdrop = pill
-	}
+	row.Backdrop = pill
 	context.Push(name)
 	context.Frame(ui.Layout{Width: ui.Grow(), Gap: size.Between, Wrap: true}, row, func() {
 		for index, tab := range tabs {
