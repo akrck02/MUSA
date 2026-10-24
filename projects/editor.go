@@ -112,7 +112,7 @@ func (screens *Screens) editorActions(context *ui.Context) {
 		}
 		context.Spacer()
 		next := nextStage(editing.project.Stage)
-		if saved && next != "" && context.IconButton("arrow-right", "Pasar a "+strings.ToLower(StageWords(next))) {
+		if saved && next != "" && context.IconButton("arrow-right", "Pasar a «"+StageWords(next)+"»") {
 			screens.save(next)
 		}
 		if editing.project.Stage != Delivered && context.PrimaryButton("Guardar") {

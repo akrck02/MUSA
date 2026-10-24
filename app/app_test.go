@@ -434,7 +434,7 @@ func TestTappingAProjectOnTheCalendarOpensItsEditor(t *testing.T) {
 	window.Frames(2)
 	steps(t, window, click(window, "Logo para tienda"))
 	window.Frames(2)
-	if program.place != Projects || program.pageName() == "" || window.Click("Pasar a entregado") != nil {
+	if program.place != Projects || program.pageName() == "" || window.Click("Pasar a «Entregado»") != nil {
 		t.Errorf("tapping the project on the calendar did not open its editor (place %v)", program.place)
 	}
 }

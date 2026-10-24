@@ -73,17 +73,17 @@ func TestSearchingProjectsKeepsOnlyWhatMatches(t *testing.T) {
 
 func TestTheEditorMovesAProjectToTheNextColumn(t *testing.T) {
 	program, window := openProject(t, "Retrato de familia")
-	steps(t, window, click(window, "Pasar a dibujando"))
+	steps(t, window, click(window, "Pasar a «Dibujando»"))
 	settle(window)
 	if moved, _ := projectTitled(t, program, "Retrato de familia"); moved.Stage != projects.Drawing {
-		t.Errorf("the project is %s after «Pasar a dibujando»", moved.Stage)
+		t.Errorf("the project is %s after «Pasar a «Dibujando»»", moved.Stage)
 	}
 }
 
 func TestDeliveringAProjectRecordsItsSale(t *testing.T) {
 	program, window := openProject(t, "Logo para tienda")
 	before := salesCount(t, program)
-	steps(t, window, click(window, "Pasar a entregado"))
+	steps(t, window, click(window, "Pasar a «Entregado»"))
 	settle(window)
 	if after := salesCount(t, program); after != before+1 {
 		t.Errorf("delivering a project left %d sales from %d", after, before)
@@ -107,5 +107,22 @@ func TestAProjectsChangesAreSaved(t *testing.T) {
 	person, _, err := program.stores.Customers.Find(project.CustomerID)
 	if err != nil || person.Contact != "lucia@example.com" {
 		t.Errorf("the contact is %q after saving (%v)", person.Contact, err)
+	}
+}
+
+func TestADeliveredProjectIsDraggedBack(t *testing.T) {
+	program, window := openApp(t, true)
+	program.Open(Projects)
+	settle(window)
+	delivered, _ := projectTitled(t, program, "Retrato de gato")
+	card, err := window.ElementIn(delivered.ID, "Retrato de gato")
+	if err != nil {
+		t.Fatal(err)
+	}
+	centreX, centreY := card.Rect.X+card.Rect.Width/2, card.Rect.Y+card.Rect.Height/2
+	window.Drag(centreX, centreY, centreX-card.Rect.Width-40, centreY)
+	settle(window)
+	if moved, _ := projectTitled(t, program, "Retrato de gato"); moved.Stage != projects.ToReview {
+		t.Errorf("the delivered project is %s after dragging it to «Para revisar»", moved.Stage)
 	}
 }

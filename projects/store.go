@@ -89,8 +89,9 @@ func (store *Store) problems(project Project) ([]Code, error) {
 	return problems, nil
 }
 
-// Move puts a project in another column. Moving it to Delivered records its sale, in the same
-// transaction; a delivered project stays delivered.
+// Move puts a project in another column. Moving it to Delivered records its sale; moving it out
+// of Delivered takes that sale back, giving back what it took from the catalogue. Both happen in
+// the same transaction as the move.
 func (store *Store) Move(id string, stage Stage) ([]Code, error) {
 	project, found, err := store.Find(id)
 	if err != nil {
@@ -99,30 +100,51 @@ func (store *Store) Move(id string, stage Stage) ([]Code, error) {
 	if !found {
 		return nil, projectNotFound(id)
 	}
-	if project.Stage == Delivered {
-		return []Code{CodeAlreadyDelivered}, nil
+	if project.Stage == stage {
+		return nil, nil
 	}
-	var sale sales.Sale
-	if stage == Delivered {
-		// Read before the transaction: the database has one connection, and the transaction holds it.
-		sale, err = store.saleOf(project)
-		if err != nil {
-			return nil, err
-		}
+	recorded, taken, err := store.salesOfMove(project, stage)
+	if err != nil {
+		return nil, err
 	}
 	return nil, store.database.InTransaction(func(rows storage.Querier) error {
-		if stage == Delivered {
-			if err := sales.InsertIn(rows, sale); err != nil {
-				return err
-			}
-		}
-		_, err := rows.ExecContext(context.Background(), "UPDATE project SET stage = ?, sale_id = ?, updated_at = ? WHERE id = ?",
-			stage, sale.ID, storage.Milliseconds(store.now()), id)
-		if err != nil {
-			return storageFailed("move project", err)
-		}
-		return nil
+		return store.moveIn(rows, project, stage, recorded, taken)
 	})
+}
+
+// salesOfMove are the sale a move records (when it delivers) and the sale it takes back (when it
+// leaves Delivered), read before the transaction: the database has one connection, and the
+// transaction holds it.
+func (store *Store) salesOfMove(project Project, stage Stage) (recorded, taken sales.Sale, err error) {
+	if stage == Delivered {
+		recorded, err = store.saleOf(project)
+		return recorded, taken, err
+	}
+	if project.Stage == Delivered && project.SaleID != "" {
+		taken, _, err = sales.FindIn(store.database.Rows(), project.SaleID) // a sale deleted from the history is not found: nothing to take back
+	}
+	return recorded, taken, err
+}
+
+// moveIn records or takes back the sale of a move, and puts the project in its new stage.
+func (store *Store) moveIn(rows storage.Querier, project Project, stage Stage, recorded, taken sales.Sale) error {
+	now := store.now()
+	if recorded.ID != "" {
+		if err := sales.InsertIn(rows, recorded); err != nil {
+			return err
+		}
+	}
+	if taken.ID != "" {
+		if err := sales.DeleteIn(rows, taken, now); err != nil {
+			return err
+		}
+	}
+	_, err := rows.ExecContext(context.Background(), "UPDATE project SET stage = ?, sale_id = ?, updated_at = ? WHERE id = ?",
+		stage, recorded.ID, storage.Milliseconds(now), project.ID)
+	if err != nil {
+		return storageFailed("move project", err)
+	}
+	return nil
 }
 
 // saleOf is the sale a delivered project records: one line of its product, or of its title.

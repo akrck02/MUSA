@@ -82,7 +82,7 @@ func (screens *Screens) column(context *ui.Context, stage Stage) {
 		Padding: ui.Pad(columnPadding)}
 	accepts := func(payload any) bool {
 		dragged, isProject := payload.(draggedProject)
-		return isProject && dragged.stage != stage && dragged.stage != Delivered // a delivered project stays delivered
+		return isProject && dragged.stage != stage
 	}
 	payload, dropped := context.DropTarget("column "+string(stage), ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, accepts, func() {
 		screens.columnCards(context, stage, inStage, layout)

@@ -82,11 +82,30 @@ func TestDeliveringAProjectRecordsItsSaleOnce(t *testing.T) {
 	if len(all) != 1 || all[0].Channel != sales.Commission || all[0].Total() != 4000 || all[0].Cost() != 500 || all[0].Customer != "Ana" {
 		t.Fatalf("sales %+v", all)
 	}
-	if problems, _ := test.projects.Move(project.ID, Drawing); !slices.Equal(problems, []Code{CodeAlreadyDelivered}) {
-		t.Errorf("moving a delivered project back: %v", problems)
-	}
 	if problems, _ := test.projects.Delete(project.ID); !slices.Equal(problems, []Code{CodeAlreadyDelivered}) {
 		t.Errorf("deleting a delivered project: %v", problems)
+	}
+}
+
+// A project marked delivered by mistake goes back to its column, and its sale leaves the history,
+// so delivering it again records it once, not twice.
+func TestMovingADeliveredProjectBackTakesItsSaleBack(t *testing.T) {
+	test := newBench(t)
+	project, _, _ := test.projects.Save(Project{Title: "Portrait of Ana", CustomerID: test.customer.ID, Price: 4000, VariantID: test.digital})
+	for _, stage := range []Stage{Delivered, ToReview, Delivered} {
+		if problems, err := test.projects.Move(project.ID, stage); err != nil || problems != nil {
+			t.Fatal(stage, problems, err)
+		}
+	}
+	if all, _ := test.sales.All(); len(all) != 1 {
+		t.Fatalf("%d sales after delivering, taking back and delivering again", len(all))
+	}
+	if _, err := test.projects.Move(project.ID, Drawing); err != nil {
+		t.Fatal(err)
+	}
+	moved, _, _ := test.projects.Find(project.ID)
+	if all, _ := test.sales.All(); len(all) != 0 || moved.Stage != Drawing || moved.SaleID != "" {
+		t.Errorf("after moving back: %d sales, stage %s, sale %q", len(all), moved.Stage, moved.SaleID)
 	}
 }
 
