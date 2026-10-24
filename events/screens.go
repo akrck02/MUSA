@@ -34,6 +34,7 @@ type Screens struct {
 	chosenLine    string // the stock row showing «Llevar más» and «Devolver»; "" for none
 	// openStand opens the stand of an event, which this package cannot reach: the app gives it.
 	openStand func(Event)
+	pack      func(Event) // opens the choice of what to take to an event
 
 	note        string
 	noteWarning bool
@@ -202,14 +203,6 @@ func (screens *Screens) open(id string) {
 	screens.detail, screens.chosenLine, screens.addingExpense = &detail, "", false
 }
 
-// TakeStockTo opens one fair's page with the sheet that takes stock to it.
-func (screens *Screens) TakeStockTo(id string) {
-	screens.OpenFair(id)
-	if screens.detail != nil {
-		screens.sheet = sheet{kind: takeSheet, quantity: "1", choices: screens.stockChoices()}
-	}
-}
-
 // OpenFair opens one fair's detail on its stand.
 func (screens *Screens) OpenFair(id string) {
 	screens.Reload()
@@ -300,6 +293,10 @@ func (screens *Screens) Detail() Detail {
 func (screens *Screens) StartFair(day calendar.Date) {
 	screens.editor = &eventEditor{draft: Draft{ID: screens.newID()}, start: calendar.Typed(day), end: calendar.Typed(day)}
 }
+
+// PackWith gives the events what opens the choice of stock to take to one, as the stand chooses
+// what to sell.
+func (screens *Screens) PackWith(pack func(Event)) { screens.pack = pack }
 
 // OpenStandWith tells the event's page how to open the stand of an event, for its «Abrir el
 // puesto».

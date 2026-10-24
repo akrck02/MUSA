@@ -111,9 +111,12 @@ func New(database *storage.Database, options Options) (*App, error) {
 		program.Open(Stand)
 		program.stand.Choose(stand.Fair{Event: event, Events: fairs, Products: products})
 	})
-	program.stand.SetUpStockWith(func(event events.Event) {
-		program.Open(Fairs)
-		program.fairs.TakeStockTo(event.ID)
+	program.fairs.PackWith(func(event events.Event) {
+		program.Open(Stand)
+		program.stand.Pack(event, func() {
+			program.Open(Fairs)
+			program.fairs.OpenFair(event.ID)
+		})
 	})
 	program.stand.AddProductsWith(func() { program.Open(Catalogue) })
 	program.projects = projects.NewScreens(commissions, people, products, storage.NewID, now, options.OpenLink)

@@ -154,7 +154,7 @@ func (screens *Screens) versionRow(context *ui.Context, version Item) bool {
 // product's tile cannot say which version to take out.
 func (screens *Screens) versionInBasket(context *ui.Context, version Item, chosen int) {
 	theme := context.Theme
-	context.Text(fmt.Sprintf("%d en la cesta", chosen), ui.TextStyle{Size: leftSize, Color: theme.Primary})
+	context.Text(fmt.Sprintf("%d %s", chosen, screens.inBasketWords()), ui.TextStyle{Size: leftSize, Color: theme.Primary})
 	side := ui.Fixed(minusSide)
 	layout := ui.Layout{Width: side, Height: side, AlignX: ui.Center, AlignY: ui.Center}
 	round := ui.Look{Fill: theme.Sunken, Radius: minusSide / 2}

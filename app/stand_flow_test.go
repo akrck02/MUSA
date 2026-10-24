@@ -175,10 +175,7 @@ func TestAFairWithNothingTakenOffersToSetUpItsStock(t *testing.T) {
 	settle(window)
 	steps(t, window, click(window, "Configurar stock"))
 	settle(window)
-	if program.place != Fairs {
-		t.Fatalf("«Configurar stock» leaves the app on %v", program.place)
-	}
-	if _, err := window.Element("Llevar stock al evento"); err != nil {
-		t.Errorf("the sheet that takes stock to the fair is not open: %v", err)
+	if !program.stand.Packing() {
+		t.Errorf("«Configurar stock» does not open the choice of what to take")
 	}
 }

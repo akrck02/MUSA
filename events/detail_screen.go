@@ -192,8 +192,18 @@ func (screens *Screens) stockCard(context *ui.Context, open bool) {
 			context.Pop()
 		}
 	}) {
-		screens.sheet = sheet{kind: takeSheet, quantity: "1", choices: screens.stockChoices()}
+		screens.takeMore()
 	}
+}
+
+// takeMore opens the choice of what to take to the event: the stand's, when the app gave it, or
+// the sheet.
+func (screens *Screens) takeMore() {
+	if screens.pack != nil {
+		screens.pack(screens.detail.Event)
+		return
+	}
+	screens.sheet = sheet{kind: takeSheet, quantity: "1", choices: screens.stockChoices()}
 }
 
 // stockRow is one product taken: its colour, its name and version, a bar of what was sold and

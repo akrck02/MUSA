@@ -5,6 +5,7 @@ import (
 
 	"github.com/Itros97/MUSA/events"
 	"github.com/Itros97/MUSA/sales"
+	"github.com/Itros97/MUSA/stand"
 	"github.com/akrck02/go-ui/uitest"
 )
 
@@ -74,16 +75,45 @@ func TestAnExpenseIsAddedToAFair(t *testing.T) {
 	}
 }
 
-func TestMoreStockIsTakenToAFair(t *testing.T) {
-	program, window, name := openFair(t)
-	before, _ := fairNamed(t, program, name)
+// packOne opens the choice of what to take to the open fair and puts one piece in the case.
+func packOne(t *testing.T, program *App, window *uitest.Window) {
+	t.Helper()
 	steps(t, window, click(window, "Llevar"))
 	settle(window)
-	steps(t, window, click(window, "Llevar"))
+	if !program.stand.Packing() || program.place != Stand {
+		t.Fatalf("«Llevar» does not open the stand's grid to pack")
+	}
+	items, err := stand.WholeStock{Products: program.stores.Products}.Items()
+	if err != nil {
+		t.Fatal(err)
+	}
+	pick(t, window, items, items[0])
+}
+
+func TestPackedPiecesMoveToTheEvent(t *testing.T) {
+	program, window, name := openFair(t)
+	before, _ := fairNamed(t, program, name)
+	packOne(t, program, window)
+	steps(t, window, click(window, "Llevar al evento"))
 	settle(window)
 	after, _ := fairNamed(t, program, name)
 	if taken(after) != taken(before)+1 {
-		t.Errorf("%d pieces taken after taking one more to %d", taken(after), taken(before))
+		t.Errorf("%d pieces taken after packing one more to %d", taken(after), taken(before))
+	}
+	if program.place != Fairs {
+		t.Errorf("packing leaves the app on %v, not on the event", program.place)
+	}
+}
+
+func TestLeavingThePackingMovesNothing(t *testing.T) {
+	program, window, name := openFair(t)
+	before, _ := fairNamed(t, program, name)
+	packOne(t, program, window)
+	steps(t, window, click(window, "Volver"))
+	settle(window)
+	after, _ := fairNamed(t, program, name)
+	if taken(after) != taken(before) || program.place != Fairs {
+		t.Errorf("leaving took %d pieces and stayed on %v", taken(after)-taken(before), program.place)
 	}
 }
 

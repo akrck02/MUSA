@@ -153,7 +153,7 @@ func (screens *Screens) tileWords(context *ui.Context, item Item, chosen int, co
 
 // inBasket is «en la cesta» and the round «−» that takes one out.
 func (screens *Screens) inBasket(context *ui.Context, item Item, colours paint) {
-	context.Text("en la cesta", ui.TextStyle{Size: leftSize, Color: colours.surface.Mix(colours.ink, inBasketAlpha)})
+	context.Text(screens.inBasketWords(), ui.TextStyle{Size: leftSize, Color: colours.surface.Mix(colours.ink, inBasketAlpha)})
 	side := ui.Fixed(minusSide)
 	layout := ui.Layout{Width: side, Height: side, AlignX: ui.Center, AlignY: ui.Center}
 	round := ui.Look{Fill: draw2d.Color{1, 1, 1, minusAlpha}, Radius: minusSide / 2}
