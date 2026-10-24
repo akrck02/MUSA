@@ -331,3 +331,33 @@ func TestTheChosenThemeIsKeptForTheNextTimeMUSAOpens(t *testing.T) {
 		t.Error("MUSA opens light again after the artist chose the dark theme")
 	}
 }
+
+func TestAProductCardOpensItsEditorWhenTapped(t *testing.T) {
+	program, window := openApp(t, true)
+	program.Open(Catalogue)
+	window.Frame()
+	steps(t, window, click(window, "Luna"))
+	if !program.catalogue.Editing() {
+		t.Error("tapping the card of «Luna» does not open its editor")
+	}
+}
+
+func TestTheEditorsBackButtonIsNamedAndClosesIt(t *testing.T) {
+	program, window := openApp(t, true)
+	program.Open(Catalogue)
+	window.Frame()
+	steps(t, window, click(window, "Luna"), click(window, "Volver"))
+	if program.catalogue.Editing() {
+		t.Error("«Volver» leaves the editor open")
+	}
+}
+
+func TestTabsAreNamedByTheirWordsWithoutTheirCount(t *testing.T) {
+	program, window := openApp(t, true)
+	program.Open(Catalogue)
+	window.Frame()
+	steps(t, window, click(window, "Digital"))
+	if !slices.Contains(window.Texts(), "Procreate") { // the brush pack's format
+		t.Errorf("the «Digital» tab does not show the digital products: %q", window.Texts())
+	}
+}

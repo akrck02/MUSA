@@ -56,9 +56,11 @@ func Segmented(context *ui.Context, name string, selected *int, tabs []Tab, size
 				hovered.Fill = theme.Surface.WithAlpha(0.5)
 			}
 			layout := ui.Layout{Padding: ui.PadXY(size.PaddingX, size.PaddingY), Gap: size.Gap, AlignY: ui.Center}
-			if context.Clickable(tab.Label, layout, ui.Looks{Normal: normal, Hovered: hovered, Pressed: hovered}, func() {
+			clicked := context.Clickable(tab.Label, layout, ui.Looks{Normal: normal, Hovered: hovered, Pressed: hovered}, func() {
 				tabWords(context, tab, chosen, size.TextSize, size.IconSize)
-			}) && !chosen {
+			})
+			context.Describe(ui.Description{Role: ui.TabRole, Label: tab.Label, Selected: chosen})
+			if clicked && !chosen {
 				*selected, changed = index, true
 			}
 		}
@@ -104,9 +106,11 @@ func PillTabs(context *ui.Context, name string, selected *int, tabs []Tab, size 
 				hovered.Fill = theme.Sunken
 			}
 			layout := ui.Layout{Padding: ui.PadXY(side, size.PaddingY+cardBorder), Gap: size.Gap, AlignY: ui.Center}
-			if context.Clickable(tab.Label, layout, ui.Looks{Normal: normal, Hovered: hovered, Pressed: hovered}, func() {
+			clicked := context.Clickable(tab.Label, layout, ui.Looks{Normal: normal, Hovered: hovered, Pressed: hovered}, func() {
 				tabWords(context, tab, chosen, size.TextSize, size.IconSize)
-			}) && !chosen {
+			})
+			context.Describe(ui.Description{Role: ui.TabRole, Label: tab.Label, Selected: chosen})
+			if clicked && !chosen {
 				*selected, changed = index, true
 			}
 		}

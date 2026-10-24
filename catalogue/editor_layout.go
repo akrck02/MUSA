@@ -83,9 +83,11 @@ func (screens *Screens) editorHeader(context *ui.Context) {
 	context.Box(ui.Layout{Width: ui.Grow(), Gap: editorTopGap, AlignY: ui.Center, Padding: ui.Padding{Bottom: editorTopBottom}}, func() {
 		round := ui.Look{Fill: theme.Sunken, Radius: backButtonSide / 2}
 		layout := ui.Layout{Width: ui.Fixed(backButtonSide), Height: ui.Fixed(backButtonSide), AlignX: ui.Center, AlignY: ui.Center}
-		if context.Clickable("Volver", layout, ui.Looks{Normal: round, Hovered: round, Pressed: round}, func() {
+		back := context.Clickable("Volver", layout, ui.Looks{Normal: round, Hovered: round, Pressed: round}, func() {
 			context.IconSized("chevron-left", backIconSize, theme.Ink)
-		}) {
+		})
+		context.Describe(ui.Description{Role: ui.ButtonRole, Label: "Volver"}) // an icon alone has no name to read
+		if back {
 			screens.editor = nil
 			return
 		}

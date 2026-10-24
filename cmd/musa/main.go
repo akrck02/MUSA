@@ -5,6 +5,7 @@
 //	go run ./cmd/musa -demo             # a throwaway database filled with toy data
 //	go run ./cmd/musa -database my.db   # another database file
 //	go run ./cmd/musa -demo -capture home.png   # draw one frame to a picture and exit
+//	go run ./cmd/musa -demo -script demo.txt    # play a script, showing its finger: a demo to film
 package main
 
 import (
@@ -16,6 +17,7 @@ import (
 
 	"github.com/akrck02/go-renderer/opengl/overlay"
 
+	"github.com/akrck02/go-ui/uidrive"
 	"github.com/akrck02/go-ui/window"
 
 	"github.com/Itros97/MUSA/app"
@@ -32,6 +34,7 @@ func main() {
 	page := flag.String("show", "", "a page inside the place to open on: product, digital, fair, order, history, calendar, project, networks or stand… (for captures; see app.Show)")
 	tools := flag.Bool("tools", true, "show the development tools on the home page")
 	today := flag.String("today", "", "a day as 2026-11-04 to open on instead of today, for captures")
+	script := flag.String("script", "", "a uidrive script to play, showing its finger: a demo to film")
 	flag.Parse()
 	if !wasSet("dark") {
 		options.Dark = window.SystemPrefersDark()
@@ -45,10 +48,35 @@ func main() {
 		fmt.Fprintln(os.Stderr, "musa:", err)
 		os.Exit(1)
 	}
+	if options.Driver, err = playerFor(*script); err != nil {
+		fmt.Fprintln(os.Stderr, "musa:", err)
+		os.Exit(1)
+	}
 	if err := run(options, *demoMode, *path, app.Place(*place), *page, *tools, clock); err != nil {
 		fmt.Fprintln(os.Stderr, "musa:", err)
 		os.Exit(1)
 	}
+}
+
+// filmGlideFrames is how many frames the pointer takes to travel to each element in a demo: about
+// a third of a second, so a film shows where it goes.
+const filmGlideFrames = 20
+
+// playerFor plays the script in a file, showing the finger and telling each step on the terminal;
+// nil when there is no file.
+func playerFor(path string) (uidrive.Driver, error) {
+	if path == "" {
+		return nil, nil
+	}
+	text, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	script, err := uidrive.Parse(string(text))
+	if err != nil {
+		return nil, err
+	}
+	return uidrive.Play(script, uidrive.PlayOptions{Show: true, WithoutOutline: true, GlideFrames: filmGlideFrames, Report: os.Stderr}), nil
 }
 
 // middayHour is the hour a fixed day's clock shows: the middle of a working day.
