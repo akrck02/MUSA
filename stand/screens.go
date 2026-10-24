@@ -43,16 +43,18 @@ type Screens struct {
 	newID    func() string
 	now      func() time.Time
 
-	fairs   []events.Event
-	source  Source
-	items   []Item
-	loadErr error
-	tag     int                               // index in tags()
-	icons   map[string]string                 // each tag's icon, by its folded name
-	asking  []Item                            // the versions of the product whose version is asked
-	search  look.Search                       // by product or version
-	shapes  map[draw2d.Color]*look.TopRounded // the pictures' fills, kept so drawing them allocates nothing
-	fade    *look.Fade                        // under the floating basket
+	fairs       []events.Event
+	source      Source
+	items       []Item
+	loadErr     error
+	tag         int                               // index in tags()
+	icons       map[string]string                 // each tag's icon, by its folded name
+	setUpStock  func(events.Event)                // opens a fair's stock; nil until the app gives it
+	addProducts func()                            // opens the catalogue; nil until the app gives it
+	asking      []Item                            // the versions of the product whose version is asked
+	search      look.Search                       // by product or version
+	shapes      map[draw2d.Color]*look.TopRounded // the pictures' fills, kept so drawing them allocates nothing
+	fade        *look.Fade                        // under the floating basket
 
 	basket   Basket
 	step     step
@@ -127,6 +129,27 @@ func (screens *Screens) Back() bool {
 		return false
 	}
 	return true
+}
+
+// SetUpStockWith gives the stand what opens a fair's stock, for a fair with nothing taken to it.
+func (screens *Screens) SetUpStockWith(open func(events.Event)) { screens.setUpStock = open }
+
+// AddProductsWith gives the stand what opens the catalogue, for a stand with no products at all.
+func (screens *Screens) AddProductsWith(open func()) { screens.addProducts = open }
+
+// nothingToSell says why the stand is empty and offers what fills it: stock taken to the fair, or
+// products in the catalogue.
+func (screens *Screens) nothingToSell(context *ui.Context) {
+	fair, atAFair := screens.source.(Fair)
+	if atAFair {
+		if look.Empty(context, "package-open", "No hay nada para vender", "Aún no has llevado stock a este evento.", "Configurar stock") && screens.setUpStock != nil {
+			screens.setUpStock(fair.Event)
+		}
+		return
+	}
+	if look.Empty(context, "package-open", "No hay nada para vender", "Aún no tienes productos físicos en el catálogo.", "Añadir productos") && screens.addProducts != nil {
+		screens.addProducts()
+	}
 }
 
 // BasketQuantity is how many of a version are in the basket.
@@ -349,7 +372,7 @@ func (screens *Screens) drawRegister(context *ui.Context) {
 	screens.top(context, tags)
 	look.Space(context, topSpaceBelow)
 	if len(screens.items) == 0 {
-		look.Empty(context, "package-open", "No hay nada para vender", "Lleva stock al evento, o añade productos al catálogo.", "")
+		screens.nothingToSell(context)
 		return
 	}
 	width, _ := context.Size()

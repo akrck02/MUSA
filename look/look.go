@@ -95,14 +95,15 @@ func Pill(context *ui.Context, text string, tone Tone) {
 }
 
 // Empty fills a page with nothing to show yet: an icon, a title, a line of help and, when action is
-// not empty, a button; it returns true on the frame that button is clicked.
+// not empty, a button; it returns true on the frame that button is clicked. When the page cannot
+// be used until the artist does something, the line says what and the button does it.
 func Empty(context *ui.Context, icon, title, message, action string) bool {
 	theme := context.Theme
 	clicked := false
 	Card(context, ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(theme.Padding * 2), Gap: theme.Gap, AlignX: ui.Center}, func() {
 		context.IconSized(icon, emptyIcon, theme.InkQuiet)
 		context.Text(title, ui.TextStyle{Size: theme.HeadingSize, Weight: draw2d.Bold})
-		Paragraph(context, message, ui.TextStyle{Color: theme.InkSoft})
+		CentredParagraph(context, message, ui.TextStyle{Color: theme.InkSoft})
 		if action != "" {
 			clicked = context.PrimaryButton(action)
 		}

@@ -126,8 +126,10 @@ func (screens *Screens) drawList(context *ui.Context) {
 	case screens.loadErr != nil:
 		look.Empty(context, "triangle-alert", "No se pudieron leer los eventos", screens.loadErr.Error(), "")
 	case len(screens.events) == 0:
-		look.Empty(context, "calendar-days", "Aún no hay eventos",
-			"Apunta tu próximo evento para llevar la cuenta de lo que llevas y lo que vendes.", "")
+		if look.Empty(context, "calendar-days", "Aún no hay eventos",
+			"Apunta tu próximo evento para llevar la cuenta de lo que llevas y lo que vendes.", "Nuevo evento##empty") {
+			screens.StartFair(calendar.Of(screens.now()))
+		}
 	}
 	today := calendar.Of(screens.now())
 	look.Space(context, listTop-groupTop)
@@ -198,6 +200,14 @@ func (screens *Screens) open(id string) {
 		return
 	}
 	screens.detail, screens.chosenLine, screens.addingExpense = &detail, "", false
+}
+
+// TakeStockTo opens one fair's page with the sheet that takes stock to it.
+func (screens *Screens) TakeStockTo(id string) {
+	screens.OpenFair(id)
+	if screens.detail != nil {
+		screens.sheet = sheet{kind: takeSheet, quantity: "1", choices: screens.stockChoices()}
+	}
 }
 
 // OpenFair opens one fair's detail on its stand.

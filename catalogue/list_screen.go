@@ -191,7 +191,13 @@ func (screens *Screens) tagBar(context *ui.Context) {
 
 func (screens *Screens) cards(context *ui.Context, shown []Product) {
 	if len(shown) == 0 {
-		look.Empty(context, "search", "Nada por aquí", "Ningún producto coincide con la búsqueda.", "")
+		action := ""
+		if screens.search.Text != "" {
+			action = "Borrar la búsqueda"
+		}
+		if look.Empty(context, "search", "Nada por aquí", "Ningún producto coincide con la búsqueda.", action) {
+			screens.search.Text = ""
+		}
 		return
 	}
 	width, _ := context.Size()
@@ -374,7 +380,13 @@ func (screens *Screens) digitalList(context *ui.Context, shown []Product) {
 	context.Text("Sin stock que contar: se venden tantas veces como quieras.", ui.TextStyle{Size: digitalHintSize, Color: theme.InkSoft})
 	look.Space(context, digitalGridSpace)
 	if len(shown) == 0 {
-		look.Empty(context, "search", "Nada por aquí", "Ningún producto coincide con la búsqueda.", "")
+		action := ""
+		if screens.search.Text != "" {
+			action = "Borrar la búsqueda"
+		}
+		if look.Empty(context, "search", "Nada por aquí", "Ningún producto coincide con la búsqueda.", action) {
+			screens.search.Text = ""
+		}
 		return
 	}
 	width, _ := context.Size()
