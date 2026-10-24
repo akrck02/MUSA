@@ -32,7 +32,7 @@ type Screens struct {
 	editor   *editor
 	settings *networkSettings // the networks sheet, while open
 	search   look.Search      // by title or customer
-	compact  bool             // cards show only their title, who, when and price: for long boards
+	spacious bool             // cards show their colour strip, networks and product; compact by default, as boards grow long
 
 	note        string
 	noteWarning bool
@@ -166,11 +166,11 @@ func (screens *Screens) ShowEditor() {
 // compactButton switches the board between full cards and compact ones; its icon shows the view
 // it switches to.
 func (screens *Screens) compactButton(context *ui.Context) {
-	icon, label := "rows-3", "Vista compacta"
-	if screens.compact {
-		icon, label = "layout-grid", "Vista amplia"
+	icon, label := "layout-grid", "Vista amplia"
+	if screens.spacious {
+		icon, label = "rows-3", "Vista compacta"
 	}
 	if look.ToolButton(context, icon, label) {
-		screens.compact = !screens.compact
+		screens.spacious = !screens.spacious
 	}
 }

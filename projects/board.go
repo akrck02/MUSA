@@ -166,7 +166,7 @@ func (screens *Screens) card(context *ui.Context, project Project) {
 	context.DragSource(project.Title, dragged, ui.Layout{Width: ui.Grow(), Padding: ui.Padding{Bottom: cardBottom}}, func() {
 		layout := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(cardPadding)}
 		if context.Clickable(project.Title, layout, ui.Looks{Normal: normal, Hovered: hovered, Pressed: hovered}, func() {
-			if screens.compact {
+			if !screens.spacious {
 				screens.compactContent(context, project, colours)
 				return
 			}
