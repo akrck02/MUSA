@@ -132,3 +132,19 @@ func TestEveryProblemHasWordsAndEachFailureItsCode(t *testing.T) {
 		}
 	}
 }
+
+func TestADeliveredProjectSaysTheDayItWasDelivered(test *testing.T) {
+	delivered := time.Date(2026, time.October, 18, 17, 0, 0, 0, time.UTC)
+	if words := DeliveredWords(delivered); words != "Entregado el 18" {
+		test.Errorf("got %q", words)
+	}
+	if words := DeliveredWords(time.Time{}); words != "Entregado" {
+		test.Errorf("without a day, got %q", words)
+	}
+}
+
+func TestTheBoardCountsItsProjectsInWords(test *testing.T) {
+	if projectCount(1) != "1 proyecto" || projectCount(5) != "5 proyectos" {
+		test.Errorf("got %q and %q", projectCount(1), projectCount(5))
+	}
+}
