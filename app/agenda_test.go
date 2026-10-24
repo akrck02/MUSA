@@ -28,3 +28,16 @@ func TestTheAgendaPutsAFairOnEachOfItsDaysAnOrderOnTheDayItCameAndAProjectWhenIt
 		t.Errorf("the day after: %+v", entries)
 	}
 }
+
+func TestTheMonthCountsItsSalesAndTheProjectsDelivered(test *testing.T) {
+	cases := map[string][2]int{
+		"en 1 venta":                            {1, 0},
+		"en 23 ventas · 2 proyectos entregados": {23, 2},
+		"en 0 ventas · 1 proyecto entregado":    {0, 1},
+	}
+	for want, counts := range cases {
+		if got := monthWords(counts[0], counts[1]); got != want {
+			test.Errorf("got %q, want %q", got, want)
+		}
+	}
+}

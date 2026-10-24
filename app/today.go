@@ -16,9 +16,11 @@ type today struct {
 	fair    events.Event
 	hasFair bool
 	month   sales.Summary
-	restock []catalogue.Product
-	plan    agenda
-	loadErr error
+	// projectsDelivered counts the month's sales that are delivered projects.
+	projectsDelivered int
+	restock           []catalogue.Product
+	plan              agenda
+	loadErr           error
 }
 
 // readToday gathers the fair to look at (the one happening, or else the next one), this month's
@@ -42,7 +44,9 @@ func readToday(stores demo.Stores, now time.Time) today {
 		return day
 	}
 	day.plan = agenda{fairs: fairs, onTheWay: sales.OnTheWay(sold), projects: commissions, zone: now.Location()}
-	day.month = sales.Summarise(sales.Filter(sold, sales.Query{Period: sales.ThisMonth}, day.date, time.Local))
+	thisMonth := sales.Filter(sold, sales.Query{Period: sales.ThisMonth}, day.date, time.Local)
+	day.month = sales.Summarise(thisMonth)
+	day.projectsDelivered = len(sales.OfKind(thisMonth, func(channel sales.Channel) bool { return channel == sales.Commission }))
 	products, err := stores.Products.All()
 	if err != nil {
 		day.loadErr = err

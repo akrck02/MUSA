@@ -114,7 +114,7 @@ func (screens *Screens) kindBar(context *ui.Context) {
 	for index, kind := range kindTabs {
 		tabs[index] = look.Tab{Icon: kindIcons[kind], Label: kindWords[kind], Count: len(Filter(screens.products, Query{Kind: kind})), HasCount: true}
 	}
-	if look.Segmented(context, "kind", &screens.kindTab, tabs) {
+	if look.Segmented(context, "kind", &screens.kindTab, tabs, look.Halves) {
 		screens.tagTab = 0
 		screens.query.LowStockOnly = false
 	}

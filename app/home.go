@@ -29,12 +29,10 @@ type homeState struct {
 // homeTabs are the two views of the home page.
 var homeTabs = []look.Tab{{Label: "Resumen"}, {Icon: "calendar", Label: "Calendario"}}
 
-// sideWidgetShare is how much of the page's width the month and the restock widgets take each.
-const sideWidgetShare = 0.27
-
 func (program *App) drawHome(context *ui.Context) {
-	look.PageHeader(context, "Hola", calendar.LongWords(program.today.date), func() {
-		look.Segmented(context, "home", &program.home.tab, homeTabs)
+	look.Space(context, greetingTop)
+	look.SizedPageHeader(context, "Hola", calendar.LongWords(program.today.date), look.Greeting, func() {
+		look.Segmented(context, "home", &program.home.tab, homeTabs, look.Views)
 	})
 	if program.today.loadErr != nil {
 		context.Toast("No se pudo leer lo de hoy", true)
@@ -59,13 +57,11 @@ func (program *App) drawSummary(context *ui.Context) {
 			program.restockWidget(context)
 		})
 	} else {
-		// The fair is the widget the artist acts on, so it is wider than the other two.
-		width, _ := context.Size()
-		side := ui.Fixed(width * sideWidgetShare)
-		context.Box(ui.Layout{Width: ui.Grow(), Gap: context.Theme.Gap}, func() {
-			context.Box(ui.Layout{Width: ui.Grow()}, func() { program.fairWidget(context) })
-			context.Box(ui.Layout{Width: side}, func() { program.monthWidget(context) })
-			context.Box(ui.Layout{Width: side}, func() { program.restockWidget(context) })
+		look.Space(context, widgetsTop)
+		context.Box(ui.Layout{Width: ui.Grow(), Gap: widgetsGap}, func() {
+			context.Box(ui.Layout{Width: ui.Share(fairShare), Height: ui.Grow()}, func() { program.fairWidget(context) })
+			context.Box(ui.Layout{Width: ui.Share(1), Height: ui.Grow()}, func() { program.monthWidget(context) })
+			context.Box(ui.Layout{Width: ui.Share(1), Height: ui.Grow()}, func() { program.restockWidget(context) })
 		})
 	}
 	program.drawWeek(context)

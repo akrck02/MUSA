@@ -7,9 +7,7 @@ import (
 
 // Measures of a page's header and its buttons, in pixels, as in the author's design.
 const (
-	titleSize          = 34
 	titleLineHeight    = 1.2
-	subtitleSize       = 17
 	subtitleSpace      = 4
 	headerGap          = 16
 	toolButtonSide     = 52
@@ -22,16 +20,32 @@ const (
 	headerIconSize     = 22
 )
 
+// HeaderSize is how big a page header's title and subtitle are, in pixels.
+type HeaderSize struct {
+	Title, Subtitle float32
+}
+
+// PageTitle is the header of most pages; Greeting is the home page's, a little bigger.
+var (
+	PageTitle = HeaderSize{Title: 34, Subtitle: 17}
+	Greeting  = HeaderSize{Title: 36, Subtitle: 18}
+)
+
 // PageHeader is the top of a page: its title and a soft line under it on the left, and the page's
 // actions on the right, standing on the same line as the bottom of the words (actions may be nil).
 func PageHeader(context *ui.Context, title, subtitle string, actions func()) {
+	SizedPageHeader(context, title, subtitle, PageTitle, actions)
+}
+
+// SizedPageHeader is PageHeader with words of another size.
+func SizedPageHeader(context *ui.Context, title, subtitle string, size HeaderSize, actions func()) {
 	theme := context.Theme
 	context.Box(ui.Layout{Direction: Across(context), Width: ui.Grow(), Gap: headerGap, AlignY: ui.End}, func() {
 		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow()}, func() {
-			context.Text(title, ui.TextStyle{Size: titleSize, Weight: draw2d.Bold, LineHeight: titleLineHeight})
+			context.Text(title, ui.TextStyle{Size: size.Title, Weight: draw2d.Bold, LineHeight: titleLineHeight})
 			if subtitle != "" {
 				Space(context, subtitleSpace)
-				Paragraph(context, subtitle, ui.TextStyle{Size: subtitleSize, Color: theme.InkSoft})
+				Paragraph(context, subtitle, ui.TextStyle{Size: size.Subtitle, Color: theme.InkSoft})
 			}
 		})
 		if actions != nil {

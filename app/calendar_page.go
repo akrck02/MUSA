@@ -13,37 +13,71 @@ import (
 
 // Heights of the calendar's days, in pixels, and how many entries each shows before "+N".
 const (
-	weekDayHeight  = 150
 	monthDayHeight = 112
-	weekEntries    = 3
 	monthEntries   = 2
 	monthLine      = 0.5
 	todaySide      = 24
 	legendDot      = 10
 )
 
+// Measures of the week on the home page, in pixels, as in the author's design.
+const (
+	weekTop         = 18
+	weekTitleSize   = 22
+	weekTitleHeight = 1.2
+	weekLinkGap     = 8
+	weekDaysTop     = 16
+	weekDaysGap     = 10
+	weekDayHeight   = 150
+	weekDayRadius   = 14
+	weekDayPadding  = 10
+	weekDayNameSize = 13
+	weekDayNumber   = 22
+)
+
 // drawWeek is this week, Monday to Sunday, with what happens each day.
 func (program *App) drawWeek(context *ui.Context) {
 	theme := context.Theme
 	today := program.today.date
-	look.Card(context, ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(theme.Padding * 1.25), Gap: 12}, func() {
+	look.Space(context, weekTop)
+	card := ui.Look{Fill: theme.Surface, Border: theme.Line, BorderWidth: 1, Radius: widgetRadius}
+	context.Frame(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(widgetPadding)}, card, func() {
 		context.Box(ui.Layout{Width: ui.Grow(), AlignY: ui.Center}, func() {
 			context.Box(ui.Layout{Width: ui.Grow()}, func() {
-				context.Text("Esta semana", ui.TextStyle{Size: theme.HeadingSize, Weight: draw2d.Bold})
+				context.Text("Esta semana", ui.TextStyle{Size: weekTitleSize, Weight: draw2d.Bold, LineHeight: weekTitleHeight})
 			})
 			if link(context, "Ver el mes entero") {
 				program.home.tab = 1
 			}
 		})
-		context.Grid(len(today.Week()), func() {
+		look.Space(context, weekDaysTop)
+		context.Box(ui.Layout{Width: ui.Grow(), Gap: weekDaysGap, Columns: len(today.Week())}, func() {
 			for _, day := range today.Week() {
 				name := calendar.ShortWeekday(day)
 				if day == today {
 					name = "hoy"
 				}
-				dayCell(context, day, today, name, program.today.plan.on(day), weekEntries, false, weekDayHeight)
+				weekDay(context, day, today, name, program.today.plan.on(day))
 			}
 		})
+	})
+}
+
+// weekDay is one day of the week: its name, its number, and its entries; today stands on the
+// sunken colour with its number in the accent.
+func weekDay(context *ui.Context, day, today calendar.Date, name string, entries []agendaEntry) {
+	theme := context.Theme
+	fill, number := theme.Background, theme.Ink
+	if day == today {
+		fill, number = theme.Sunken, theme.Primary
+	}
+	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Grow().Between(weekDayHeight, 0), Padding: ui.Pad(weekDayPadding)}
+	context.Frame(layout, ui.Look{Fill: fill, Radius: weekDayRadius, Clip: true}, func() {
+		context.Text(name, ui.TextStyle{Size: weekDayNameSize, Color: theme.InkSoft})
+		context.Text(strconv.Itoa(day.Day), ui.TextStyle{Size: weekDayNumber, Weight: draw2d.Bold, Color: number})
+		for _, entry := range entries {
+			entryChip(context, entry)
+		}
 	})
 }
 

@@ -9,14 +9,6 @@ import (
 
 // Measures of the tabs, in pixels, as in the author's design.
 const (
-	segmentTrackPadding = 5
-	segmentTrackRadius  = 16
-	segmentRadius       = 12
-	segmentPaddingX     = 26
-	segmentPaddingY     = 12
-	segmentGap          = 10
-	segmentTextSize     = 19
-	segmentIconSize     = 20
 	tabCountSize        = 14
 	pillRadius          = 999
 )
@@ -30,27 +22,42 @@ type Tab struct {
 	HasCount bool
 }
 
-// Segmented is a track with a raised, lit choice: the halves of a page («Físico», «Digital»). It
-// returns true on the frame the choice changes.
-func Segmented(context *ui.Context, name string, selected *int, tabs []Tab) bool {
+// SegmentSize is how big a Segmented track and its choices are, in pixels.
+type SegmentSize struct {
+	TrackPadding, TrackRadius float32
+	// Radius, PaddingX, PaddingY and Gap shape each choice; Gap is between its icon and words.
+	Radius, PaddingX, PaddingY, Gap float32
+	TextSize, IconSize              float32
+}
+
+// Halves are the segments that split a page in two big halves («Físico», «Digital»); Views are
+// the smaller ones that switch a page's view («Resumen», «Calendario»).
+var (
+	Halves = SegmentSize{TrackPadding: 5, TrackRadius: 16, Radius: 12, PaddingX: 26, PaddingY: 12, Gap: 10, TextSize: 19, IconSize: 20}
+	Views  = SegmentSize{TrackPadding: 4, TrackRadius: 14, Radius: 10, PaddingX: 20, PaddingY: 10, Gap: 8, TextSize: 17, IconSize: 18}
+)
+
+// Segmented is a track with a raised, lit choice: the halves of a page, or its views. It returns
+// true on the frame the choice changes.
+func Segmented(context *ui.Context, name string, selected *int, tabs []Tab, size SegmentSize) bool {
 	theme := context.Theme
 	changed := false
-	track := ui.Look{Fill: theme.Sunken, Radius: segmentTrackRadius}
+	track := ui.Look{Fill: theme.Sunken, Radius: size.TrackRadius}
 	context.Push(name)
-	context.Frame(ui.Layout{Padding: ui.Pad(segmentTrackPadding)}, track, func() {
+	context.Frame(ui.Layout{Padding: ui.Pad(size.TrackPadding)}, track, func() {
 		for index, tab := range tabs {
 			chosen := index == *selected
-			normal := ui.Look{Radius: segmentRadius}
+			normal := ui.Look{Radius: size.Radius}
 			if chosen {
-				normal = ui.Look{Fill: theme.Surface, Radius: segmentRadius, Shadow: true}
+				normal = ui.Look{Fill: theme.Surface, Radius: size.Radius, Shadow: true}
 			}
 			hovered := normal
 			if !chosen {
 				hovered.Fill = theme.Surface.WithAlpha(0.5)
 			}
-			layout := ui.Layout{Padding: ui.PadXY(segmentPaddingX, segmentPaddingY), Gap: segmentGap, AlignY: ui.Center}
+			layout := ui.Layout{Padding: ui.PadXY(size.PaddingX, size.PaddingY), Gap: size.Gap, AlignY: ui.Center}
 			if context.Clickable(tab.Label, layout, ui.Looks{Normal: normal, Hovered: hovered, Pressed: hovered}, func() {
-				tabWords(context, tab, chosen, segmentTextSize, segmentIconSize)
+				tabWords(context, tab, chosen, size.TextSize, size.IconSize)
 			}) && !chosen {
 				*selected, changed = index, true
 			}

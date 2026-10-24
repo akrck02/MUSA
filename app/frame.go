@@ -105,9 +105,18 @@ func (program *App) scrollingPage(context *ui.Context) {
 
 // spaced writes the brand in capitals with Bubble's letter spacing, letter by letter.
 func spaced(context *ui.Context, text string, size float32) {
-	context.Box(ui.Layout{Gap: size * brandLetter, AlignY: ui.Center}, func() {
+	spacedBy(context, text, ui.TextStyle{Size: size, Weight: draw2d.Bold}, brandLetter)
+}
+
+// spacedBy writes text letter by letter, ems apart (CSS's letter-spacing).
+func spacedBy(context *ui.Context, text string, style ui.TextStyle, ems float32) {
+	size := style.Size
+	if size == 0 {
+		size = context.Theme.TextSize
+	}
+	context.Box(ui.Layout{Gap: size * ems, AlignY: ui.Center}, func() {
 		for _, letter := range text {
-			context.Text(string(letter), ui.TextStyle{Size: size, Weight: draw2d.Bold})
+			context.Text(string(letter), style)
 		}
 	})
 	context.Describe(ui.Description{Role: ui.TextRole, Label: text}) // a word, not letters, for a screen reader
