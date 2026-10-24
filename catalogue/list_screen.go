@@ -234,7 +234,7 @@ func (screens *Screens) card(context *ui.Context, product Product, fill draw2d.C
 	hovered.Border = theme.ControlLine
 	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(cardBorder)}
 	padding := ui.Padding{Left: cardPaddingX, Right: cardPaddingX, Top: cardPaddingTop, Bottom: cardPaddingBottom}
-	clicked := context.Clickable(product.Name, layout, ui.Looks{Normal: normal, Hovered: hovered, Pressed: hovered}, func() {
+	clicked := context.Clickable(product.Name, layout, look.Answering(theme, normal, hovered), func() {
 		screens.cardPicture(context, product, fill)
 		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: padding}, func() {
 			look.Paragraph(context, product.Name, ui.TextStyle{Size: cardNameSize, Weight: draw2d.Bold})

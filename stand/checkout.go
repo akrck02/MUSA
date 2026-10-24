@@ -97,7 +97,7 @@ func (screens *Screens) methodCard(context *ui.Context, icon, title string) bool
 	hovered.Border = theme.ControlLine
 	padding := ui.PadXY(methodPaddingX+1, methodPaddingY+1)
 	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: padding, Gap: methodGap, AlignX: ui.Center}
-	return context.Clickable(title, layout, ui.Looks{Normal: normal, Hovered: hovered, Pressed: hovered}, func() {
+	return context.Clickable(title, layout, look.Answering(theme, normal, hovered), func() {
 		circle(context, icon, methodBadge, methodIconSize, theme.Sunken, theme.Primary)
 		context.Text(title, ui.TextStyle{Size: methodTitleSize, Weight: draw2d.Bold})
 	})

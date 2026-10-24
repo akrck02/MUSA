@@ -272,7 +272,7 @@ func roundButton(context *ui.Context, icon, label string) bool {
 	hovered.Fill = theme.Sunken
 	side := ui.Fixed(roundSide)
 	clicked := context.Clickable(label, ui.Layout{Width: side, Height: side, AlignX: ui.Center, AlignY: ui.Center},
-		ui.Looks{Normal: normal, Hovered: hovered, Pressed: hovered}, func() {
+		look.Answering(theme, normal, hovered), func() {
 			context.IconSized(icon, roundIconSize, theme.Ink)
 		})
 	context.Describe(ui.Description{Role: ui.ButtonRole, Label: label})
@@ -286,7 +286,7 @@ func newFairButton(context *ui.Context) bool {
 	hovered := normal
 	hovered.Fill = theme.Primary.Mix(theme.Ink, hoverDarkening)
 	layout := ui.Layout{Padding: ui.PadXY(newFairPaddingX, newFairPaddingY), Gap: mainGap, AlignY: ui.Center}
-	clicked := context.Clickable("Nuevo evento", layout, ui.Looks{Normal: normal, Hovered: hovered, Pressed: hovered}, func() {
+	clicked := context.Clickable("Nuevo evento", layout, look.Answering(theme, normal, hovered), func() {
 		context.IconSized("plus", goIconSize, theme.OnPrimary)
 		context.Text("Nuevo evento", ui.TextStyle{Size: newFairSize, Weight: draw2d.Bold, Color: theme.OnPrimary})
 	})

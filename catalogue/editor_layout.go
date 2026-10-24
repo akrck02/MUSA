@@ -112,7 +112,7 @@ func ghostButton(context *ui.Context, words string) bool {
 	normal := ui.Look{Fill: theme.Surface, Border: theme.Line, BorderWidth: 1, Radius: headerButtonRadius}
 	hovered := normal
 	hovered.Fill = theme.Sunken
-	return wordsButton(context, words, ui.Looks{Normal: normal, Hovered: hovered, Pressed: hovered},
+	return wordsButton(context, words, look.Answering(theme, normal, hovered),
 		ui.PadXY(ghostPaddingX, ghostPaddingY), ui.TextStyle{Size: ghostSize, Weight: draw2d.Medium})
 }
 
@@ -122,7 +122,7 @@ func saveButton(context *ui.Context, words string) bool {
 	normal := ui.Look{Fill: theme.Primary, Radius: headerButtonRadius}
 	hovered := normal
 	hovered.Fill = theme.Primary.Mix(theme.Ink, look.HoverDarkening)
-	return wordsButton(context, words, ui.Looks{Normal: normal, Hovered: hovered, Pressed: hovered},
+	return wordsButton(context, words, look.Answering(theme, normal, hovered),
 		ui.PadXY(savePaddingX, savePaddingY), ui.TextStyle{Size: saveSize, Weight: draw2d.Bold, Color: theme.OnPrimary})
 }
 
@@ -239,7 +239,7 @@ func tagPill(context *ui.Context, words, label string) bool {
 	normal := ui.Look{Fill: theme.Sunken, Radius: fieldLabelSize * 2}
 	hovered := normal
 	hovered.Fill = theme.Sunken.Mix(theme.Ink, look.HoverDarkening/2)
-	clicked := context.Clickable(label, ui.Layout{Padding: ui.PadXY(tagPaddingX, tagPaddingY)}, ui.Looks{Normal: normal, Hovered: hovered, Pressed: hovered}, func() {
+	clicked := context.Clickable(label, ui.Layout{Padding: ui.PadXY(tagPaddingX, tagPaddingY)}, look.Answering(theme, normal, hovered), func() {
 		context.Text(words, ui.TextStyle{Size: fieldLabelSize})
 	})
 	context.Describe(ui.Description{Role: ui.ButtonRole, Label: label})

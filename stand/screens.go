@@ -278,7 +278,7 @@ func (screens *Screens) choiceCard(context *ui.Context, icon, title, subtitle st
 	hovered := normal
 	hovered.Border = theme.ControlLine
 	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Grow(), Padding: ui.Pad(choiceCardPadding + 1), Gap: choiceCardGap}
-	return context.Clickable(title, layout, ui.Looks{Normal: normal, Hovered: hovered, Pressed: hovered}, func() {
+	return context.Clickable(title, layout, look.Answering(theme, normal, hovered), func() {
 		side := ui.Fixed(choiceBadge)
 		context.Frame(ui.Layout{Width: side, Height: side, AlignX: ui.Center, AlignY: ui.Center}, ui.Look{Fill: theme.Sunken, Radius: choiceBadge / 2}, func() {
 			context.IconSized(icon, choiceIconSize, theme.Primary)

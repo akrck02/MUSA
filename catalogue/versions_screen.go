@@ -151,7 +151,7 @@ func stepButton(context *ui.Context, icon, label string) bool {
 	hovered.Fill = theme.Sunken
 	side := ui.Fixed(stepSide)
 	clicked := context.Clickable("##"+label, ui.Layout{Width: side, Height: side, AlignX: ui.Center, AlignY: ui.Center},
-		ui.Looks{Normal: normal, Hovered: hovered, Pressed: hovered}, func() {
+		look.Answering(theme, normal, hovered), func() {
 			context.IconSized(icon, stepIconSize, theme.Ink)
 		})
 	context.Describe(ui.Description{Role: ui.ButtonRole, Label: label})

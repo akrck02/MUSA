@@ -84,7 +84,7 @@ func goButton(context *ui.Context, icon, words string) bool {
 	hovered := normal
 	hovered.Fill = theme.Primary.Mix(theme.Ink, hoverDarkening)
 	layout := ui.Layout{Padding: ui.PadXY(goPaddingX, goPaddingY), Gap: goGap, AlignY: ui.Center}
-	clicked := context.Clickable(words, layout, ui.Looks{Normal: normal, Hovered: hovered, Pressed: hovered}, func() {
+	clicked := context.Clickable(words, layout, look.Answering(theme, normal, hovered), func() {
 		if icon != "" {
 			context.IconSized(icon, goIconSize, theme.OnPrimary)
 		}
