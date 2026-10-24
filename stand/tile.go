@@ -157,9 +157,11 @@ func (screens *Screens) inBasket(context *ui.Context, item Item, colours paint) 
 	side := ui.Fixed(minusSide)
 	layout := ui.Layout{Width: side, Height: side, AlignX: ui.Center, AlignY: ui.Center}
 	round := ui.Look{Fill: draw2d.Color{1, 1, 1, minusAlpha}, Radius: minusSide / 2}
-	if context.Clickable("Quitar uno", layout, ui.Looks{Normal: round, Hovered: round, Pressed: round}, func() {
+	clicked := context.Clickable("Quitar uno", layout, ui.Looks{Normal: round, Hovered: round, Pressed: round}, func() {
 		context.Text("−", ui.TextStyle{Size: minusSize, Color: colours.ink, LineHeight: 1})
-	}) {
+	})
+	context.Describe(ui.Description{Role: ui.ButtonRole, Label: "Quitar uno"}) // a sign alone says nothing
+	if clicked {
 		screens.basket.Remove(item.VariantID)
 	}
 }

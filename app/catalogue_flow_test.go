@@ -126,13 +126,20 @@ func TestATagIsAddedAndRemovedFromAProduct(t *testing.T) {
 	steps(t, window, click(window, "Añadir etiqueta"))
 	settle(window)
 	steps(t, window, typeInto(window, "Lámina, pegatina, gatos…", "verde"))
-	steps(t, window, click(window, "Añadir etiqueta"))
+	steps(t, window, click(window, "Confirmar etiqueta"))
 	settle(window)
 	steps(t, window, click(window, "Guardar"))
 	settle(window)
 	saved, _ := productNamed(t, program, "Rana feliz")
 	if !hasTag(saved, "verde") {
 		t.Fatalf("the product's tags are %v, without «verde»", saved.Tags)
+	}
+	steps(t, window, click(window, "Rana feliz"))
+	settle(window)
+	steps(t, window, click(window, "Quitar verde"), click(window, "Guardar"))
+	settle(window)
+	if removed, _ := productNamed(t, program, "Rana feliz"); hasTag(removed, "verde") {
+		t.Errorf("«verde» is still a tag after removing it")
 	}
 }
 

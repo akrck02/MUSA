@@ -217,7 +217,7 @@ func (screens *Screens) tagSection(context *ui.Context) {
 	look.Space(context, tagGap)
 	context.Box(ui.Layout{Width: ui.Grow(), Gap: tagGap, AlignY: ui.Center}, func() {
 		context.TextFieldWith("tag", &edited.tagTyped, ui.TextFieldOptions{Placeholder: "Lámina, pegatina, gatos…"})
-		if context.IconButton("check", "##Añadir etiqueta") {
+		if context.IconButton("check", "##Confirmar etiqueta") {
 			edited.addTag(edited.tagTyped)
 		}
 	})

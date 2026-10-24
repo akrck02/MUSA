@@ -1,0 +1,131 @@
+package app
+
+import (
+	"slices"
+	"testing"
+
+	"github.com/Itros97/MUSA/money"
+	"github.com/Itros97/MUSA/sales"
+	"github.com/Itros97/MUSA/stand"
+	"github.com/akrck02/go-ui/uitest"
+)
+
+// openStand opens the stand on the whole stock with one piece of its first item in the basket.
+func openStand(t *testing.T) (*App, *uitest.Window, stand.Item) {
+	t.Helper()
+	program, window := openApp(t, true)
+	program.Show("stand")
+	settle(window)
+	items, err := stand.WholeStock{Products: program.stores.Products}.Items()
+	if err != nil || len(items) == 0 {
+		t.Fatalf("no product on the stand (%v)", err)
+	}
+	item := items[0]
+	steps(t, window, clickIn(window, item.VariantID, tileLabel(item)))
+	settle(window)
+	return program, window, item
+}
+
+// tileLabel is how a product's tile is read on the stand: «Luna · Mate · 3 €».
+func tileLabel(item stand.Item) string { return item.Label + " · " + money.Format(item.Price) }
+
+func salesCount(t *testing.T, program *App) int {
+	t.Helper()
+	all, err := program.stores.Sales.All()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return len(all)
+}
+
+func TestPayingByCardRecordsACardSale(t *testing.T) {
+	program, window, _ := openStand(t)
+	before := salesCount(t, program)
+	steps(t, window, click(window, "Cobrar"), click(window, "Pagar con tarjeta"), click(window, "Cobrado con tarjeta"))
+	settle(window)
+	all, _ := program.stores.Sales.All()
+	if len(all) != before+1 || all[0].PaidWith != sales.Card {
+		t.Errorf("after a card payment: %d sales from %d, the last paid with %s", len(all), before, all[0].PaidWith)
+	}
+}
+
+func TestACardThatFailsRecordsNothing(t *testing.T) {
+	program, window, _ := openStand(t)
+	before := salesCount(t, program)
+	steps(t, window, click(window, "Cobrar"), click(window, "Pagar con tarjeta"), click(window, "No ha salido"))
+	settle(window)
+	if after := salesCount(t, program); after != before {
+		t.Errorf("a failed card payment recorded a sale")
+	}
+}
+
+func TestExactCashClosesTheSale(t *testing.T) {
+	program, window, _ := openStand(t)
+	before := salesCount(t, program)
+	steps(t, window, click(window, "Cobrar"), click(window, "Pagar en efectivo"), click(window, "Justo"), click(window, "Confirmar"))
+	settle(window)
+	if after := salesCount(t, program); after != before+1 {
+		t.Errorf("paying the exact amount did not record the sale")
+	}
+}
+
+func TestTooLittleCashDoesNotCloseTheSale(t *testing.T) {
+	program, window, item := openStand(t)
+	if item.Price <= 50 {
+		t.Skip("the first item costs too little to pay short")
+	}
+	before := salesCount(t, program)
+	steps(t, window, click(window, "Cobrar"), click(window, "Pagar en efectivo"), click(window, money.Format(50)), click(window, "Confirmar"))
+	settle(window)
+	if after := salesCount(t, program); after != before {
+		t.Errorf("a sale was recorded with too little money")
+	}
+	if !slices.Contains(window.Texts(), "Falta") {
+		t.Errorf("the dialog does not say money is missing")
+	}
+}
+
+func TestClearingTheCashTypedStartsAgain(t *testing.T) {
+	_, window, _ := openStand(t)
+	steps(t, window, click(window, "Cobrar"), click(window, "Pagar en efectivo"), click(window, money.Format(5000)), click(window, "Borrar"))
+	settle(window)
+	if slices.Contains(window.Texts(), "Cambio") && slices.Contains(window.Texts(), money.Format(5000)) {
+		t.Errorf("the money given is still there after Borrar")
+	}
+}
+
+func TestTakingOneOutOfTheBasketEmptiesIt(t *testing.T) {
+	_, window, _ := openStand(t)
+	steps(t, window, click(window, "Quitar uno"))
+	settle(window)
+	if _, err := window.Element("Cobrar"); err == nil {
+		t.Errorf("the basket bar still shows after taking its only piece out")
+	}
+}
+
+func TestSearchingTheStandKeepsOnlyWhatMatches(t *testing.T) {
+	program, window := openApp(t, true)
+	program.Show("stand")
+	settle(window)
+	steps(t, window, click(window, "Buscar"))
+	settle(window)
+	window.Type("zorro")
+	settle(window)
+	for _, text := range window.Texts() {
+		if text == "Estrella" {
+			t.Fatalf("«Estrella» still shows when searching «zorro»")
+		}
+	}
+	if !slices.Contains(window.Texts(), "Zorro") {
+		t.Errorf("«Zorro» is not found by «zorro»: %q", window.Texts())
+	}
+}
+
+func TestCambiarGoesBackToTheChoiceOfStands(t *testing.T) {
+	_, window, _ := openStand(t)
+	steps(t, window, click(window, "Cambiar"))
+	settle(window)
+	if _, err := window.Element("Todo el stock Todos tus productos, para vender fuera de una feria"); err != nil {
+		t.Errorf("Cambiar did not go back to the choice of stands: %v", err)
+	}
+}
