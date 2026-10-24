@@ -167,9 +167,9 @@ func (screens *Screens) editorPicture(context *ui.Context) {
 	theme := context.Theme
 	product := screens.editor.form.product
 	name := nameOr(product.Name, screens.editor.form.name)
-	fill := ListFill(theme, screens.positions[product.ID])
+	fill := ListFill(screens.positions[product.ID])
 	if _, stored := screens.positions[product.ID]; !stored {
-		fill = PictureFill(theme, name)
+		fill = PictureFill(name)
 	}
 	layout := ui.Layout{Direction: ui.Stacked, Width: ui.Grow(), Height: ui.Fixed(editorSideWidth), AlignX: ui.Center, AlignY: ui.Center}
 	context.Frame(layout, ui.Look{Fill: fill, Radius: pictureRadius}, func() {

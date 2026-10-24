@@ -198,7 +198,7 @@ func (screens *Screens) cards(context *ui.Context, shown []Product) {
 	context.Box(ui.Layout{Width: ui.Grow(), Columns: columns, Gap: gridGap}, func() {
 		for _, product := range shown {
 			context.Push(product.ID)
-			screens.card(context, product, ListFill(context.Theme, screens.positions[product.ID]))
+			screens.card(context, product, ListFill(screens.positions[product.ID]))
 			context.Pop()
 		}
 	})
@@ -379,7 +379,7 @@ func (screens *Screens) digitalList(context *ui.Context, shown []Product) {
 	context.Box(ui.Layout{Width: ui.Grow(), Columns: columns, Gap: gridGap}, func() {
 		for _, product := range shown {
 			context.Push(product.ID)
-			screens.card(context, product, ListFill(theme, screens.positions[product.ID]))
+			screens.card(context, product, ListFill(screens.positions[product.ID]))
 			context.Pop()
 		}
 	})

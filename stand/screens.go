@@ -308,7 +308,7 @@ func (screens *Screens) drawRegister(context *ui.Context) {
 	context.Box(ui.Layout{Width: ui.Grow(), Columns: columns, Gap: tilesGap}, func() {
 		for position, item := range screens.shown(tags) {
 			context.Push(item.VariantID)
-			screens.tile(context, item, catalogue.ListFill(context.Theme, position))
+			screens.tile(context, item, catalogue.ListFill(position))
 			context.Pop()
 		}
 	})

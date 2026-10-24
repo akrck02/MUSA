@@ -231,7 +231,7 @@ func restockLine(context *ui.Context, index int, row restockRow) {
 	theme := context.Theme
 	context.Box(ui.Layout{Width: ui.Grow(), Padding: ui.PadXY(0, restockRowY), Gap: restockGap, AlignY: ui.Center}, func() {
 		side := ui.Fixed(swatchSide)
-		context.Frame(ui.Layout{Width: side, Height: side}, ui.Look{Fill: catalogue.ListFill(theme, index), Radius: swatchRadius}, nil)
+		context.Frame(ui.Layout{Width: side, Height: side}, ui.Look{Fill: catalogue.ListFill(index), Radius: swatchRadius}, nil)
 		context.Frame(ui.Layout{Width: ui.Grow()}, ui.Look{Clip: true}, func() {
 			context.Text(row.words, ui.TextStyle{Weight: draw2d.Medium})
 		})

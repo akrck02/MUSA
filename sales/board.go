@@ -169,7 +169,7 @@ func (screens *Screens) thumbs(context *ui.Context, sale Sale) {
 				break
 			}
 			side := ui.Fixed(thumbSide)
-			fill := catalogue.ListFill(theme, screens.positions[line.ProductName])
+			fill := catalogue.ListFill(screens.positions[line.ProductName])
 			context.Frame(ui.Layout{Width: side, Height: side},
 				ui.Look{Fill: fill, Border: theme.Surface, BorderWidth: thumbBorder, Radius: thumbRadius}, nil)
 		}
