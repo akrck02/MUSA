@@ -71,7 +71,7 @@ func (program *App) drawSummary(context *ui.Context) {
 	if program.options.DevelopmentTools {
 		program.developmentTools(context)
 	}
-	studioFooter(context)
+	program.studioFooter(context)
 }
 
 func (program *App) developmentTools(context *ui.Context) {
@@ -128,8 +128,9 @@ func (program *App) tell(err error, done string) {
 	program.home.noteUntil = time.Now().Add(toastTime)
 }
 
-// studioFooter is the quiet signature at the end of the home page: the app and who makes it.
-func studioFooter(context *ui.Context) {
+// studioFooter is the quiet end of the home page: the switch between the light and the dark
+// theme, and the signature of the app and who makes it.
+func (program *App) studioFooter(context *ui.Context) {
 	theme := context.Theme
 	context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.PadXY(0, theme.Padding*1.5), Gap: 6, AlignX: ui.Center}, func() {
 		context.Box(ui.Layout{Gap: 8, AlignY: ui.Center}, func() {
@@ -137,5 +138,31 @@ func studioFooter(context *ui.Context) {
 			context.Text("by Software Anvil", ui.TextStyle{Size: theme.SmallTextSize, Color: theme.InkQuiet})
 		})
 		context.Text("© 2026 · Itros97", ui.TextStyle{Size: theme.SmallTextSize, Color: theme.InkQuiet})
+		program.themeSwitch(context)
 	})
 }
+
+// themeSwitch is a quiet button that says which theme it changes to: «Modo oscuro» or «Modo claro».
+func (program *App) themeSwitch(context *ui.Context) {
+	theme := context.Theme
+	icon, words := "moon", "Modo oscuro"
+	if program.dark {
+		icon, words = "sun", "Modo claro"
+	}
+	hovered := ui.Look{Fill: theme.Sunken, Radius: theme.ControlRadius}
+	layout := ui.Layout{Gap: themeSwitchGap, AlignY: ui.Center, Padding: ui.PadXY(themeSwitchPaddingX, themeSwitchPaddingY)}
+	if context.Clickable(words, layout, ui.Looks{Hovered: hovered, Pressed: hovered}, func() {
+		context.IconSized(icon, theme.SmallTextSize, theme.InkSoft)
+		context.Text(words, ui.TextStyle{Size: theme.SmallTextSize, Color: theme.InkSoft})
+	}) {
+		program.SetDark(!program.dark)
+	}
+	context.Describe(ui.Description{Role: ui.ButtonRole, Label: words})
+}
+
+// Measures of the theme switch, in pixels.
+const (
+	themeSwitchGap      = 6
+	themeSwitchPaddingX = 10
+	themeSwitchPaddingY = 6
+)

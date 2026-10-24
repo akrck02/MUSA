@@ -51,7 +51,8 @@ type Options struct {
 // App is everything MUSA remembers between frames.
 type App struct {
 	stores  demo.Stores
-	theme   ui.Theme
+	themes  [2]ui.Theme // the light theme and the dark one
+	dark    bool
 	options Options
 	place   Place
 
@@ -66,15 +67,11 @@ type App struct {
 
 // New opens MUSA over an open database.
 func New(database *storage.Database, options Options) (*App, error) {
-	mode := bubble.ModeLight
-	if options.Dark {
-		mode = bubble.ModeDark
-	}
-	accent, err := bubble.ParseColor(Accent)
+	light, err := newTheme(bubble.ModeLight)
 	if err != nil {
 		return nil, err
 	}
-	design, err := bubble.NewTheme(bubble.Options{Style: bubble.StylePaper, Mode: mode, Density: bubble.DensityComfortable, Accent: accent})
+	dark, err := newTheme(bubble.ModeDark)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +87,8 @@ func New(database *storage.Database, options Options) (*App, error) {
 	program := &App{
 		stores: demo.Stores{Database: database, Products: products, Sales: sold, Events: fairs, Customers: people,
 			Projects: commissions, Now: now, NewID: storage.NewID},
-		theme:   pageTheme(goui.Theme(design)),
+		themes:  [2]ui.Theme{light, dark},
+		dark:    options.Dark,
 		options: options,
 	}
 	program.catalogue = catalogue.NewScreens(products, storage.NewID)
@@ -131,9 +129,31 @@ func (program *App) Open(place Place) {
 	}
 }
 
+// newTheme is Bubble's paper theme in a mode, on MUSA's accent and with the design's text.
+func newTheme(mode bubble.Mode) (ui.Theme, error) {
+	accent, err := bubble.ParseColor(Accent)
+	if err != nil {
+		return ui.Theme{}, err
+	}
+	design, err := bubble.NewTheme(bubble.Options{Style: bubble.StylePaper, Mode: mode, Density: bubble.DensityComfortable, Accent: accent})
+	if err != nil {
+		return ui.Theme{}, err
+	}
+	return pageTheme(goui.Theme(design)), nil
+}
+
+// Dark tells whether MUSA is drawn with its dark theme.
+func (program *App) Dark() bool { return program.dark }
+
+// SetDark draws MUSA with its dark theme, or its light one, from the next frame on.
+func (program *App) SetDark(dark bool) { program.dark = dark }
+
 // Build draws one frame of MUSA; it is the function given to window.Run.
 func (program *App) Build(context *ui.Context) {
-	context.Theme = program.theme
+	context.Theme = program.themes[0]
+	if program.dark {
+		context.Theme = program.themes[1]
+	}
 	if context.Back() && !program.back() {
 		program.Open(Home)
 	}

@@ -305,3 +305,16 @@ func TestPagesCopiedFromOutsideServicesSayTheyAreNotSyncedYet(t *testing.T) {
 		}
 	}
 }
+
+func TestTheHomePageSwitchesBetweenTheLightAndTheDarkTheme(t *testing.T) {
+	program, window := openApp(t, true)
+	window.Frame()
+	steps(t, window, click(window, "Modo oscuro"))
+	if !program.Dark() {
+		t.Fatal("«Modo oscuro» leaves the light theme on")
+	}
+	steps(t, window, click(window, "Modo claro"))
+	if program.Dark() {
+		t.Error("«Modo claro» leaves the dark theme on")
+	}
+}
