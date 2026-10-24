@@ -16,7 +16,7 @@ model, the rules, the store that reads and writes it, and its screens.
 | `stand`     | The stand: the basket, «Cobrar» and where it sells from. |
 | `cash`      | Paying in cash: what was handed over and the change. |
 | `calendar`, `money` | Days without time zones, and euros as whole cents. |
-| `storage`   | The SQLite connection, the schema and its migrations. |
+| `storage`   | The SQLite connection, the schema and its migrations, and the artist's settings (the theme they chose). |
 | `look`      | The pieces every screen shares, on top of Bubble 4. |
 | `app`       | The frame, the navigation and the home page. |
 | `cmd/musa`  | The program: reads its flags, opens the database, opens the window. |
