@@ -3,6 +3,8 @@ package app
 import (
 	"slices"
 	"testing"
+
+	"github.com/akrck02/go-ui/uitest"
 )
 
 func TestAHistoryKindKeepsOnlyItsSales(t *testing.T) {
@@ -37,13 +39,40 @@ func TestASaleOpenedFromTheHistoryCanBeDeleted(t *testing.T) {
 	}
 }
 
-func TestTheOrderButtonMovesAnOrderOn(t *testing.T) {
+func TestASentOrderDroppedOnDeliveredLeavesTheBoard(t *testing.T) {
 	program, window := openApp(t, true)
 	program.Open(Sales)
 	settle(window)
-	steps(t, window, clickIn(window, orderID(t, program, "Marcos"), "Preparado"))
+	dragOnto(t, window, "Ana", "Entregado")
 	settle(window)
-	if sale := saleOf(t, program, "Marcos"); sale.Status != "SENT" {
-		t.Errorf("Marcos's order is %s after «Preparado»", sale.Status)
+	if sale := saleOf(t, program, "Ana"); sale.Status != "DELIVERED" {
+		t.Errorf("Ana's order is %s after being dropped on «Entregado»", sale.Status)
 	}
+}
+
+func TestAnOrderToPrepareCannotSkipToDelivered(t *testing.T) {
+	program, window := openApp(t, true)
+	program.Open(Sales)
+	settle(window)
+	dragOnto(t, window, "Marcos", "Entregado")
+	settle(window)
+	if sale := saleOf(t, program, "Marcos"); sale.Status != "TO_PREPARE" {
+		t.Errorf("Marcos's order is %s after being dropped on «Entregado» before it was sent", sale.Status)
+	}
+}
+
+// dragOnto drags an element by its middle and lets it go over the middle of another.
+func dragOnto(t *testing.T, window *uitest.Window, from, to string) {
+	t.Helper()
+	source, err := window.Element(from)
+	if err != nil {
+		t.Fatal(err)
+	}
+	target, err := window.Element(to)
+	if err != nil {
+		t.Fatal(err)
+	}
+	window.Drag(source.Rect.X+source.Rect.Width/2, source.Rect.Y+source.Rect.Height/2,
+		target.Rect.X+target.Rect.Width/2, target.Rect.Y+target.Rect.Height/2)
+	window.Frames(2)
 }

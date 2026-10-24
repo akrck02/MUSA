@@ -150,7 +150,8 @@ func TestAnOrderMovesAlongTheBoardAndThenToTheHistory(t *testing.T) {
 		t.Fatal("the demo has no order with a customer on the way")
 	}
 	order := onTheWay[index]
-	steps(t, window, clickIn(window, order.ID, "Preparado"), clickIn(window, order.ID, "Entregado"))
+	dragOnto(t, window, whoTo(order), "column SENT")
+	dragOnto(t, window, whoTo(order), "Entregado")
 	after, found, err := program.stores.Sales.Find(order.ID)
 	if err != nil || !found || after.Status != sales.Delivered {
 		t.Fatalf("the order is %q (%v)", after.Status, err)

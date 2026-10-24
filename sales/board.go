@@ -18,7 +18,6 @@ var boardColumns = []Status{ToPrepare, Sent}
 var columnIcons = map[Status]string{ToPrepare: "package", Sent: "truck"}
 
 // actionWords is what the button of an order says: the status it moves the order to.
-var actionWords = map[Status]string{ToPrepare: "Preparado", Sent: "Entregado"}
 
 // boardWords is the subtitle of the orders page: how many are waiting at each step.
 func boardWords(onTheWay []Sale) string {
@@ -62,7 +61,10 @@ const (
 	sourcePaddingX   = 8
 	sourcePaddingY   = 2
 	sourceSpace      = 6
-	deliveredNote    = "Al marcar «Entregado», el pedido pasa al historial. Las ventas locales (eventos y en mano) van directas al historial."
+	deliveredNote    = "Arrastra un pedido a la columna siguiente para avanzarlo. Las ventas locales (eventos y en mano) van directas al historial."
+	deliveredWords   = "Suelta aquí un pedido enviado para darlo por entregado: pasa al historial"
+	deliveredPadding = 18
+	deliveredGap     = 12
 )
 
 // A shop's pill is in its own orange: a soft fill and a deep ink.
@@ -81,6 +83,8 @@ func (screens *Screens) drawBoard(context *ui.Context, onTheWay []Sale) {
 			screens.drawColumn(context, status, onTheWay)
 		}
 	})
+	look.Space(context, boardGap)
+	screens.deliveredZone(context)
 	look.Space(context, noteTop)
 	look.Paragraph(context, deliveredNote, ui.TextStyle{Size: noteSize, Color: context.Theme.InkSoft})
 }
@@ -101,6 +105,29 @@ func (screens *Screens) drawColumn(context *ui.Context, status Status, onTheWay 
 	}
 	payload, dropped := context.DropTarget("column "+string(status), ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, accepts, func() {
 		screens.columnPanel(context, status, orders)
+	})
+	if dropped {
+		dragged := payload.(draggedOrder)
+		problems, err := screens.store.Advance(dragged.id)
+		screens.afterAdvance(dragged.status, problems, err)
+	}
+}
+
+// deliveredZone is where a sent order is dropped once it has arrived: it leaves the board for the
+// history.
+func (screens *Screens) deliveredZone(context *ui.Context) {
+	theme := context.Theme
+	accepts := func(payload any) bool {
+		dragged, isOrder := payload.(draggedOrder)
+		return isOrder && dragged.status == Sent
+	}
+	inside := ui.Layout{Width: ui.Grow(), Padding: ui.Pad(deliveredPadding), Gap: deliveredGap, AlignY: ui.Center}
+	edge := ui.Look{Fill: theme.Background, Border: theme.Line, BorderWidth: 1, Radius: panelRadius}
+	payload, dropped := context.DropTarget("Entregado", ui.Layout{Width: ui.Grow()}, accepts, func() {
+		context.Frame(inside, edge, func() {
+			iconCircle(context, "check")
+			context.Text(deliveredWords, ui.TextStyle{Size: noteSize, Color: theme.InkSoft})
+		})
 	})
 	if dropped {
 		dragged := payload.(draggedOrder)
@@ -153,10 +180,6 @@ func (screens *Screens) boardRow(context *ui.Context, sale Sale) {
 	context.DragSource(whoOrdered(sale), dragged, ui.Layout{Width: ui.Grow(), Padding: ui.PadXY(0, orderPaddingY), Gap: orderGap, AlignY: ui.Center}, func() {
 		screens.thumbs(context, sale)
 		nameAndDetail(context, sale, sourceWords(sale), whoOrdered(sale), fmt.Sprintf("%s · %s", piecesWords(sale), money.Format(sale.Total())))
-		if actionButton(context, actionWords[sale.Status]) {
-			problems, err := screens.store.Advance(sale.ID)
-			screens.afterAdvance(sale.Status, problems, err)
-		}
 	})
 }
 
@@ -170,20 +193,6 @@ func nameAndDetail(context *ui.Context, sale Sale, source, name, detail string) 
 		})
 		context.Text(detail, ui.TextStyle{Size: detailSize, Color: theme.InkSoft})
 	})
-}
-
-// actionButton is an outlined button on the page's colour, for a row's one action.
-func actionButton(context *ui.Context, words string) bool {
-	theme := context.Theme
-	normal := ui.Look{Fill: theme.Background, Border: theme.Line, BorderWidth: 1, Radius: actionRadius}
-	hovered := normal
-	hovered.Fill = theme.Sunken
-	layout := ui.Layout{Padding: ui.PadXY(actionPaddingX, actionPaddingY)}
-	clicked := context.Clickable(words, layout, ui.Looks{Normal: normal, Hovered: hovered, Pressed: hovered}, func() {
-		context.Text(words, ui.TextStyle{Size: actionSize, Weight: draw2d.Medium, LineHeight: ui.LettersLineHeight})
-	})
-	context.Describe(ui.Description{Role: ui.ButtonRole, Label: words})
-	return clicked
 }
 
 // thumbs are the pictures of a sale's first products, each over the edge of the one before.
