@@ -1,6 +1,8 @@
 package catalogue
 
 import (
+	"strings"
+
 	"github.com/akrck02/go-renderer/draw2d"
 	ui "github.com/akrck02/go-ui"
 
@@ -49,6 +51,10 @@ const (
 	tagGap             = 8
 	tagPaddingX        = 12
 	tagPaddingY        = 6
+	tagBoxPadding      = 8   // inside the tags' field, around its chips
+	tagTypingWidth     = 200 // the least room left to type the next tag
+	tagRemoveSide      = 22  // the round × of a tag
+	tagRemoveIcon      = 14
 )
 
 func (screens *Screens) drawEditor(context *ui.Context) {
@@ -193,55 +199,84 @@ func (screens *Screens) editorPicture(context *ui.Context) {
 	})
 }
 
-// tagSection is the product's tags as pills, and «+ Añadir», which opens a field with suggestions.
+// tagSection is the product's tags inside one field, each with its × to remove it, and room to
+// type the next: Enter or a comma adds it. Under the field, while something is typed, quiet links
+// suggest the tags of other products that match.
 func (screens *Screens) tagSection(context *ui.Context) {
 	editing := screens.editor
 	edited := &editing.form
+	theme := context.Theme
 	look.Space(context, fieldTop)
 	fieldLabel(context, "Etiquetas")
-	context.Box(ui.Layout{Width: ui.Grow(), Gap: tagGap, Wrap: true}, func() {
+	border := theme.FieldLine
+	if context.FieldFocused("tag") {
+		border = theme.FocusRing
+	}
+	box := ui.Look{Fill: theme.Surface, Border: border, BorderWidth: 1, Radius: theme.ControlRadius}
+	context.Frame(ui.Layout{Width: ui.Grow(), Padding: ui.Pad(tagBoxPadding), Gap: tagGap, Wrap: true, AlignY: ui.Center}, box, func() {
 		for index, name := range edited.tags {
 			context.Push(name)
-			if tagPill(context, name, "Quitar "+name) {
+			if tagChip(context, name) {
 				edited.tags = append(edited.tags[:index:index], edited.tags[index+1:]...)
 			}
 			context.Pop()
 		}
-		if tagPill(context, "+ Añadir", "Añadir etiqueta") {
-			editing.addingTag = !editing.addingTag
+		options := ui.TextFieldOptions{Placeholder: "Añade una etiqueta…", Plain: true, Width: ui.Grow().Between(tagTypingWidth, 0)}
+		sent := context.EntryField("tag", &edited.tagTyped, options)
+		if sent || strings.Contains(edited.tagTyped, ",") {
+			for _, typed := range strings.Split(edited.tagTyped, ",") {
+				edited.addTag(typed)
+			}
+			edited.tagTyped = ""
+			context.FocusField("tag")
 		}
 	})
-	if !editing.addingTag {
+	screens.tagSuggestions(context)
+}
+
+// tagSuggestions are the tags of other products matching what is typed, as quiet links: they
+// must not look like the tags already on the product.
+func (screens *Screens) tagSuggestions(context *ui.Context) {
+	edited := &screens.editor.form
+	if TagDisplayName(edited.tagTyped) == "" {
+		return
+	}
+	suggested := SuggestTags(screens.tags, edited.tags, edited.tagTyped)
+	if len(suggested) == 0 {
 		return
 	}
 	look.Space(context, tagGap)
-	context.Box(ui.Layout{Width: ui.Grow(), Gap: tagGap, AlignY: ui.Center}, func() {
-		context.TextFieldWith("tag", &edited.tagTyped, ui.TextFieldOptions{Placeholder: "Lámina, pegatina, gatos…"})
-		if context.IconButton("check", "##Confirmar etiqueta") {
-			edited.addTag(edited.tagTyped)
-		}
-	})
-	look.Space(context, tagGap)
-	context.Box(ui.Layout{Width: ui.Grow(), Gap: tagGap, Wrap: true}, func() {
-		for _, tag := range SuggestTags(screens.tags, edited.tags, edited.tagTyped) {
+	context.Box(ui.Layout{Width: ui.Grow(), Gap: tagGap * 2, Wrap: true, AlignY: ui.Center}, func() {
+		context.Text("Sugerencias:", ui.TextStyle{Size: fieldLabelSize, Color: context.Theme.InkSoft})
+		for _, tag := range suggested {
 			context.Push("suggested-" + tag.ID)
-			if tagPill(context, "+ "+tag.Name, "Añadir "+tag.Name) {
+			if look.QuietLink(context, tag.Name, fieldLabelSize, 1) {
 				edited.addTag(tag.Name)
+				edited.tagTyped = ""
+				context.FocusField("tag")
 			}
 			context.Pop()
 		}
 	})
 }
 
-// tagPill is a tag on a sunken pill; tapping it does what label says (a tag is removed).
-func tagPill(context *ui.Context, words, label string) bool {
+// tagChip is a chosen tag on a sunken pill with its own ×; it returns true on the frame the × is
+// tapped. Tapping the name does nothing: only the × removes.
+func tagChip(context *ui.Context, name string) bool {
 	theme := context.Theme
-	normal := ui.Look{Fill: theme.Sunken, Radius: fieldLabelSize * 2}
-	hovered := normal
-	hovered.Fill = theme.Sunken.Mix(theme.Ink, look.HoverDarkening/2)
-	clicked := context.Clickable(label, ui.Layout{Padding: ui.PadXY(tagPaddingX, tagPaddingY)}, look.Answering(theme, normal, hovered), func() {
-		context.Text(words, ui.TextStyle{Size: fieldLabelSize})
+	removed := false
+	padding := ui.Padding{Left: tagPaddingX, Right: tagPaddingY, Top: tagPaddingY, Bottom: tagPaddingY}
+	context.Frame(ui.Layout{Padding: padding, Gap: tagPaddingY, AlignY: ui.Center}, ui.Look{Fill: theme.Sunken, Radius: fieldLabelSize * 2}, func() {
+		context.Text(name, ui.TextStyle{Size: fieldLabelSize})
+		side := ui.Fixed(tagRemoveSide)
+		round := ui.Look{Radius: tagRemoveSide / 2}
+		hovered := ui.Look{Fill: theme.Line, Radius: tagRemoveSide / 2}
+		label := "Quitar " + name
+		removed = context.Clickable(label, ui.Layout{Width: side, Height: side, AlignX: ui.Center, AlignY: ui.Center},
+			ui.Looks{Normal: round, Hovered: hovered, Pressed: hovered}, func() {
+				context.IconSized("x", tagRemoveIcon, theme.InkSoft)
+			})
+		context.Describe(ui.Description{Role: ui.ButtonRole, Label: label})
 	})
-	context.Describe(ui.Description{Role: ui.ButtonRole, Label: label})
-	return clicked
+	return removed
 }

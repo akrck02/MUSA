@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Itros97/MUSA/catalogue"
+	"github.com/akrck02/go-renderer/input"
 	"github.com/akrck02/go-ui"
 	"github.com/akrck02/go-ui/uitest"
 )
@@ -123,10 +124,8 @@ func TestDeletingAProductAsksFirst(t *testing.T) {
 
 func TestATagIsAddedAndRemovedFromAProduct(t *testing.T) {
 	program, window := openProductEditor(t, "Rana feliz")
-	steps(t, window, click(window, "Añadir etiqueta"))
-	settle(window)
-	steps(t, window, typeInto(window, "Lámina, pegatina, gatos…", "verde"))
-	steps(t, window, click(window, "Confirmar etiqueta"))
+	steps(t, window, typeInto(window, "Añade una etiqueta…", "verde"))
+	window.PressKey(input.KeyEnter)
 	settle(window)
 	steps(t, window, click(window, "Guardar"))
 	settle(window)
@@ -183,5 +182,37 @@ func TestASecondVersionNeedsNamesForBoth(t *testing.T) {
 	settle(window)
 	if saved, _ := productNamed(t, program, "Rana feliz"); len(saved.Variants) != 2 {
 		t.Errorf("the product has %d versions after naming both", len(saved.Variants))
+	}
+}
+
+func TestACommaAddsEachTagTypedBeforeIt(t *testing.T) {
+	_, window := openProductEditor(t, "Rana feliz")
+	steps(t, window, typeInto(window, "Añade una etiqueta…", "verde, otoño,"))
+	settle(window)
+	for _, name := range []string{"Quitar verde", "Quitar otoño"} {
+		if _, err := window.Element(name); err != nil {
+			t.Errorf("the comma did not add the tag: %v", err)
+		}
+	}
+}
+
+func TestASuggestionAddsTheTagOfAnotherProduct(t *testing.T) {
+	_, window := openProductEditor(t, "Rana feliz")
+	steps(t, window, typeInto(window, "Añade una etiqueta…", "lám"))
+	settle(window)
+	steps(t, window, click(window, "Lámina"))
+	settle(window)
+	if _, err := window.Element("Quitar Lámina"); err != nil {
+		t.Errorf("the suggestion did not add its tag: %v", err)
+	}
+}
+
+func TestTappingATagsNameDoesNotRemoveIt(t *testing.T) {
+	_, window := openProductEditor(t, "Rana feliz")
+	if err := window.Click("Llavero"); err == nil {
+		t.Errorf("a tag's name can be tapped: only its × removes it")
+	}
+	if _, err := window.Element("Quitar Llavero"); err != nil {
+		t.Errorf("the tag went: %v", err)
 	}
 }

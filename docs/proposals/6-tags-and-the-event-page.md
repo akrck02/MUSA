@@ -1,6 +1,6 @@
 # 6. Tags that explain themselves, and an event page like the rest
 
-> Status: proposed · Author's approval: proposal ☐ plan ☐ · Lives in: `catalogue` (the product
+> Status: building · Author's approval: proposal ☑ plan ☑ (2026-10-24, from the mock-ups) · Lives in: `catalogue` (the product
 > editor's tags), `events` (the event's page), `look`
 > Depends on: proposals 1 to 5 (MUSA as it is on `feature/go-ui`)
 
@@ -77,11 +77,23 @@ Mercado de Otoño                          [Abrir el puesto]  [⋯]
 
 ## Design
 
-*To fill after the author approves the proposal.*
+- **Tags.** Go UI gains `EntryField`, a text field that tells the step Enter is pressed: generic,
+  for any line sent with Enter. The tag field is a frame drawn like a field (the field's line, the
+  focus colour while typing), holding a chip per tag with its own round × and a plain `EntryField`
+  that grows into the rest of the row. Suggestions are `look.QuietLink`s, five at most.
+- **The event page.** `events/detail_screen.go` is rewritten as one page: `look.PageHeader`,
+  `look.Figures` with four figures, then two columns (`look.Columns`): the stock card on the left,
+  sales and expenses cards on the right. The take, return, close and delete sheets stay as they
+  are; «Abrir el puesto» hands the event to the stand through a callback the app gives.
 
 ## Tasks
 
-*To fill with the design.*
+- [x] T1 `EntryField` in Go UI, with its test and docs (R2)
+- [x] T2 The tag field, its chips and suggestions; tests for Enter, comma, suggestion and × (R1–R4)
+- [ ] T3 The event page's header, figures and «Abrir el puesto» (R5, R6, R10)
+- [ ] T4 «Lo que llevas» with «Llevar más» and «Devolver» (R7)
+- [ ] T5 «Ventas» and «Gastos» cards (R8, R9)
+- [ ] T6 Narrow layout and a closed event (R10, R11)
 
 ## Result
 

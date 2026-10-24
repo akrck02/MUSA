@@ -27,7 +27,7 @@ type Tag struct {
 }
 
 // MaximumSuggestions is how many tags the editor suggests at once.
-const MaximumSuggestions = 8
+const MaximumSuggestions = 5
 
 // SuggestTags picks the tags not chosen yet whose name holds what is typed; with nothing typed,
 // any tags not chosen yet.

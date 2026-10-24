@@ -17,7 +17,6 @@ type editor struct {
 	unreadable  map[string]string
 	asking      string // "delete" while the delete question is open
 	detailsOpen bool   // «Más detalles» is unfolded
-	addingTag   bool   // the field to add a tag is open
 }
 
 func newEditor(edited form) editor { return editor{form: edited, unreadable: map[string]string{}} }
