@@ -20,3 +20,21 @@ func TestATagOfACommonKindOfWorkHasItsOwnIcon(t *testing.T) {
 		}
 	}
 }
+
+func TestAProductSaysWhatItIsWithItsFirstTagAndAKindThatAgrees(t *testing.T) {
+	cases := []struct {
+		kind Kind
+		tags []string
+		want string
+	}{
+		{Physical, []string{"Llavero", "ranas"}, "Llavero físico"},
+		{Physical, []string{"Pegatina"}, "Pegatina física"},
+		{Digital, []string{"Fondo"}, "Fondo digital"},
+		{Physical, nil, "Físico"},
+	}
+	for _, each := range cases {
+		if got := KindWords(each.kind, each.tags); got != each.want {
+			t.Errorf("KindWords(%v, %v) = %q, want %q", each.kind, each.tags, got, each.want)
+		}
+	}
+}

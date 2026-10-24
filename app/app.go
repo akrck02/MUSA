@@ -177,14 +177,14 @@ func (program *App) page(context *ui.Context) {
 // Stores are the stores MUSA reads and writes through, for the demo to fill.
 func (program *App) Stores() demo.Stores { return program.stores }
 
-// Show opens one of the pages inside a place, for captures and tests: "product" (the first
-// product's editor), "fair" (the open fair's detail), "order" (a new order), "project" (a project's editor), "networks" (the social networks), "history" (the sales history), "calendar" (the month on the home page), "stand" (selling
+// Show opens one of the pages inside a place, for captures and tests: "product" (the editor of the first
+// product of one version), "versions" (of two), "fair" (the open fair's detail), "order" (a new order), "project" (a project's editor), "networks" (the social networks), "history" (the sales history), "calendar" (the month on the home page), "stand" (selling
 // from the whole stock), "stand-basket" (with a basket) or "stand-cash" (its cash dialog).
 func (program *App) Show(page string) {
 	switch page {
-	case "product":
+	case "product", "versions":
 		program.Open(Catalogue)
-		program.catalogue.EditFirst()
+		program.catalogue.EditFirstWith(map[string]int{"product": 1, "versions": 2}[page])
 	case "digital":
 		program.Open(Catalogue)
 		program.catalogue.ShowDigital()

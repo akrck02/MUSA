@@ -2,6 +2,7 @@ package catalogue
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/Itros97/MUSA/money"
 )
@@ -104,4 +105,17 @@ func SoldWords(units int) string {
 		return "Vendido 1 vez este mes"
 	}
 	return fmt.Sprintf("Vendido %d veces este mes", units)
+}
+
+// KindWords is what a product is, as its editor says it: its first tag and the kind, which agrees
+// with it ("Llavero físico", "Pegatina física"), or the kind alone ("Físico", "Digital").
+func KindWords(kind Kind, tags []string) string {
+	if len(tags) == 0 {
+		return kindWords[kind]
+	}
+	adjective := map[Kind]string{Physical: "físico", Digital: "digital"}[kind]
+	if kind == Physical && strings.HasSuffix(tags[0], "a") {
+		adjective = "física" // the feminine, as «Pegatina física»
+	}
+	return tags[0] + " " + adjective
 }

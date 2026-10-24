@@ -81,7 +81,7 @@ func MainButton(context *ui.Context, icon, words string) bool {
 	theme := context.Theme
 	normal := ui.Look{Fill: theme.Primary, Radius: mainButtonRadius}
 	hovered := normal
-	hovered.Fill = theme.Primary.Mix(theme.Ink, hoverDarkening)
+	hovered.Fill = theme.Primary.Mix(theme.Ink, HoverDarkening)
 	layout := ui.Layout{Padding: ui.PadXY(mainButtonPaddingX, mainButtonPaddingY), Gap: mainButtonGap, AlignY: ui.Center}
 	clicked := context.Clickable(words, layout, ui.Looks{Normal: normal, Hovered: hovered, Pressed: hovered}, func() {
 		context.IconSized(icon, headerIconSize, theme.OnPrimary)
@@ -91,5 +91,5 @@ func MainButton(context *ui.Context, icon, words string) bool {
 	return clicked
 }
 
-// hoverDarkening is how much ink a main button takes under the pointer.
-const hoverDarkening = 0.15
+// HoverDarkening is how much ink a button on a colour takes under the pointer.
+const HoverDarkening = 0.15

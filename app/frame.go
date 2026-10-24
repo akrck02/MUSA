@@ -17,7 +17,7 @@ const (
 	barLabelSize   = 13
 	brandLetter    = 0.14 // the brand's letter spacing, in ems
 	pageTop        = 24
-	registerTop    = 20 // the stand while selling: its top bar sits higher
+	registerTop    = 20 // the stand while selling and the product editor: their top bars sit higher
 	pageSide       = 32
 	pageBottom     = 32
 	narrowPageSide = 16
@@ -92,7 +92,7 @@ func (program *App) scrollingPage(context *ui.Context) {
 		side = narrowPageSide
 	}
 	top := float32(pageTop)
-	if program.place == Stand && program.stand.Selling() {
+	if (program.place == Stand && program.stand.Selling()) || (program.place == Catalogue && program.catalogue.Editing()) {
 		top = registerTop
 	}
 	padding := ui.Padding{Top: top, Left: side, Right: side, Bottom: pageBottom}

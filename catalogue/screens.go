@@ -134,12 +134,12 @@ func (screens *Screens) ShowRestock() {
 	screens.query.LowStockOnly = true
 }
 
-// EditFirst opens the editor of the first product of the list with more than one version, or of
-// the first product when none has; nothing when the list is empty.
-func (screens *Screens) EditFirst() {
+// EditFirstWith opens the editor of the first product shown with this many versions, or of the
+// first one when none has as many, for captures.
+func (screens *Screens) EditFirstWith(versions int) {
 	shown := Filter(screens.products, screens.query)
 	for _, product := range shown {
-		if len(product.Variants) > 1 {
+		if len(product.Variants) == versions {
 			screens.edit(product)
 			return
 		}
@@ -148,3 +148,6 @@ func (screens *Screens) EditFirst() {
 		screens.edit(shown[0])
 	}
 }
+
+// Editing tells whether a product's editor is open.
+func (screens *Screens) Editing() bool { return screens.editor != nil }
