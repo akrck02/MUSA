@@ -361,3 +361,14 @@ func TestTabsAreNamedByTheirWordsWithoutTheirCount(t *testing.T) {
 		t.Errorf("the «Digital» tab does not show the digital products: %q", window.Texts())
 	}
 }
+
+func TestOpeningAProjectsEditorLeavesThePageUnderItStill(t *testing.T) {
+	program, window := openApp(t, false)
+	program.Open(Projects)
+	window.Frame()
+	before := program.pageName()
+	steps(t, window, click(window, "Nuevo proyecto"))
+	if after := program.pageName(); after != before {
+		t.Errorf("the page became %q from %q, so it would rise in again under the dialog", after, before)
+	}
+}
