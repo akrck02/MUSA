@@ -36,6 +36,11 @@ type Project struct {
 	VariantID string
 	// SaleID is the sale its delivery recorded; empty until it is delivered.
 	SaleID string
+	// CreatedAt is when it was first saved, and DeliveredAt when its sale was recorded (zero until
+	// then). The store reads them; saving does not change them.
+	CreatedAt, DeliveredAt time.Time
+	// sequence is the order it was saved in, which tells apart projects made in the same instant.
+	sequence int64
 }
 
 // DeadlineWords says when a project is due, counted from today, or "" when it has no deadline.
@@ -70,4 +75,12 @@ const hoursInDay = 24
 
 func daysBetween(from, to calendar.Date) int {
 	return int(to.At(0, utc).Sub(from.At(0, utc)).Hours() / hoursInDay)
+}
+
+// DeliveredWords says the day of the month a project was delivered, "Entregado el 18".
+func DeliveredWords(delivered time.Time) string {
+	if delivered.IsZero() {
+		return "Entregado"
+	}
+	return fmt.Sprintf("Entregado el %d", delivered.Day())
 }

@@ -40,6 +40,7 @@ type Screens struct {
 // productChoice is a digital product a project can make, as the editor lists it.
 type productChoice struct {
 	variantID, label string
+	product          string // its product's name alone
 }
 
 // NewScreens draws the projects kept in store; openLink opens a customer's profile, and may be
@@ -82,7 +83,7 @@ func digitalChoices(products *catalogue.Store) ([]productChoice, error) {
 			if variant.Name != "" {
 				label += " · " + variant.Name
 			}
-			choices = append(choices, productChoice{variantID: variant.ID, label: label})
+			choices = append(choices, productChoice{variantID: variant.ID, label: label, product: product.Name})
 		}
 	}
 	return choices, nil
@@ -100,10 +101,10 @@ func (screens *Screens) Back() bool {
 // Draw draws the board, and the editor over it when one is open.
 func (screens *Screens) Draw(context *ui.Context) {
 	look.PageHeader(context, "Proyectos", screens.subtitle(), func() {
-		if context.IconButton("at-sign", "Redes") {
+		if look.ToolButton(context, "at-sign", "Redes") {
 			screens.openNetworks()
 		}
-		if context.PrimaryIconButton("plus", "Nuevo proyecto") {
+		if look.MainButton(context, "plus", "Nuevo proyecto") {
 			screens.startProject(ToStart)
 		}
 	})
@@ -124,20 +125,18 @@ func (screens *Screens) Draw(context *ui.Context) {
 	}
 }
 
-// subtitle counts the projects still to deliver, and those due this week.
+// subtitle counts the projects, and those still to deliver that are due from today to the end of
+// the week.
 func (screens *Screens) subtitle() string {
 	today := calendar.Of(screens.now())
-	open, thisWeek := 0, 0
+	thisWeek := 0
 	for _, project := range screens.projects {
-		if project.Stage == Delivered {
-			continue
-		}
-		open++
-		if !project.Deadline.Zero() && project.Deadline.Before(today.WeekStart().AddDays(7)) {
+		due := project.Deadline
+		if project.Stage != Delivered && !due.Zero() && !due.Before(today) && due.Before(today.WeekStart().AddDays(7)) {
 			thisWeek++
 		}
 	}
-	return fmt.Sprintf("%d por entregar · %d vencen esta semana", open, thisWeek)
+	return fmt.Sprintf("%s · %d por entregar esta semana", projectCount(len(screens.projects)), thisWeek)
 }
 
 func (screens *Screens) tell(warning bool, words string) {

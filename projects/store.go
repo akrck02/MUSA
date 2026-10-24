@@ -167,8 +167,10 @@ func (store *Store) Delete(id string) ([]Code, error) {
 }
 
 func readProjects(rows storage.Querier, onlyID string) ([]Project, error) {
-	result, err := rows.QueryContext(context.Background(), `SELECT id, title, customer_id, stage, deadline, price_cents, variant_id, sale_id
-		FROM project WHERE deleted_at IS NULL AND (?1 = '' OR id = ?1) ORDER BY deadline = '', deadline, created_at`, onlyID)
+	result, err := rows.QueryContext(context.Background(), `SELECT p.id, p.title, p.customer_id, p.stage, p.deadline, p.price_cents,
+			p.variant_id, p.sale_id, p.created_at, coalesce(s.sold_at, 0), p.rowid
+		FROM project p LEFT JOIN sale s ON s.id = p.sale_id
+		WHERE p.deleted_at IS NULL AND (?1 = '' OR p.id = ?1) ORDER BY p.deadline = '', p.deadline, p.created_at`, onlyID)
 	if err != nil {
 		return nil, storageFailed("read projects", err)
 	}
@@ -177,9 +179,15 @@ func readProjects(rows storage.Querier, onlyID string) ([]Project, error) {
 	for result.Next() {
 		var project Project
 		var deadline string
-		err := result.Scan(&project.ID, &project.Title, &project.CustomerID, &project.Stage, &deadline, &project.Price, &project.VariantID, &project.SaleID)
+		var created, delivered int64
+		err := result.Scan(&project.ID, &project.Title, &project.CustomerID, &project.Stage, &deadline, &project.Price, &project.VariantID,
+			&project.SaleID, &created, &delivered, &project.sequence)
 		if err != nil {
 			return nil, storageFailed("read projects", err)
+		}
+		project.CreatedAt = storage.Moment(created)
+		if delivered > 0 {
+			project.DeliveredAt = storage.Moment(delivered)
 		}
 		if deadline != "" {
 			project.Deadline, err = calendar.Parse(deadline)

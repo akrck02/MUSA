@@ -1,5 +1,7 @@
 package projects
 
+import "fmt"
+
 // stageWords are the board's columns as the artist reads them.
 var stageWords = map[Stage]string{ToStart: "Por empezar", Drawing: "Dibujando", ToReview: "Para revisar", Delivered: "Entregado"}
 
@@ -20,4 +22,12 @@ func ProblemWords(code Code) string {
 		return words
 	}
 	return string(code)
+}
+
+// projectCount is "1 proyecto" or "5 proyectos".
+func projectCount(count int) string {
+	if count == 1 {
+		return "1 proyecto"
+	}
+	return fmt.Sprintf("%d proyectos", count)
 }

@@ -28,8 +28,8 @@ func (filler *filler) projects(today calendar.Date) {
 	x := func(handle string) customers.Profile { return customers.Profile{NetworkID: "x", Handle: handle} }
 	for _, each := range []commission{
 		{"Retrato de familia", "Lucía", []customers.Profile{instagram("lucia.dibuja"), bluesky("lucia.bsky.social")}, projects.ToStart, 6, 4000, "Retrato por encargo · "},
+		{"Retrato de pareja", "Ana", []customers.Profile{x("ana_lee"), instagram("ana.lee"), bluesky("ana.bsky.social")}, projects.Drawing, 1, 4000, "Retrato por encargo · "},
 		{"Fondos con su perro", "Marcos", []customers.Profile{instagram("marcos_y_toby")}, projects.ToStart, 9, 1500, "Fondos para móvil · "},
-		{"Retrato de pareja", "Ana", []customers.Profile{x("ana_lee"), instagram("ana.lee")}, projects.Drawing, 1, 4000, "Retrato por encargo · "},
 		{"Logo para tienda", "Taller Norte", []customers.Profile{instagram("tallernorte")}, projects.ToReview, -1, 6000, ""},
 		{"Retrato de gato", "Pablo", []customers.Profile{bluesky("pablo.bsky.social")}, projects.Delivered, -5, 4000, "Retrato por encargo · "},
 	} {
