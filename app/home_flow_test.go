@@ -166,3 +166,21 @@ func TestSeeingAllOfABusyDayWidensItsDetail(t *testing.T) {
 		t.Errorf("the whole day does not list its last entry: %v", err)
 	}
 }
+
+// Two choices of a segmented track never touch: a hovered one would merge into the chosen one.
+func TestTheHomeViewsKeepRoomBetweenThem(t *testing.T) {
+	program, window := openApp(t, true)
+	program.Open(Home)
+	window.Frames(2)
+	summary, err := window.Element("Resumen")
+	if err != nil {
+		t.Fatal(err)
+	}
+	month, err := window.Element("Calendario")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if month.Rect.X <= summary.Rect.X+summary.Rect.Width {
+		t.Errorf("«Calendario» starts at %v, where «Resumen» ends", month.Rect.X)
+	}
+}

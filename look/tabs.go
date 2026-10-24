@@ -28,13 +28,15 @@ type SegmentSize struct {
 	// Radius, PaddingX, PaddingY and Gap shape each choice; Gap is between its icon and words.
 	Radius, PaddingX, PaddingY, Gap float32
 	TextSize, IconSize              float32
+	// Between is the room between two choices, so a hovered one does not touch the chosen one.
+	Between float32
 }
 
 // Halves are the segments that split a page in two big halves («Físico», «Digital»); Views are
 // the smaller ones that switch a page's view («Resumen», «Calendario»).
 var (
-	Halves = SegmentSize{TrackPadding: 5, TrackRadius: 16, Radius: 12, PaddingX: 26, PaddingY: 12, Gap: 10, TextSize: 19, IconSize: 20}
-	Views  = SegmentSize{TrackPadding: 4, TrackRadius: 14, Radius: 10, PaddingX: 20, PaddingY: 10, Gap: 8, TextSize: 17, IconSize: 18}
+	Halves = SegmentSize{TrackPadding: 5, TrackRadius: 16, Radius: 12, PaddingX: 26, PaddingY: 12, Gap: 10, TextSize: 19, IconSize: 20, Between: 4}
+	Views  = SegmentSize{TrackPadding: 4, TrackRadius: 14, Radius: 10, PaddingX: 20, PaddingY: 10, Gap: 8, TextSize: 17, IconSize: 18, Between: 4}
 )
 
 // Segmented is a track with a raised, lit choice: the halves of a page, or its views. It returns
@@ -47,7 +49,7 @@ func Segmented(context *ui.Context, name string, selected *int, tabs []Tab, size
 	pill, sliding := slideTo(context, name, tabs[*selected].Label, pillLook)
 	track.Backdrop = pill
 	context.Push(name)
-	context.Frame(ui.Layout{Padding: ui.Pad(size.TrackPadding)}, track, func() {
+	context.Frame(ui.Layout{Padding: ui.Pad(size.TrackPadding), Gap: size.Between}, track, func() {
 		for index, tab := range tabs {
 			chosen := index == *selected
 			normal := ui.Look{Radius: size.Radius}
