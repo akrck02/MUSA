@@ -1,6 +1,8 @@
 package events
 
 import (
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/akrck02/go-renderer/draw2d"
@@ -106,9 +108,18 @@ func (screens *Screens) tell(refused []Refusal, err error, done string) bool {
 	return !screens.noteWarning
 }
 
+// Spaces of the list of events, in pixels.
+const (
+	listTop          = 28 // from the page's header to the first group
+	groupTop         = 24 // above each group after the first
+	groupLabelBottom = 10 // from a group's name to its first event
+	cardGap          = 10 // between two events
+)
+
+// drawList is every event, grouped into those happening now, those to come and those past.
 func (screens *Screens) drawList(context *ui.Context) {
 	look.PageHeader(context, "Eventos", "Ferias, mercados y demás: qué llevas, cuánto vendes y cuánto te cuesta ir", func() {
-		if context.PrimaryIconButton("plus", "Nuevo evento") {
+		if look.MainButton(context, "plus", "Nuevo evento") {
 			today := calendar.Of(screens.now())
 			screens.StartFair(today)
 		}
@@ -121,6 +132,7 @@ func (screens *Screens) drawList(context *ui.Context) {
 			"Apunta tu próximo evento para llevar la cuenta de lo que llevas y lo que vendes.", "")
 	}
 	today := calendar.Of(screens.now())
+	look.Space(context, listTop-groupTop)
 	for _, group := range []struct {
 		timing Timing
 		title  string
@@ -134,12 +146,19 @@ func (screens *Screens) drawList(context *ui.Context) {
 		if len(shown) == 0 {
 			continue
 		}
-		look.Label(context, group.title)
-		for _, event := range shown {
-			context.Push(event.ID)
-			screens.eventCard(context, event, today)
-			context.Pop()
+		if group.timing == Upcoming { // the next one first
+			slices.SortStableFunc(shown, func(one, other Event) int { return strings.Compare(one.StartDate.String(), other.StartDate.String()) })
 		}
+		look.Space(context, groupTop)
+		look.Label(context, group.title)
+		look.Space(context, groupLabelBottom)
+		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Gap: cardGap}, func() {
+			for _, event := range shown {
+				context.Push(event.ID)
+				screens.eventCard(context, event, today)
+				context.Pop()
+			}
+		})
 	}
 }
 

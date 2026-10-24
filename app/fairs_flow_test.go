@@ -131,3 +131,20 @@ func TestAFairWithSalesCannotBeDeleted(t *testing.T) {
 		t.Errorf("a fair with sales was deleted")
 	}
 }
+
+func TestTheNextEventComesFirstAmongThoseToCome(t *testing.T) {
+	program, window := openApp(t, true)
+	program.Open(Fairs)
+	window.Frames(2)
+	soon, err := window.Element("Feria del Puerto")
+	if err != nil {
+		t.Fatal(err)
+	}
+	later, err := window.Element("Mercadillo de Invierno")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if soon.Rect.Y > later.Rect.Y {
+		t.Errorf("the event in three days is listed after the one in December")
+	}
+}
