@@ -18,6 +18,9 @@ go run ./cmd/musa -demo               # a throwaway database in memory, filled w
 go run ./cmd/musa -database my.db     # another database file
 ```
 
+On Linux, add `-tags=x11` (`go run -tags=x11 ./cmd/musa -demo`): GLFW there is built either for
+X11 or for Wayland, and X11 also runs under XWayland.
+
 The demo lives only in memory: close the window and it is gone, so you can break things freely.
 
 For a phone, Go UI for Android's `go-ui-apk` packages the same program as an APK.

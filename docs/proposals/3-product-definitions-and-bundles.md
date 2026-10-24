@@ -2,6 +2,8 @@
 
 > Status: proposed · Author's approval: proposal ☐ plan ☐ · Lives in: `catalogue`, `orders` (today `sales`), `events`, `demo`, `storage`
 
+> Note (2026-10-24): bundles («packs») moved to proposal 9; R4, R5 and R8's bundles are decided there.
+
 ## Why
 
 Today a `product` holds both the artwork and its kind, and a `product_variant` is what is sold.
