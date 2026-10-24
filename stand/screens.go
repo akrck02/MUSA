@@ -170,10 +170,10 @@ func (screens *Screens) drawChoice(context *ui.Context) {
 		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Fixed(choiceWidth), Padding: ui.Padding{Top: choiceTop}}, func() {
 			context.Text("¿Dónde vendes hoy?", ui.TextStyle{Size: choiceTitleSize, Weight: draw2d.Bold, LineHeight: choiceTitleLine})
 			look.Space(context, choiceLeadAbove)
-			context.Text("Elige la feria y lo que vendas quedará apuntado en ella.", ui.TextStyle{Size: choiceLeadSize, Color: theme.InkSoft})
+			context.Text("Elige el evento y lo que vendas quedará apuntado en él.", ui.TextStyle{Size: choiceLeadSize, Color: theme.InkSoft})
 			look.Space(context, choiceLeadBelow)
 			if screens.loadErr != nil {
-				look.Empty(context, "triangle-alert", "No se pudieron leer las ferias", screens.loadErr.Error(), "")
+				look.Empty(context, "triangle-alert", "No se pudieron leer los eventos", screens.loadErr.Error(), "")
 				return
 			}
 			screens.choices(context)
@@ -201,7 +201,7 @@ func (screens *Screens) choices(context *ui.Context) {
 			}
 			context.Pop()
 		}
-		if screens.choiceCard(context, "package", "Todo el stock", "Todos tus productos, para vender fuera de una feria") {
+		if screens.choiceCard(context, "package", "Todo el stock", "Todos tus productos, para vender fuera de un evento") {
 			screens.Choose(WholeStock{Sales: screens.sales, Products: screens.products, Now: screens.now})
 		}
 	})
@@ -317,7 +317,7 @@ func (screens *Screens) drawRegister(context *ui.Context) {
 	screens.top(context, tags)
 	look.Space(context, topSpaceBelow)
 	if len(screens.items) == 0 {
-		look.Empty(context, "package-open", "No hay nada para vender", "Lleva stock a la feria, o añade productos al catálogo.", "")
+		look.Empty(context, "package-open", "No hay nada para vender", "Lleva stock al evento, o añade productos al catálogo.", "")
 		return
 	}
 	width, _ := context.Size()

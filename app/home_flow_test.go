@@ -11,7 +11,7 @@ func TestTheHomePageLinksLeadWhereTheySay(t *testing.T) {
 		link  string
 		place Place
 	}{
-		{"Ver la feria", Fairs},
+		{"Ver el evento", Fairs},
 		{"Ir al puesto", Stand},
 		{"Ver ventas", Sales},
 		{"Ver los 5", Catalogue},
@@ -62,7 +62,7 @@ func TestNewFairFromTheCalendarOpensTheFairEditor(t *testing.T) {
 	program, window := openApp(t, true)
 	program.Show("calendar")
 	settle(window)
-	steps(t, window, click(window, "Nueva feria"))
+	steps(t, window, click(window, "Nuevo evento"))
 	settle(window)
 	if _, err := window.Element("Nuevo evento"); err != nil || program.place != Fairs {
 		t.Errorf("«Nueva feria» did not open a new fair (place %d): %v", program.place, err)
@@ -93,5 +93,25 @@ func TestTheDemoDataFillsAnEmptyDatabase(t *testing.T) {
 	settle(window)
 	if salesCount(t, program) == 0 {
 		t.Errorf("the demo data did not fill the database")
+	}
+}
+
+// Switching a page's tab changes what is under the tabs, not the page: the whole screen must not
+// fade and rise again, which looks like a flicker.
+func TestSwitchingATabDoesNotReplayThePageEntrance(t *testing.T) {
+	program, window := openApp(t, true)
+	program.Open(Home)
+	settle(window)
+	home := program.pageName()
+	steps(t, window, click(window, "Calendario"))
+	if program.pageName() != home {
+		t.Errorf("the calendar tab made the home page another page")
+	}
+	program.Open(Sales)
+	settle(window)
+	orders := program.pageName()
+	steps(t, window, click(window, "Historial de ventas"))
+	if program.pageName() != orders {
+		t.Errorf("the history tab made the orders page another page")
 	}
 }

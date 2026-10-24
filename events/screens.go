@@ -107,7 +107,7 @@ func (screens *Screens) tell(refused []Refusal, err error, done string) bool {
 }
 
 func (screens *Screens) drawList(context *ui.Context) {
-	look.PageHeader(context, "Eventos", "Ferias y mercados: qué llevas, cuánto vendes y cuánto te cuesta ir", func() {
+	look.PageHeader(context, "Eventos", "Ferias, mercados y demás: qué llevas, cuánto vendes y cuánto te cuesta ir", func() {
 		if context.PrimaryIconButton("plus", "Nuevo evento") {
 			today := calendar.Of(screens.now())
 			screens.StartFair(today)
@@ -118,7 +118,7 @@ func (screens *Screens) drawList(context *ui.Context) {
 		look.Empty(context, "triangle-alert", "No se pudieron leer los eventos", screens.loadErr.Error(), "")
 	case len(screens.events) == 0:
 		look.Empty(context, "calendar-days", "Aún no hay eventos",
-			"Apunta tu próxima feria para llevar la cuenta de lo que llevas y lo que vendes.", "")
+			"Apunta tu próximo evento para llevar la cuenta de lo que llevas y lo que vendes.", "")
 	}
 	today := calendar.Of(screens.now())
 	for _, group := range []struct {

@@ -102,9 +102,9 @@ func (program *App) fairWidget(context *ui.Context) {
 	day := program.today
 	if !day.hasFair {
 		widget(context, fairLinksTop, func() {
-			fairHeading(context, "", "Sin ferias a la vista", "")
+			fairHeading(context, "", "Sin eventos a la vista", "")
 		}, func() {
-			if link(context, "Nueva feria") {
+			if link(context, "Nuevo evento") {
 				program.Open(Fairs)
 				program.fairs.StartFair(day.date)
 			}
@@ -112,7 +112,7 @@ func (program *App) fairWidget(context *ui.Context) {
 		return
 	}
 	happening := events.TimingOf(day.fair, day.date) == events.Happening
-	label := "PRÓXIMA FERIA"
+	label := "PRÓXIMO EVENTO"
 	if happening {
 		label = "HOY ESTÁS EN"
 	}
@@ -149,7 +149,7 @@ func fairHeading(context *ui.Context, label, name, words string) {
 
 func (program *App) fairLinks(context *ui.Context, happening bool) {
 	fair := program.today.fair
-	if link(context, "Ver la feria") {
+	if link(context, "Ver el evento") {
 		program.Open(Fairs)
 		program.fairs.OpenFair(fair.ID)
 	}

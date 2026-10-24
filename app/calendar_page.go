@@ -248,7 +248,7 @@ func (program *App) monthHeader(context *ui.Context, shown calendar.Date) {
 		}
 		context.Spacer()
 		legend(context)
-		if look.Link(context, "Todas las ferias") {
+		if look.Link(context, "Todos los eventos") {
 			program.Open(Fairs)
 		}
 	})
@@ -276,11 +276,11 @@ func newFairButton(context *ui.Context) bool {
 	hovered := normal
 	hovered.Fill = theme.Primary.Mix(theme.Ink, hoverDarkening)
 	layout := ui.Layout{Padding: ui.PadXY(newFairPaddingX, newFairPaddingY), Gap: mainGap, AlignY: ui.Center}
-	clicked := context.Clickable("Nueva feria", layout, ui.Looks{Normal: normal, Hovered: hovered, Pressed: hovered}, func() {
+	clicked := context.Clickable("Nuevo evento", layout, ui.Looks{Normal: normal, Hovered: hovered, Pressed: hovered}, func() {
 		context.IconSized("plus", goIconSize, theme.OnPrimary)
-		context.Text("Nueva feria", ui.TextStyle{Size: newFairSize, Weight: draw2d.Bold, Color: theme.OnPrimary})
+		context.Text("Nuevo evento", ui.TextStyle{Size: newFairSize, Weight: draw2d.Bold, Color: theme.OnPrimary})
 	})
-	context.Describe(ui.Description{Role: ui.ButtonRole, Label: "Nueva feria"})
+	context.Describe(ui.Description{Role: ui.ButtonRole, Label: "Nuevo evento"})
 	return clicked
 }
 
@@ -291,7 +291,7 @@ const mainGap = 10
 func legend(context *ui.Context) {
 	theme := context.Theme
 	context.Box(ui.Layout{Gap: legendGap, AlignY: ui.Center}, func() {
-		for _, item := range []agendaEntry{{words: "Ferias", fair: true}, {words: "Proyectos", project: true}, {words: "Envíos"}} {
+		for _, item := range []agendaEntry{{words: "Eventos", fair: true}, {words: "Proyectos", project: true}, {words: "Envíos"}} {
 			context.Box(ui.Layout{Gap: chipGap, AlignY: ui.Center}, func() {
 				side := ui.Fixed(legendDot)
 				context.Frame(ui.Layout{Width: side, Height: side}, ui.Look{Fill: legendColor(theme, item), Radius: legendDot / 2}, nil)

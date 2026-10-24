@@ -125,7 +125,7 @@ func TestCambiarGoesBackToTheChoiceOfStands(t *testing.T) {
 	_, window, _ := openStand(t)
 	steps(t, window, click(window, "Cambiar"))
 	settle(window)
-	if _, err := window.Element("Todo el stock Todos tus productos, para vender fuera de una feria"); err != nil {
+	if _, err := window.Element("Todo el stock Todos tus productos, para vender fuera de un evento"); err != nil {
 		t.Errorf("Cambiar did not go back to the choice of stands: %v", err)
 	}
 }

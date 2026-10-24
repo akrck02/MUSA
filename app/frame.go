@@ -108,9 +108,9 @@ func (program *App) scrollingPage(context *ui.Context) {
 
 // pageName tells pages apart, so a new one rises in: the place, and which of its pages shows.
 func (program *App) pageName() string {
-	// A dialog over a page (a project's editor) is not another page: the page under it stays still.
-	return fmt.Sprint(program.place, program.home.tab, program.catalogue.Editing(), program.stand.Selling(),
-		program.sales.ShowingHistory())
+	// A dialog over a page (a project's editor) is not another page, nor is a tab of it (the home
+	// page's calendar, the orders' history): the page stays still and only what changes changes.
+	return fmt.Sprint(program.place, program.catalogue.Editing(), program.stand.Selling())
 }
 
 // spaced writes the brand in capitals with Bubble's letter spacing, letter by letter.

@@ -62,7 +62,7 @@ const (
 	sourcePaddingX   = 8
 	sourcePaddingY   = 2
 	sourceSpace      = 6
-	deliveredNote    = "Al marcar «Entregado», el pedido pasa al historial. Las ventas locales (ferias y en mano) van directas al historial."
+	deliveredNote    = "Al marcar «Entregado», el pedido pasa al historial. Las ventas locales (eventos y en mano) van directas al historial."
 )
 
 // A shop's pill is in its own orange: a soft fill and a deep ink.

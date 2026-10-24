@@ -454,7 +454,7 @@ func TestTappingADayOnTheCalendarShowsWhatItHolds(t *testing.T) {
 	if program.home.dayShown != program.today.date {
 		t.Fatalf("the day's detail is not open")
 	}
-	if _, err := window.ElementIn("day detail", "Nueva feria"); err != nil {
+	if _, err := window.ElementIn("day detail", "Nuevo evento"); err != nil {
 		t.Errorf("the day's detail has no «Nueva feria»: %v", err)
 	}
 }
