@@ -14,23 +14,28 @@ import (
 
 // Measures of the history, in pixels, as in the author's design.
 const (
-	periodWidth      = 200
-	filtersBottom    = 14
-	figuresGap       = 28
-	figuresBottom    = 14
-	figureLabelSize  = 16
-	figureAmountSize = 20
-	figureSpace      = 6
-	historyPadX      = 20 + 1
-	historyPadY      = 6 + 1
-	historyRadius    = 18
-	rowPaddingY      = 14
-	rowGap           = 14
-	dateWidth        = 120
-	spareWidth       = 160 // an empty column of the design, kept so amounts line up as there
-	amountWidth      = 110
-	daySize          = 15
-	amountSize       = 17
+	periodWidth       = 200
+	periodChevronSize = 14
+	periodChevronGap  = 4
+	periodListPadding = 6
+	periodRowPaddingX = 12
+	periodRowPaddingY = 10
+	filtersBottom     = 14
+	figuresGap        = 28
+	figuresBottom     = 14
+	figureLabelSize   = 15
+	figureAmountSize  = 20
+	figureSpace       = 6
+	historyPadX       = 20 + 1
+	historyPadY       = 6 + 1
+	historyRadius     = 18
+	rowPaddingY       = 14
+	rowGap            = 14
+	dateWidth         = 120
+	spareWidth        = 160 // an empty column of the design, kept so amounts line up as there
+	amountWidth       = 110
+	daySize           = 15
+	amountSize        = 17
 )
 
 // filterTabs are the tabs of the history's kinds.
@@ -71,7 +76,7 @@ func (screens *Screens) drawHistory(context *ui.Context) {
 	summary := Summarise(shown)
 	look.Space(context, filtersBottom)
 	context.Box(ui.Layout{Gap: figuresGap, AlignY: ui.End}, func() {
-		inlineFigure(context, periodWords[Periods[screens.period]], money.Format(summary.Revenue))
+		screens.periodFigure(context, money.Format(summary.Revenue))
 		inlineFigure(context, "Coste", money.Format(summary.Cost))
 		inlineFigure(context, "Te queda", money.Format(summary.Margin()))
 	})
@@ -107,20 +112,48 @@ func inlineFigure(context *ui.Context, label, amount string) {
 
 // historyFilters are the kinds as tabs on the left, and the period on the right.
 func (screens *Screens) historyFilters(context *ui.Context) {
-	var kinds, periods []string
-	for _, kind := range historyKinds {
-		kinds = append(kinds, kind.words)
+	tabs := make([]look.Tab, len(historyKinds))
+	for index, kind := range historyKinds {
+		tabs[index] = look.Tab{Label: kind.words}
 	}
-	for _, period := range Periods {
-		periods = append(periods, periodWords[period])
-	}
-	context.Box(ui.Layout{Width: ui.Grow(), Gap: context.Theme.Gap, AlignY: ui.Center}, func() {
-		tabs := make([]look.Tab, len(kinds))
-		for index, words := range kinds {
-			tabs[index] = look.Tab{Label: words}
+	look.PillTabs(context, "kind", &screens.kind, tabs, filterTabs)
+}
+
+// periodFigure is the period's revenue, named by the period: tapping its name lists the other
+// periods to choose from.
+func (screens *Screens) periodFigure(context *ui.Context, amount string) {
+	theme := context.Theme
+	label := periodWords[Periods[screens.period]]
+	context.Box(ui.Layout{Gap: figureSpace, AlignY: ui.End}, func() {
+		if context.Clickable("Periodo", ui.Layout{Gap: periodChevronGap, AlignY: ui.Center}, ui.Looks{}, func() {
+			context.Text(label, ui.TextStyle{Size: figureLabelSize, Color: theme.InkSoft})
+			context.IconSized("chevron-down", periodChevronSize, theme.InkSoft)
+		}) {
+			screens.choosingPeriod = !screens.choosingPeriod
 		}
-		context.Box(ui.Layout{Width: ui.Grow()}, func() { look.PillTabs(context, "kind", &screens.kind, tabs, filterTabs) })
-		context.Box(ui.Layout{Width: ui.Fixed(periodWidth)}, func() { context.Select("period", &screens.period, periods) })
+		context.Describe(ui.Description{Role: ui.ButtonRole, Label: "Periodo"})
+		context.Popover("periods", &screens.choosingPeriod, ui.Look{Fill: theme.Surface, Border: theme.Line, BorderWidth: 1,
+			Radius: theme.ControlRadius, Shadow: true}, func() {
+			screens.periodChoices(context)
+		})
+		context.Text(amount, ui.TextStyle{Size: figureAmountSize, Weight: draw2d.Bold})
+	})
+}
+
+// periodChoices are the periods the history can show, one per line.
+func (screens *Screens) periodChoices(context *ui.Context) {
+	theme := context.Theme
+	context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Fixed(periodWidth), Padding: ui.Pad(periodListPadding)}, func() {
+		for index, period := range Periods {
+			hovered := ui.Look{Fill: theme.Sunken, Radius: theme.ControlRadius}
+			row := ui.Layout{Width: ui.Grow(), Padding: ui.PadXY(periodRowPaddingX, periodRowPaddingY)}
+			if context.Clickable(periodWords[period], row, ui.Looks{Hovered: hovered, Pressed: hovered}, func() {
+				context.Text(periodWords[period], ui.TextStyle{Weight: map[bool]draw2d.Weight{true: draw2d.Bold}[index == screens.period]})
+			}) {
+				screens.period, screens.choosingPeriod = index, false
+			}
+			context.Describe(ui.Description{Role: ui.ButtonRole, Label: periodWords[period]})
+		}
 	})
 }
 

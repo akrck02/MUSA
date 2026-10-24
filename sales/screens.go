@@ -30,7 +30,9 @@ type Screens struct {
 	positions map[string]int
 	view      int // 0 the board of orders on the way, 1 the sales history
 	period    int // index in Periods
-	kind      int // index in historyKinds
+	// choosingPeriod is true while the list of periods is open, under the period's figure.
+	choosingPeriod bool
+	kind           int // index in historyKinds
 	// eventName names a fair by its id, empty when unknown; sales cannot read fairs themselves.
 	eventName func(id string) string
 	opened    string

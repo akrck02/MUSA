@@ -276,3 +276,20 @@ func TestUndoingACashSaleAtTheStandGivesItsPiecesBack(t *testing.T) {
 		t.Errorf("stock %d, not the %d it had before the sale", stock, item.Left)
 	}
 }
+
+func TestTheHistoryShowsAnotherPeriodChosenFromItsFigure(t *testing.T) {
+	program, window := openApp(t, true)
+	program.Open(Sales)
+	program.sales.ShowHistory()
+	window.Frame()
+	lastMonth := func() bool {
+		return slices.ContainsFunc(window.Texts(), func(text string) bool { return strings.Contains(text, "Mercadillo de verano") })
+	}
+	if lastMonth() {
+		t.Fatal("this month's history already shows a fair from last month")
+	}
+	steps(t, window, click(window, "Periodo"), clickIn(window, "periods", "Todo"))
+	if !lastMonth() {
+		t.Errorf("choosing «Todo» does not show last month's fair: %q", window.Texts())
+	}
+}
