@@ -21,6 +21,7 @@ type homeState struct {
 	tab         int           // index in homeTabs
 	month       calendar.Date // a day of the month the calendar shows; zero for this month
 	dayShown    calendar.Date // the day whose detail is open over the calendar; zero for none
+	dayWhole    bool          // the day's detail lists every entry, wider and scrolling
 	note        string
 	noteWarning bool
 	noteUntil   time.Time

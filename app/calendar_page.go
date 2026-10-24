@@ -92,12 +92,13 @@ const (
 	weekdayPaddingX   = 12
 	weekdayPaddingY   = 10
 	weekdaySize       = 14
-	monthDayHeight    = 96
+	monthDayHeight    = 112 // a number and two entries, with room to breathe
 	monthDayPadding   = 8
 	monthDaySize      = 14
 	todayPaddingX     = 8
 	todayPaddingY     = 2
 	monthEntries      = 2
+	moreSize          = 12
 	legendDot         = 10
 )
 
@@ -190,12 +191,8 @@ func (program *App) monthCell(context *ui.Context, cell cellOfMonth, entries []a
 		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Grow()}, func() {
 			context.Separator()
 			context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(monthDayPadding)}, func() {
-				dayNumber(context, cell.day.Day, cell.today, ink)
-				for index, entry := range entries {
-					if index == monthEntries {
-						context.Text("+"+strconv.Itoa(len(entries)-monthEntries), ui.TextStyle{Size: chipTextSize, Color: theme.InkSoft})
-						break
-					}
+				dayHeading(context, cell, ink, len(entries)-monthEntries)
+				for _, entry := range entries[:min(len(entries), monthEntries)] {
 					if entryBar(context, entry) {
 						program.openEntry(entry)
 					}
@@ -207,6 +204,19 @@ func (program *App) monthCell(context *ui.Context, cell cellOfMonth, entries []a
 	if clicked {
 		program.home.dayShown = cell.day
 	}
+}
+
+// dayHeading is a day's number and, when it holds more than its cell shows, a quiet «+N» on its
+// right: tapping the day shows them all.
+func dayHeading(context *ui.Context, cell cellOfMonth, ink draw2d.Color, hidden int) {
+	context.Box(ui.Layout{Width: ui.Grow(), AlignY: ui.Center}, func() {
+		dayNumber(context, cell.day.Day, cell.today, ink)
+		if hidden <= 0 {
+			return
+		}
+		context.Spacer()
+		context.Text("+"+strconv.Itoa(hidden), ui.TextStyle{Size: moreSize, Weight: draw2d.Medium, Color: context.Theme.InkQuiet})
+	})
 }
 
 // dayNumber is a day's number, on an accent pill when it is today.

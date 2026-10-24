@@ -1,9 +1,12 @@
 package app
 
 import (
+	"strconv"
 	"testing"
+	"time"
 
 	"github.com/Itros97/MUSA/calendar"
+	"github.com/Itros97/MUSA/projects"
 )
 
 func TestTheHomePageLinksLeadWhereTheySay(t *testing.T) {
@@ -113,5 +116,53 @@ func TestSwitchingATabDoesNotReplayThePageEntrance(t *testing.T) {
 	steps(t, window, click(window, "Historial de ventas"))
 	if program.pageName() != orders {
 		t.Errorf("the history tab made the orders page another page")
+	}
+}
+
+// busyToday gives today six projects due, more than a cell or a day's detail shows at once.
+func busyToday(program *App) {
+	for index := range 6 {
+		project := projects.Project{ID: "busy " + strconv.Itoa(index), Title: "Encargo " + strconv.Itoa(index), Deadline: program.today.date}
+		program.today.plan.projects = append(program.today.plan.projects, project)
+	}
+}
+
+func TestADayWithMoreThanTwoEntriesShowsTwoAndHowManyMore(t *testing.T) {
+	program, window := openApp(t, true)
+	program.Open(Home)
+	program.home.tab = 1
+	busyToday(program)
+	window.Frames(2)
+	entries := len(program.today.plan.on(program.today.date))
+	if _, err := window.Element("+" + strconv.Itoa(entries-monthEntries)); err != nil {
+		t.Errorf("today's cell does not say how many more it holds: %v", err)
+	}
+	if _, err := window.Element("Encargo 5"); err == nil {
+		t.Errorf("today's cell shows more entries than fit")
+	}
+}
+
+func TestSeeingAllOfABusyDayWidensItsDetail(t *testing.T) {
+	program, window := openApp(t, true)
+	program.Open(Home)
+	program.home.tab = 1
+	busyToday(program)
+	program.home.dayShown = program.today.date
+	window.Frames(2)
+	if _, err := window.ElementIn("day detail", "Encargo 5"); err == nil {
+		t.Fatalf("a busy day's detail lists every entry before «Ver todos»")
+	}
+	title := calendar.LongWords(program.today.date)
+	before, _ := window.Element(title)
+	steps(t, window, click(window, "Ver todos ("+strconv.Itoa(len(program.today.plan.on(program.today.date)))+")"))
+	window.Wait(time.Second)
+	window.Frames(2)
+	after, _ := window.Element(title)
+	// The card stays centred, so a wider card starts further left.
+	if !program.home.dayWhole || after.Rect.X >= before.Rect.X {
+		t.Errorf("«Ver todos» did not widen the day's detail (its title from %v to %v)", before.Rect.X, after.Rect.X)
+	}
+	if _, err := window.Element("Encargo 5"); err != nil {
+		t.Errorf("the whole day does not list its last entry: %v", err)
 	}
 }
