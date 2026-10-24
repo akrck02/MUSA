@@ -12,11 +12,29 @@ import (
 	"github.com/Itros97/MUSA/money"
 )
 
-// Widths of the history, in pixels: its date column and its period's choice.
+// Measures of the history, in pixels, as in the author's design.
 const (
-	dateWidth   = 90
-	periodWidth = 200
+	periodWidth      = 200
+	filtersBottom    = 14
+	figuresGap       = 28
+	figuresBottom    = 14
+	figureLabelSize  = 16
+	figureAmountSize = 20
+	figureSpace      = 6
+	historyPadX      = 20 + 1
+	historyPadY      = 6 + 1
+	historyRadius    = 18
+	rowPaddingY      = 14
+	rowGap           = 14
+	dateWidth        = 120
+	spareWidth       = 160 // an empty column of the design, kept so amounts line up as there
+	amountWidth      = 110
+	daySize          = 15
+	amountSize       = 17
 )
+
+// filterTabs are the tabs of the history's kinds.
+var filterTabs = look.PillSize{TextSize: 16, PaddingX: 14, PaddingY: 8, Between: 8}
 
 // historyKind is a group of channels the history filters by.
 type historyKind struct {
@@ -51,16 +69,20 @@ func (screens *Screens) drawHistory(context *ui.Context) {
 	shown := OfKind(Filter(Done(screens.sales), period, calendar.Of(now), now.Location()), historyKinds[screens.kind].keeps)
 	screens.historyFilters(context)
 	summary := Summarise(shown)
-	context.Box(ui.Layout{Gap: 24, AlignY: ui.End}, func() {
+	look.Space(context, filtersBottom)
+	context.Box(ui.Layout{Gap: figuresGap, AlignY: ui.End}, func() {
 		inlineFigure(context, periodWords[Periods[screens.period]], money.Format(summary.Revenue))
 		inlineFigure(context, "Coste", money.Format(summary.Cost))
 		inlineFigure(context, "Te queda", money.Format(summary.Margin()))
 	})
+	look.Space(context, figuresBottom)
 	if len(shown) == 0 {
 		look.Empty(context, "receipt", "Sin ventas aquí", "Mira otro periodo, u otro filtro.", "")
 		return
 	}
-	look.Card(context, ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.PadXY(16, 4)}, func() {
+	theme := context.Theme
+	card := ui.Look{Fill: theme.Surface, Border: theme.Line, BorderWidth: 1, Radius: historyRadius}
+	context.Frame(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.PadXY(historyPadX, historyPadY)}, card, func() {
 		for index, sale := range shown {
 			if index > 0 {
 				context.Separator()
@@ -77,9 +99,9 @@ func (screens *Screens) drawHistory(context *ui.Context) {
 // inlineFigure is a small label and its amount on one line: "Coste 52 €".
 func inlineFigure(context *ui.Context, label, amount string) {
 	theme := context.Theme
-	context.Box(ui.Layout{Gap: 8, AlignY: ui.Center}, func() {
-		context.Text(label, ui.TextStyle{Size: theme.SmallTextSize, Color: theme.InkSoft})
-		context.Text(amount, ui.TextStyle{Size: theme.TextSize * 1.3, Weight: draw2d.Bold})
+	context.Box(ui.Layout{Gap: figureSpace, AlignY: ui.End}, func() {
+		context.Text(label, ui.TextStyle{Size: figureLabelSize, Color: theme.InkSoft})
+		context.Text(amount, ui.TextStyle{Size: figureAmountSize, Weight: draw2d.Bold})
 	})
 }
 
@@ -97,7 +119,7 @@ func (screens *Screens) historyFilters(context *ui.Context) {
 		for index, words := range kinds {
 			tabs[index] = look.Tab{Label: words}
 		}
-		context.Box(ui.Layout{Width: ui.Grow()}, func() { look.PillTabs(context, "kind", &screens.kind, tabs, look.GroupTabs) })
+		context.Box(ui.Layout{Width: ui.Grow()}, func() { look.PillTabs(context, "kind", &screens.kind, tabs, filterTabs) })
 		context.Box(ui.Layout{Width: ui.Fixed(periodWidth)}, func() { context.Select("period", &screens.period, periods) })
 	})
 }
@@ -111,19 +133,16 @@ func (screens *Screens) historyRow(context *ui.Context, sale Sale) bool {
 		day = "Hoy"
 	}
 	label := fmt.Sprintf("%s · %s · %s", day, screens.who(sale), money.Format(sale.Total()))
-	layout := ui.Layout{Width: ui.Grow(), Padding: ui.PadXY(0, 12), Gap: 16, AlignY: ui.Center}
+	layout := ui.Layout{Width: ui.Grow(), Padding: ui.PadXY(0, rowPaddingY), Gap: rowGap, AlignY: ui.Center}
 	clicked := context.Clickable(label, layout, ui.Looks{Pressed: ui.Look{Fill: theme.Sunken}}, func() {
 		context.Box(ui.Layout{Width: ui.Fixed(dateWidth)}, func() {
-			context.Text(day, ui.TextStyle{Color: theme.InkSoft})
+			context.Text(day, ui.TextStyle{Size: daySize, Color: theme.InkSoft})
 		})
-		context.Frame(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Gap: 4}, ui.Look{Clip: true}, func() {
-			context.Box(ui.Layout{Gap: 8, AlignY: ui.Center}, func() {
-				context.Text(screens.who(sale), ui.TextStyle{Weight: draw2d.Bold})
-				look.Pill(context, sourceWords(sale), sourceTone(theme, sale.Channel))
-			})
-			context.Text(screens.headline(sale), ui.TextStyle{Size: theme.SmallTextSize, Color: theme.InkSoft})
+		nameAndDetail(context, sale, sourceWords(sale), screens.who(sale), SummaryWords(sale))
+		context.Box(ui.Layout{Width: ui.Fixed(spareWidth)}, nil)
+		context.Box(ui.Layout{Width: ui.Fixed(amountWidth), AlignX: ui.End}, func() {
+			context.Text(money.Format(sale.Total()), ui.TextStyle{Size: amountSize, Weight: draw2d.Bold})
 		})
-		context.Text(money.Format(sale.Total()), ui.TextStyle{Weight: draw2d.Bold})
 	})
 	context.Describe(ui.Description{Role: ui.ButtonRole, Label: label})
 	return clicked

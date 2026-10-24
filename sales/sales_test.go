@@ -299,3 +299,22 @@ func TestUnitsSinceCountsOnlyTheSalesFromThatMomentOn(t *testing.T) {
 		t.Errorf("units %v", units)
 	}
 }
+
+func TestTheHistorySaysWhatEachSaleWasAndHowItEnded(t *testing.T) {
+	cat := Line{ProductName: "Gato", VariantName: "A5", Quantity: 2}
+	frog := Line{ProductName: "Rana", Quantity: 1}
+	cases := []struct {
+		sale Sale
+		want string
+	}{
+		{Sale{Channel: AtEvent, Lines: []Line{cat, frog}}, "2 × Gato A5, 1 × Rana"},
+		{Sale{Channel: InPerson, Lines: []Line{frog}}, "1 × Rana · en mano"},
+		{Sale{Channel: Marketplace, Status: Delivered, Lines: []Line{cat, frog, frog}}, "4 piezas · entregado"},
+		{Sale{Channel: Commission, Status: Delivered, Lines: []Line{{ProductName: "Retrato de un perro", Quantity: 1}}}, "Retrato de un perro · entregado"},
+	}
+	for _, each := range cases {
+		if got := SummaryWords(each.sale); got != each.want {
+			t.Errorf("got %q, want %q", got, each.want)
+		}
+	}
+}

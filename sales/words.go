@@ -37,3 +37,41 @@ func ProblemWords(problem Problem) string {
 	}
 	return string(problem.Code)
 }
+
+// linesShown is how many lines a sale's summary names before it only counts the pieces.
+const linesShown = 2
+
+// SummaryWords is what a sale was and how it ended, as the history writes it: "2 × Gato A5,
+// 1 × Rana · en mano", "3 piezas · entregado", or a project's name alone.
+func SummaryWords(sale Sale) string {
+	words := linesWords(sale)
+	switch {
+	case sale.Channel == InPerson:
+		words += " · en mano"
+	case sale.Channel != AtEvent && sale.Status == Delivered:
+		words += " · entregado"
+	}
+	return words
+}
+
+func linesWords(sale Sale) string {
+	switch {
+	case len(sale.Lines) == 0:
+		return "Venta"
+	case sale.Channel == Commission:
+		return sale.Lines[0].ProductName
+	case len(sale.Lines) > linesShown:
+		return piecesWords(sale)
+	}
+	words := ""
+	for index, line := range sale.Lines {
+		if index > 0 {
+			words += ", "
+		}
+		words += fmt.Sprintf("%d × %s", line.Quantity, line.ProductName)
+		if line.VariantName != "" {
+			words += " " + line.VariantName
+		}
+	}
+	return words
+}

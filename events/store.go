@@ -27,6 +27,13 @@ func NewStore(database *storage.Database, sold *sales.Store, now func() time.Tim
 	return &Store{database: database, sales: sold, now: now, newID: newID}
 }
 
+// WithClock is a store over the same data whose clock is now: what it records is dated by it.
+func (store *Store) WithClock(now func() time.Time) *Store {
+	copied := *store
+	copied.now = now
+	return &copied
+}
+
 // All reads every fair: open ones first, then the most recent first.
 func (store *Store) All() ([]Event, error) { return readEvents(store.database.Rows(), "") }
 

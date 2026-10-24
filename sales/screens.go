@@ -26,9 +26,11 @@ type Screens struct {
 
 	sales   []Sale
 	loadErr error
-	view    int // 0 the board of orders on the way, 1 the sales history
-	period  int // index in Periods
-	kind    int // index in historyKinds
+	// positions is each product's place in the catalogue, by name, which picks its colour.
+	positions map[string]int
+	view      int // 0 the board of orders on the way, 1 the sales history
+	period    int // index in Periods
+	kind      int // index in historyKinds
 	// eventName names a fair by its id, empty when unknown; sales cannot read fairs themselves.
 	eventName func(id string) string
 	opened    string
@@ -44,8 +46,19 @@ func NewScreens(store *Store, products *catalogue.Store, newID func() string, no
 	return &Screens{store: store, products: products, newID: newID, now: now}
 }
 
-// Reload reads the sales again.
-func (screens *Screens) Reload() { screens.sales, screens.loadErr = screens.store.All() }
+// Reload reads the sales again, and the catalogue's order for their colours.
+func (screens *Screens) Reload() {
+	screens.sales, screens.loadErr = screens.store.All()
+	all, err := screens.products.All()
+	if err != nil {
+		screens.loadErr = err
+		return
+	}
+	screens.positions = make(map[string]int, len(all))
+	for index, product := range all {
+		screens.positions[product.Name] = index
+	}
+}
 
 // Back closes what is open over the list; false when only the list was open.
 func (screens *Screens) Back() bool {
@@ -84,7 +97,7 @@ var views = []string{"Por enviar", "Historial de ventas"}
 func (screens *Screens) drawList(context *ui.Context) {
 	onTheWay := OnTheWay(screens.sales)
 	look.PageHeader(context, "Pedidos", boardWords(onTheWay), func() {
-		if context.PrimaryIconButton("plus", "Nuevo pedido") {
+		if look.MainButton(context, "plus", "Nuevo pedido") {
 			screens.StartOrder()
 		}
 	})
@@ -92,7 +105,9 @@ func (screens *Screens) drawList(context *ui.Context) {
 	for index, words := range views {
 		tabs[index] = look.Tab{Label: words}
 	}
-	look.PillTabs(context, "view", &screens.view, tabs, look.GroupTabs)
+	look.Space(context, viewsTop)
+	context.Box(ui.Layout{}, func() { look.PillTabs(context, "view", &screens.view, tabs, viewTabs) })
+	look.Space(context, viewsBottom)
 	switch {
 	case screens.loadErr != nil:
 		look.Empty(context, "triangle-alert", "No se pudieron leer los pedidos", screens.loadErr.Error(), "")

@@ -78,9 +78,11 @@ type piece struct {
 func (filler *filler) fairs(today calendar.Date) {
 	summer := filler.event("Mercadillo de verano", "Plaza Mayor", today.AddDays(-30), today.AddDays(-29))
 	filler.take(summer, []piece{{"LAM-GAT-A5", 6}, {"PEG-LUN-B", 15}, {"PEG-NUB", 10}})
-	filler.sell(summer, "LAM-GAT-A5", 5, 800)
-	filler.sell(summer, "PEG-LUN-B", 9, 300)
-	filler.sell(summer, "PEG-NUB", 6, 300)
+	// Its sales were made on its first day, not today: a store with the fair's clock records them.
+	onTheDay := filler.stores.Events.WithClock(func() time.Time { return sales.SoldAt(today.AddDays(-30), filler.stores.Now()) })
+	filler.refused(onTheDay.Sell(summer, filler.variants["LAM-GAT-A5"], 5, 800))
+	filler.refused(onTheDay.Sell(summer, filler.variants["PEG-LUN-B"], 9, 300))
+	filler.refused(onTheDay.Sell(summer, filler.variants["PEG-NUB"], 6, 300))
 	filler.spend(summer, "Stand", 4000)
 	filler.spend(summer, "Gasolina", 2200)
 	filler.refused(filler.stores.Events.Close(summer))
@@ -163,10 +165,6 @@ func (filler *filler) sellLines(eventID string, pieces []piece) {
 		lines = append(lines, sales.LineDraft{ID: filler.stores.NewID(), VariantID: line.VariantID, Quantity: each.units, UnitPrice: line.Price})
 	}
 	filler.refused(filler.stores.Events.SellLines(eventID, lines, sales.Cash))
-}
-
-func (filler *filler) sell(eventID, sku string, quantity int, cents money.Money) {
-	filler.refused(filler.stores.Events.Sell(eventID, filler.variants[sku], quantity, cents))
 }
 
 func (filler *filler) spend(eventID, concept string, cents money.Money) {

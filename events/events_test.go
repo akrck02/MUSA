@@ -247,3 +247,14 @@ func TestACustomersBasketIsOneSaleThatSaysHowItWasPaid(t *testing.T) {
 	refusedWith(t, Refusal{Code: CodeExceedsRemaining, Available: 3})(test.events.SellLines("e1", tooMany, sales.Card))
 	refusedWith(t, Refusal{Code: CodeNothingToSell})(test.events.SellLines("e1", nil, sales.Card))
 }
+
+func TestAStoreWithItsOwnClockDatesTheSalesItRecords(t *testing.T) {
+	test := newBench(t)
+	test.must(t)(test.events.MoveStock("e1", "v1", 3))
+	fairDay := springStart.At(12, time.UTC)
+	test.must(t)(test.events.WithClock(func() time.Time { return fairDay }).Sell("e1", "v1", 1, 1000))
+	detail, _ := test.events.Detail("e1")
+	if !detail.Sales[0].SoldAt.Equal(fairDay) {
+		t.Errorf("sold at %v, want the fair's day %v", detail.Sales[0].SoldAt, fairDay)
+	}
+}
