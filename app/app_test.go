@@ -10,6 +10,7 @@ import (
 	"github.com/Itros97/MUSA/catalogue"
 	"github.com/Itros97/MUSA/customers"
 	"github.com/Itros97/MUSA/demo"
+	"github.com/Itros97/MUSA/look"
 	"github.com/Itros97/MUSA/money"
 	"github.com/Itros97/MUSA/projects"
 	"github.com/Itros97/MUSA/sales"
@@ -291,5 +292,16 @@ func TestTheHistoryShowsAnotherPeriodChosenFromItsFigure(t *testing.T) {
 	steps(t, window, click(window, "Periodo"), clickIn(window, "periods", "Todo"))
 	if !lastMonth() {
 		t.Errorf("choosing «Todo» does not show last month's fair: %q", window.Texts())
+	}
+}
+
+func TestPagesCopiedFromOutsideServicesSayTheyAreNotSyncedYet(t *testing.T) {
+	program, window := openApp(t, true)
+	for _, page := range []Place{Projects, Sales} {
+		program.Open(page)
+		window.Frame()
+		if !slices.Contains(window.Texts(), look.Unsynced) {
+			t.Errorf("page %v does not say %q: %q", page, look.Unsynced, window.Texts())
+		}
 	}
 }

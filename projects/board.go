@@ -17,6 +17,7 @@ import (
 // so paddings beside one are a pixel larger than the design's CSS.
 const (
 	boardTop          = 18
+	syncTop           = 16
 	boardGap          = 16
 	columnRadius      = 18
 	columnPadding     = 14
@@ -55,6 +56,11 @@ const (
 
 // drawBoard is one column per stage, each with its projects and «Añadir proyecto».
 func (screens *Screens) drawBoard(context *ui.Context) {
+	look.Space(context, syncTop)
+	context.Box(ui.Layout{Width: ui.Grow(), AlignX: ui.End}, func() {
+		// TODO(akrck02): say when the board last synced with Trello, once there is an API to sync with.
+		look.SyncStatus(context, look.Unsynced)
+	})
 	look.Space(context, boardTop)
 	context.Box(ui.Layout{Width: ui.Grow(), Gap: boardGap, Columns: look.Columns(context, len(Stages))}, func() {
 		for _, stage := range Stages {

@@ -108,7 +108,12 @@ func (screens *Screens) drawList(context *ui.Context) {
 		tabs[index] = look.Tab{Label: words}
 	}
 	look.Space(context, viewsTop)
-	context.Box(ui.Layout{}, func() { look.PillTabs(context, "view", &screens.view, tabs, viewTabs) })
+	context.Box(ui.Layout{Width: ui.Grow(), AlignY: ui.Center}, func() {
+		look.PillTabs(context, "view", &screens.view, tabs, viewTabs)
+		context.Spacer()
+		// TODO(akrck02): say when the orders last synced with the shops, once there is an API to sync with.
+		look.SyncStatus(context, look.Unsynced)
+	})
 	look.Space(context, viewsBottom)
 	switch {
 	case screens.loadErr != nil:
