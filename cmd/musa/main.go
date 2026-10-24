@@ -6,6 +6,7 @@
 //	go run ./cmd/musa -database my.db   # another database file
 //	go run ./cmd/musa -demo -capture home.png   # draw one frame to a picture and exit
 //	go run ./cmd/musa -demo -script demo.txt    # play a script, showing its finger: a demo to film
+//	go run ./cmd/musa -demo -memory-profile memory.pprof  # on closing, say what memory is Go's
 package main
 
 import (
@@ -35,6 +36,7 @@ func main() {
 	tools := flag.Bool("tools", true, "show the development tools on the home page")
 	today := flag.String("today", "", "a day as 2026-11-04 to open on instead of today, for captures")
 	script := flag.String("script", "", "a uidrive script to play, showing its finger: a demo to film")
+	memoryProfile := flag.String("memory-profile", "", "when the window closes, write what Go holds to this file (go tool pprof) and say how much it is")
 	flag.Parse()
 	if !wasSet("dark") {
 		options.Dark = window.SystemPrefersDark()
@@ -53,6 +55,13 @@ func main() {
 		os.Exit(1)
 	}
 	if err := run(options, *demoMode, *path, app.Place(*place), *page, *tools, clock); err != nil {
+		fmt.Fprintln(os.Stderr, "musa:", err)
+		os.Exit(1)
+	}
+	if *memoryProfile == "" {
+		return
+	}
+	if err := writeMemoryProfile(*memoryProfile, os.Stderr); err != nil {
 		fmt.Fprintln(os.Stderr, "musa:", err)
 		os.Exit(1)
 	}
