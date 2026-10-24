@@ -109,8 +109,8 @@ func (filler *filler) orders(today calendar.Date) {
 	}
 	filler.order(etsy("Lucía", 1, append(filler.lines("LAM-ZOR-A4", 1, 1500), filler.lines("LAM-GAT-A5", 1, 800)...)))
 	filler.order(etsy("Marcos", 0, filler.lines("LAM-GAT-A4", 1, 1200)))
-	filler.sent(etsy("Ana", 3, filler.lines("LAM-BOS-A4", 1, 1000)))
-	filler.sent(etsy("Pablo", 4, filler.lines("LAM-ZOR-A5", 1, 800)))
+	filler.sent(etsy("Ana", 4, filler.lines("LAM-BOS-A4", 1, 1000)))
+	filler.sent(etsy("Pablo", 3, filler.lines("LAM-ZOR-A5", 1, 800)))
 	filler.delivered(etsy("Sara", 1, filler.lines("LAM-BOS-A4", 1, 1000)))
 	filler.order(sales.Draft{Channel: sales.InPerson, Customer: "Hugo", SoldAt: daysAgo(2), Lines: filler.lines("PEG-OLA", 2, 300)})
 	filler.order(sales.Draft{Channel: sales.InPerson, Customer: "Taller Norte", SoldAt: daysAgo(3),
