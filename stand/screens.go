@@ -215,31 +215,49 @@ func (screens *Screens) chooseFair(fair events.Event) {
 // heroCard is the fair on today: dark, with what the artist took and «Vender aquí». All of it
 // opens the fair's stand.
 func (screens *Screens) heroCard(context *ui.Context, fair events.Event) {
-	theme := context.Theme
-	light := theme.OnPrimary
-	soft := theme.Primary.Mix(light, heroSoftAlpha)
-	normal := ui.Look{Fill: theme.Primary, Radius: heroRadius}
-	layout := ui.Layout{Width: ui.Grow(), Padding: ui.Pad(heroPadding), Gap: heroGap, AlignY: ui.Center}
+	colours := heroColoursOf(context.Theme)
+	normal := ui.Look{Fill: colours.fill, Border: colours.border, BorderWidth: colours.borderWidth, Radius: heroRadius}
+	layout := ui.Layout{Width: ui.Grow(), Padding: ui.Pad(heroPadding + colours.borderWidth), Gap: heroGap, AlignY: ui.Center}
 	if context.Clickable(fair.Name, layout, ui.Looks{Normal: normal, Hovered: normal, Pressed: normal}, func() {
 		side := ui.Fixed(heroBadgeSide)
 		badge := ui.Layout{Width: side, Height: side, AlignX: ui.Center, AlignY: ui.Center}
-		context.Frame(badge, ui.Look{Fill: theme.Primary.Mix(light, heroBadgeAlpha), Radius: heroBadgeSide / 2}, func() {
-			context.IconSized("tent", heroIconSize, light)
+		context.Frame(badge, ui.Look{Fill: colours.badge, Radius: heroBadgeSide / 2}, func() {
+			context.IconSized("tent", heroIconSize, colours.badgeIcon)
 		})
 		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow()}, func() {
-			context.Text("● EN CURSO", ui.TextStyle{Size: heroLiveSize, Weight: draw2d.Bold, Color: soft})
+			context.Text("● EN CURSO", ui.TextStyle{Size: heroLiveSize, Weight: draw2d.Bold, Color: colours.soft})
 			look.Space(context, heroNameSpace)
-			context.Text(fair.Name, ui.TextStyle{Size: heroNameSize, Weight: draw2d.Bold, Color: light})
+			context.Text(fair.Name, ui.TextStyle{Size: heroNameSize, Weight: draw2d.Bold, Color: colours.ink})
 			look.Space(context, heroNameSpace)
-			context.Text(screens.heroWords(fair), ui.TextStyle{Size: heroWordsSize, Color: soft})
+			context.Text(screens.heroWords(fair), ui.TextStyle{Size: heroWordsSize, Color: colours.soft})
 		})
-		pill := ui.Look{Fill: light, Radius: roundRadius}
+		pill := ui.Look{Fill: colours.button, Radius: roundRadius}
 		context.Frame(ui.Layout{Padding: ui.PadXY(heroButtonPadX, heroButtonPadY)}, pill, func() {
-			context.Text("Vender aquí", ui.TextStyle{Size: heroButtonSize, Weight: draw2d.Bold, Color: theme.Primary})
+			context.Text("Vender aquí", ui.TextStyle{Size: heroButtonSize, Weight: draw2d.Bold, Color: colours.buttonInk})
 		})
 	}) {
 		screens.chooseFair(fair)
 	}
+}
+
+// heroColours are the colours of the card of today's fair: on the accent on the light theme, and
+// on the surface with an accent line on the dark one, where a light accent would glare.
+type heroColours struct {
+	fill, border, ink, soft, badge, badgeIcon, button, buttonInk draw2d.Color
+	borderWidth                                                  float32
+}
+
+// heroDarkBorder is the width of the accent line around today's fair on the dark theme.
+const heroDarkBorder = 2
+
+func heroColoursOf(theme ui.Theme) heroColours {
+	if look.Dark(theme) {
+		return heroColours{fill: theme.Surface, border: theme.Primary, ink: theme.Ink, soft: theme.InkSoft, badge: theme.Sunken,
+			badgeIcon: theme.Primary, button: theme.Primary, buttonInk: theme.OnPrimary, borderWidth: heroDarkBorder}
+	}
+	light := theme.OnPrimary
+	return heroColours{fill: theme.Primary, ink: light, soft: theme.Primary.Mix(light, heroSoftAlpha),
+		badge: theme.Primary.Mix(light, heroBadgeAlpha), badgeIcon: light, button: light, buttonInk: theme.Primary}
 }
 
 // heroWords is how many pieces the artist has at the fair on today.
