@@ -28,6 +28,7 @@ const (
 	cardPadding       = 14 + 1
 	cardBottom        = 12
 	stripHeight       = 70
+	compactDot        = 10 // the colour of a compact card, before its title
 	stripRadius       = 10
 	stripBottom       = 10
 	cardTitleSize     = 16
@@ -165,6 +166,10 @@ func (screens *Screens) card(context *ui.Context, project Project) {
 	context.DragSource(project.Title, dragged, ui.Layout{Width: ui.Grow(), Padding: ui.Padding{Bottom: cardBottom}}, func() {
 		layout := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(cardPadding)}
 		if context.Clickable(project.Title, layout, ui.Looks{Normal: normal, Hovered: hovered, Pressed: hovered}, func() {
+			if screens.compact {
+				screens.compactContent(context, project, colours)
+				return
+			}
 			strip := ui.Look{Fill: colours.fade(catalogue.ListFill(screens.created(project))), Radius: stripRadius}
 			context.Frame(ui.Layout{Width: ui.Grow(), Height: ui.Fixed(stripHeight)}, strip, nil)
 			look.Space(context, stripBottom)
@@ -182,6 +187,27 @@ func (screens *Screens) card(context *ui.Context, project Project) {
 		}) {
 			screens.edit(project)
 		}
+	})
+}
+
+// compactContent is a card in the compact view: its colour as a dot before the title and the
+// price, then who it is for and when it is due, on two lines.
+func (screens *Screens) compactContent(context *ui.Context, project Project, colours palette) {
+	context.Box(ui.Layout{Width: ui.Grow(), Gap: whoGap, AlignY: ui.Center}, func() {
+		side := ui.Fixed(compactDot)
+		dot := ui.Look{Fill: colours.fade(catalogue.ListFill(screens.created(project))), Radius: compactDot / 2}
+		context.Frame(ui.Layout{Width: side, Height: side}, dot, nil)
+		context.Frame(ui.Layout{Width: ui.Grow()}, ui.Look{Clip: true}, func() {
+			context.Text(project.Title, ui.TextStyle{Size: cardTitleSize, Weight: draw2d.Bold, Color: colours.ink})
+		})
+		context.Text(money.Format(project.Price), ui.TextStyle{Size: cardTitleSize, Weight: draw2d.Bold, Color: colours.ink})
+	})
+	look.Space(context, footTop)
+	context.Box(ui.Layout{Width: ui.Grow(), Gap: whoGap, AlignY: ui.Center}, func() {
+		context.Frame(ui.Layout{Width: ui.Grow()}, ui.Look{Clip: true}, func() {
+			context.Text(screens.people[project.CustomerID].Name, ui.TextStyle{Size: footSize, Color: colours.soft})
+		})
+		screens.duePill(context, project, colours)
 	})
 }
 

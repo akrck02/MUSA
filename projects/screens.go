@@ -32,6 +32,7 @@ type Screens struct {
 	editor   *editor
 	settings *networkSettings // the networks sheet, while open
 	search   look.Search      // by title or customer
+	compact  bool             // cards show only their title, who, when and price: for long boards
 
 	note        string
 	noteWarning bool
@@ -104,6 +105,7 @@ func (screens *Screens) Draw(context *ui.Context) {
 	look.PageHeader(context, "Proyectos", screens.subtitle(), func() {
 		look.SearchField(context, &screens.search, "Buscar por título o cliente")
 		look.SearchButton(context, &screens.search)
+		screens.compactButton(context)
 		if look.MainButton(context, "plus", "Nuevo proyecto") {
 			screens.startProject(ToStart)
 		}
@@ -158,5 +160,17 @@ func (screens *Screens) Edit(id string) {
 func (screens *Screens) ShowEditor() {
 	if len(screens.projects) > 0 {
 		screens.edit(screens.projects[0])
+	}
+}
+
+// compactButton switches the board between full cards and compact ones; its icon shows the view
+// it switches to.
+func (screens *Screens) compactButton(context *ui.Context) {
+	icon, label := "rows-3", "Vista compacta"
+	if screens.compact {
+		icon, label = "layout-grid", "Vista amplia"
+	}
+	if look.ToolButton(context, icon, label) {
+		screens.compact = !screens.compact
 	}
 }

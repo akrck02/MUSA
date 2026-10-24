@@ -126,3 +126,25 @@ func TestADeliveredProjectIsDraggedBack(t *testing.T) {
 		t.Errorf("the delivered project is %s after dragging it to «Para revisar»", moved.Stage)
 	}
 }
+
+func TestTheCompactViewFitsMoreProjectsOnTheBoard(t *testing.T) {
+	program, window := openApp(t, true)
+	program.Open(Projects)
+	window.Frames(2)
+	before, err := window.Element("Retrato de familia")
+	if err != nil {
+		t.Fatal(err)
+	}
+	steps(t, window, click(window, "Vista compacta"))
+	window.Frames(2)
+	after, err := window.Element("Retrato de familia")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if after.Rect.Height >= before.Rect.Height/2 {
+		t.Errorf("a compact card is %v tall, a full one %v", after.Rect.Height, before.Rect.Height)
+	}
+	if _, err := window.Element("Vista amplia"); err != nil {
+		t.Errorf("the compact view offers no way back: %v", err)
+	}
+}
