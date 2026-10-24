@@ -122,12 +122,12 @@ func (screens *Screens) details(context *ui.Context) {
 	context.Tabs("status", &edited.status, statusWords[Draft], statusWords[Active], statusWords[Archived])
 	if edited.product.Kind == Digital {
 		context.Box(ui.Layout{Width: ui.Grow(), Columns: look.Columns(context, 2), Gap: theme.Gap}, func() {
-			look.Field(context, "Formato", "delivery", &edited.delivery, "PNG 4000 px", "")
-			look.Field(context, "Plazo en días", "turnaround", &edited.turnaround, "14",
+			look.Field(context, "Formato", "delivery", &edited.delivery, "Ej.: PNG 4000 px", "")
+			look.Field(context, "Plazo en días", "turnaround", &edited.turnaround, "En días",
 				firstOf(editing.unreadable["turnaround"], editing.problemFor(CodeNegativeTurnaround, "", "")))
 		})
 	} else {
-		look.Field(context, "Material", "material", &edited.material, "Papel de algodón 300 g", "")
+		look.Field(context, "Material", "material", &edited.material, "Ej.: Papel de algodón 300 g", "")
 	}
 	for index := range edited.variants {
 		typed := &edited.variants[index]
@@ -170,7 +170,7 @@ func (screens *Screens) physicalFields(context *ui.Context, typed *variantForm) 
 	theme := context.Theme
 	id := typed.id
 	context.Box(ui.Layout{Width: ui.Grow(), Columns: look.Columns(context, 3), Gap: theme.Gap, AlignY: ui.Start}, func() {
-		look.Field(context, "SKU", "sku", &typed.sku, "LAM-GAT-A4", editing.problemFor(CodeDuplicateSKU, id, "sku"))
+		look.Field(context, "SKU", "sku", &typed.sku, "Ej.: LAM-GAT-A4", editing.problemFor(CodeDuplicateSKU, id, "sku"))
 		look.Field(context, "Avisar con", "minimum", &typed.minimum, "Opcional", editing.problemFor(CodeNegativeMinimumStock, id, "minimum"))
 	})
 	context.Box(ui.Layout{Width: ui.Grow(), Columns: look.Columns(context, 4), Gap: theme.Gap, AlignY: ui.Start}, func() {

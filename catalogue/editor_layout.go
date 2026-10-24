@@ -144,7 +144,7 @@ func (screens *Screens) basics(context *ui.Context) {
 	fieldLabel(context, "Nombre")
 	input := ui.Look{Fill: theme.Surface, Border: theme.Line, BorderWidth: 1, Radius: inputRadius}
 	context.Frame(ui.Layout{Width: ui.Grow(), Padding: ui.PadXY(inputPaddingX, inputPaddingY)}, input, func() {
-		context.TextFieldWith("name", &edited.name, ui.TextFieldOptions{Placeholder: "Gato astronauta", Plain: true,
+		context.TextFieldWith("name", &edited.name, ui.TextFieldOptions{Placeholder: "Nombre del producto", Plain: true,
 			Size: inputSize, Height: ui.Fixed(inputSize * theme.LineHeight)})
 	})
 	if words := editing.problemFor(CodeBlankName, "", ""); words != "" {

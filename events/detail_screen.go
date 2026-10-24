@@ -301,7 +301,7 @@ func (screens *Screens) expensesSection(context *ui.Context, open bool) {
 		context.Box(ui.Layout{Direction: look.Across(context), Width: ui.Grow(), Gap: 8}, func() {
 			look.Field(context, "Concepto", "concept", &screens.newExpense.concept, "Stand, gasolina, comida…", "")
 			context.Box(ui.Layout{Width: ui.Fixed(120)}, func() {
-				look.Field(context, "Importe (€)", "amount", &screens.newExpense.amount, "40", "")
+				look.Field(context, "Importe (€)", "amount", &screens.newExpense.amount, "En euros", "")
 			})
 			if context.IconButton("plus", "Añadir gasto") {
 				screens.addExpense()

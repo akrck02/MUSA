@@ -53,7 +53,7 @@ func (screens *Screens) drawEditor(context *ui.Context) {
 		title = editing.project.Title
 	}
 	if context.Sheet(title, ui.SheetOptions{}, func() {
-		look.Field(context, "Título", "title", &editing.project.Title, "Retrato de familia", editing.problems["title"])
+		look.Field(context, "Título", "title", &editing.project.Title, "Ej.: Retrato de familia", editing.problems["title"])
 		screens.customerFields(context)
 		screens.workFields(context)
 		screens.editorActions(context)
@@ -67,7 +67,7 @@ func (screens *Screens) customerFields(context *ui.Context) {
 	editing := screens.editor
 	theme := context.Theme
 	context.Box(ui.Layout{Width: ui.Grow(), Columns: look.Columns(context, 2), Gap: theme.Gap}, func() {
-		look.Field(context, "Para", "customer", &editing.person.Name, "Lucía", editing.problems["customer"])
+		look.Field(context, "Para", "customer", &editing.person.Name, "Nombre", editing.problems["customer"])
 		look.Field(context, "Contacto", "contact", &editing.person.Contact, "Email o teléfono", "")
 	})
 	if look.Link(context, "Editar redes") {
@@ -87,8 +87,8 @@ func (screens *Screens) workFields(context *ui.Context) {
 	editing := screens.editor
 	theme := context.Theme
 	context.Box(ui.Layout{Width: ui.Grow(), Columns: look.Columns(context, 2), Gap: theme.Gap}, func() {
-		look.Field(context, "Precio", "price", &editing.price, "40", editing.problems["price"])
-		look.Field(context, "Fecha de entrega", "deadline", &editing.deadline, "18/11/2026", editing.problems["deadline"])
+		look.Field(context, "Precio", "price", &editing.price, "En euros", editing.problems["price"])
+		look.Field(context, "Fecha de entrega", "deadline", &editing.deadline, "dd/mm/aaaa", editing.problems["deadline"])
 	})
 	options := []string{"Sin producto del catálogo"}
 	for _, choice := range screens.choices {

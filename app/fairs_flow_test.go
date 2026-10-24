@@ -42,7 +42,7 @@ func TestANewFairIsSaved(t *testing.T) {
 	settle(window)
 	steps(t, window, click(window, "Nuevo evento"))
 	settle(window)
-	steps(t, window, typeInto(window, "Feria del cómic", "Feria del Faro"), typeInto(window, "Pabellón 3", "Puerto"),
+	steps(t, window, typeInto(window, "Ej.: Feria del cómic", "Feria del Faro"), typeInto(window, "Ej.: Pabellón 3", "Puerto"),
 		click(window, "Guardar"))
 	settle(window)
 	if _, found := fairNamed(t, program, "Feria del Faro"); !found {
@@ -73,7 +73,7 @@ func TestAnExpenseIsAddedToAFair(t *testing.T) {
 	before, _ := fairNamed(t, program, name)
 	steps(t, window, click(window, "Gastos (1)"))
 	settle(window)
-	steps(t, window, typeInto(window, "Stand, gasolina, comida…", "Mesa"), typeInto(window, "40", "15"), click(window, "Añadir gasto"))
+	steps(t, window, typeInto(window, "Stand, gasolina, comida…", "Mesa"), typeInto(window, "En euros", "15"), click(window, "Añadir gasto"))
 	settle(window)
 	after, _ := fairNamed(t, program, name)
 	if len(after.Expenses) != len(before.Expenses)+1 {

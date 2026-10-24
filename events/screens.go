@@ -222,11 +222,11 @@ func (screens *Screens) drawEditor(context *ui.Context) {
 		title = "Editar evento"
 	}
 	if context.Sheet(title, ui.SheetOptions{}, func() {
-		look.Field(context, "Nombre", "name", &editing.draft.Name, "Feria del cómic", editing.problems["name"])
-		look.Field(context, "Lugar", "location", &editing.draft.Location, "Pabellón 3", "")
+		look.Field(context, "Nombre", "name", &editing.draft.Name, "Ej.: Feria del cómic", editing.problems["name"])
+		look.Field(context, "Lugar", "location", &editing.draft.Location, "Ej.: Pabellón 3", "")
 		context.Box(ui.Layout{Width: ui.Grow(), Columns: look.Columns(context, 2), Gap: context.Theme.Gap}, func() {
-			look.Field(context, "Empieza", "start", &editing.start, "18/4/2026", editing.problems["start"])
-			look.Field(context, "Termina", "end", &editing.end, "19/4/2026", editing.problems["end"])
+			look.Field(context, "Empieza", "start", &editing.start, "dd/mm/aaaa", editing.problems["start"])
+			look.Field(context, "Termina", "end", &editing.end, "dd/mm/aaaa", editing.problems["end"])
 		})
 		context.Box(ui.Layout{Width: ui.Grow(), AlignX: ui.End}, func() {
 			if context.PrimaryButton("Guardar") {

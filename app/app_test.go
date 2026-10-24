@@ -75,7 +75,7 @@ func TestCreatingAProductPutsItInTheCatalogue(t *testing.T) {
 	steps(t, window,
 		click(window, "Crear tu primer producto"),
 		click(window, "Producto físico"),
-		typeInto(window, "Gato astronauta", "Lámina de prueba"),
+		typeInto(window, "Nombre del producto", "Lámina de prueba"),
 		typeInto(window, "12,50", "15"),
 		click(window, "Guardar"),
 	)
@@ -224,10 +224,10 @@ func TestANewProjectIsSavedWithItsCustomerAndTheirNetwork(t *testing.T) {
 	program.Open(Projects)
 	window.Frame()
 	steps(t, window, click(window, "Nuevo proyecto"),
-		typeInto(window, "Retrato de familia", "Retrato de Toby"),
-		typeInto(window, "Lucía", "Marta"),
+		typeInto(window, "Ej.: Retrato de familia", "Retrato de Toby"),
+		typeInto(window, "Nombre", "Marta"),
 		typeInto(window, "@instagram", "@marta"),
-		typeInto(window, "40", "35"),
+		typeInto(window, "En euros", "35"),
 		click(window, "Guardar"))
 	saved, err := program.stores.Projects.All()
 	if err != nil || len(saved) != 1 || saved[0].Title != "Retrato de Toby" || saved[0].Price != 3500 || saved[0].Stage != projects.ToStart {
