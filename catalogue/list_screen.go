@@ -17,7 +17,6 @@ const (
 	cardsOnAPhone        = 1
 	cardsWhenThereIsRoom = 4
 	gridGap              = 18
-	searchFieldWidth     = 320
 	shownRestockNames    = 3
 	kindBarSpace         = 20
 	kindBarSpaceBelow    = 4
@@ -38,17 +37,11 @@ var kindTabs = []Kind{Physical, Digital}
 
 func (screens *Screens) drawList(context *ui.Context) {
 	screens.applyTabs()
+	screens.query.Text = screens.search.Text
 	shown := Filter(screens.products, screens.query)
 	look.PageHeader(context, "Mis productos", screens.subtitle(), func() {
-		if screens.searching {
-			context.Box(ui.Layout{Width: ui.Fixed(searchFieldWidth)}, func() {
-				context.TextFieldWith("search", &screens.query.Text, ui.TextFieldOptions{Placeholder: "Buscar por nombre o SKU"})
-			})
-		}
-		if look.ToolButton(context, "search", "Buscar") {
-			screens.searching = !screens.searching
-			screens.query.Text = ""
-		}
+		look.SearchField(context, &screens.search, "Buscar por nombre o SKU")
+		look.SearchButton(context, &screens.search)
 		if look.MainButton(context, "plus", "Nuevo producto") {
 			screens.choosingKind = true
 		}

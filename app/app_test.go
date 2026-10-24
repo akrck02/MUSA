@@ -28,7 +28,7 @@ func openApp(t *testing.T, withDemo bool) (*App, *uitest.Window) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { database.Close() })
-	program, err := New(database, Options{DevelopmentTools: true})
+	program, err := New(database, Options{DevelopmentTools: true, OpenLink: func(string) bool { return true }}) // as if a browser opened it
 	if err != nil {
 		t.Fatal(err)
 	}

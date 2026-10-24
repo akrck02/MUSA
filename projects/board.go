@@ -74,7 +74,7 @@ func (screens *Screens) drawBoard(context *ui.Context) {
 func (screens *Screens) column(context *ui.Context, stage Stage) {
 	var inStage []Project
 	for _, project := range screens.projects {
-		if project.Stage == stage && Matches(project, screens.people[project.CustomerID].Name, screens.query) {
+		if project.Stage == stage && Matches(project, screens.people[project.CustomerID].Name, screens.search.Text) {
 			inStage = append(inStage, project)
 		}
 	}

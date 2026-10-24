@@ -43,15 +43,14 @@ type Screens struct {
 	newID    func() string
 	now      func() time.Time
 
-	fairs     []events.Event
-	source    Source
-	items     []Item
-	loadErr   error
-	tag       int // index in tags()
-	searching bool
-	search    string
-	shapes    map[draw2d.Color]*look.TopRounded // the pictures' fills, kept so drawing them allocates nothing
-	fade      *look.Fade                        // under the floating basket
+	fairs   []events.Event
+	source  Source
+	items   []Item
+	loadErr error
+	tag     int                               // index in tags()
+	search  look.Search                       // by product or version
+	shapes  map[draw2d.Color]*look.TopRounded // the pictures' fills, kept so drawing them allocates nothing
+	fade    *look.Fade                        // under the floating basket
 
 	basket   Basket
 	step     step
@@ -349,9 +348,8 @@ func (screens *Screens) top(context *ui.Context, tags []string) {
 			}
 		})
 		context.Box(ui.Layout{Gap: toolsGap}, func() {
-			if look.ToolButton(context, "search", "Buscar") {
-				screens.searching = !screens.searching
-			}
+			look.SearchField(context, &screens.search, "Buscar producto")
+			look.SearchButton(context, &screens.search)
 			if look.ToolButton(context, "plus", "Venta libre") {
 				screens.tell(false, "Pronto: vender algo que no está en el catálogo")
 			}
@@ -400,14 +398,13 @@ func (screens *Screens) tags() []string {
 	return tags
 }
 
-// shown is the items of the chosen tag, or all of them when there are no tags.
+// shown is the items of the chosen tag (all of them when there are no tags) that match the search.
 func (screens *Screens) shown(tags []string) []Item {
-	if screens.tag >= len(tags) {
-		return screens.items
-	}
+	wanted := catalogue.Fold(strings.TrimSpace(screens.search.Text))
 	var shown []Item
 	for _, item := range screens.items {
-		if slices.Contains(item.Tags, tags[screens.tag]) {
+		ofTag := screens.tag >= len(tags) || slices.Contains(item.Tags, tags[screens.tag])
+		if ofTag && strings.Contains(catalogue.Fold(item.Label), wanted) {
 			shown = append(shown, item)
 		}
 	}

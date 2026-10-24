@@ -27,10 +27,10 @@ type Screens struct {
 	query         Query
 	loadErr       error
 
-	kindTab   int                               // index in kindTabs
-	tagTab    int                               // 0 for every tag, then each tag of the kind, then the archived
-	searching bool                              // the search field is open
-	shapes    map[draw2d.Color]*look.TopRounded // the pictures' fills, kept so drawing them allocates nothing
+	kindTab int                               // index in kindTabs
+	tagTab  int                               // 0 for every tag, then each tag of the kind, then the archived
+	search  look.Search                       // by name or SKU; its words go into query
+	shapes  map[draw2d.Color]*look.TopRounded // the pictures' fills, kept so drawing them allocates nothing
 
 	choosingKind bool
 	stockOf      string // the product whose quick stock sheet is open

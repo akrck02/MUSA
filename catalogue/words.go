@@ -40,7 +40,7 @@ func PriceRangeWords(product Product) string {
 // SummaryWords is the kind, with the number of variants when there is more than one.
 func SummaryWords(product Product) string {
 	if len(product.Variants) > 1 {
-		return fmt.Sprintf("%s · %d variantes", kindWords[product.Kind], len(product.Variants))
+		return fmt.Sprintf("%s · %d versiones", kindWords[product.Kind], len(product.Variants))
 	}
 	return kindWords[product.Kind]
 }
@@ -61,10 +61,10 @@ func StockWords(product Product) string {
 // problemWords is what the artist reads beside a field a problem is about.
 var problemWords = map[Code]string{
 	CodeBlankName:            "Ponle un nombre",
-	CodeNoVariants:           "Añade al menos una variante",
+	CodeNoVariants:           "Añade al menos una versión",
 	CodeNegativeTurnaround:   "El plazo no puede ser negativo",
-	CodeBlankVariantName:     "Con varias variantes, cada una necesita nombre",
-	CodeDuplicateVariantName: "Ya hay otra variante con este nombre",
+	CodeBlankVariantName:     "Con varias versiones, cada una necesita nombre",
+	CodeDuplicateVariantName: "Ya hay otra versión con este nombre",
 	CodeNegativePrice:        "El precio no puede ser negativo",
 	CodeNegativeCost:         "El coste no puede ser negativo",
 	CodeNegativeStock:        "El stock no puede ser negativo",

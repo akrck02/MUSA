@@ -70,7 +70,8 @@ func (screens *Screens) drawEditor(context *ui.Context) {
 			screens.moreDetails(context)
 		})
 	})
-	if screens.editor.asking == "delete" {
+	// Archiving closes the editor while it draws: what is left of it is not drawn.
+	if screens.editor != nil && screens.editor.asking == "delete" {
 		screens.askDelete(context)
 	}
 }
