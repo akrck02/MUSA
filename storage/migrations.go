@@ -52,6 +52,8 @@ var migrations = []string{
 		updated_at INTEGER NOT NULL,
 		deleted_at INTEGER
 	);`,
+	// The artist's settings, by name: the theme they chose, for now.
+	"CREATE TABLE setting (name TEXT PRIMARY KEY, value TEXT NOT NULL)",
 }
 
 // migrate takes the steps a database has not taken yet, each in its own transaction.

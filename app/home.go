@@ -119,7 +119,7 @@ func (program *App) fillWithDemo() {
 	program.Open(Home)
 }
 
-// tell shows what a development tool did, or why it could not.
+// tell shows on the home page what was done (by a development tool, say), or why it could not.
 func (program *App) tell(err error, done string) {
 	program.home.note, program.home.noteWarning = done, false
 	if err != nil {
@@ -155,7 +155,9 @@ func (program *App) themeSwitch(context *ui.Context) {
 		context.IconSized(icon, theme.SmallTextSize, theme.InkSoft)
 		context.Text(words, ui.TextStyle{Size: theme.SmallTextSize, Color: theme.InkSoft})
 	}) {
-		program.SetDark(!program.dark)
+		if err := program.SetDark(!program.dark); err != nil {
+			program.tell(err, "")
+		}
 	}
 	context.Describe(ui.Description{Role: ui.ButtonRole, Label: words})
 }

@@ -318,3 +318,16 @@ func TestTheHomePageSwitchesBetweenTheLightAndTheDarkTheme(t *testing.T) {
 		t.Error("«Modo claro» leaves the dark theme on")
 	}
 }
+
+func TestTheChosenThemeIsKeptForTheNextTimeMUSAOpens(t *testing.T) {
+	program, window := openApp(t, false)
+	window.Frame()
+	steps(t, window, click(window, "Modo oscuro"))
+	reopened, err := New(program.stores.Database, Options{Dark: false})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reopened.Dark() {
+		t.Error("MUSA opens light again after the artist chose the dark theme")
+	}
+}

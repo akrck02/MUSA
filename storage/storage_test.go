@@ -109,3 +109,32 @@ func TestOpeningTwiceTakesEachMigrationOnce(t *testing.T) {
 		database.Close()
 	}
 }
+
+func TestASettingIsKeptAcrossOpeningsAndSurvivesWiping(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "musa.db")
+	database, err := Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, found, err := database.Setting("theme"); found || err != nil {
+		t.Fatalf("a new database already has a theme (found %v, err %v)", found, err)
+	}
+	if err := database.SetSetting("theme", "light"); err != nil {
+		t.Fatal(err)
+	}
+	if err := database.SetSetting("theme", "dark"); err != nil {
+		t.Fatal(err)
+	}
+	if err := database.Wipe(); err != nil {
+		t.Fatal(err)
+	}
+	database.Close()
+	reopened, err := Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reopened.Close()
+	if value, found, err := reopened.Setting("theme"); value != "dark" || !found || err != nil {
+		t.Errorf("theme is %q (found %v, err %v), not the last one set", value, found, err)
+	}
+}
