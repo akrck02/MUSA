@@ -29,13 +29,11 @@ type Screens struct {
 	editor  *eventEditor
 	sheet   sheet
 
-	newExpense expenseForm
-	detailTab  int
-
-	// lastSale is the quick sale that can still be undone, what it says and until when.
-	lastSale  string
-	lastWords string
-	lastUntil time.Time
+	newExpense    expenseForm
+	addingExpense bool   // the form for a new expense is open
+	chosenLine    string // the stock row showing «Llevar más» and «Devolver»; "" for none
+	// openStand opens the stand of an event, which this package cannot reach: the app gives it.
+	openStand func(Event)
 
 	note        string
 	noteWarning bool
@@ -199,7 +197,7 @@ func (screens *Screens) open(id string) {
 		screens.tell(nil, err, "")
 		return
 	}
-	screens.detail, screens.detailTab, screens.lastSale = &detail, 0, ""
+	screens.detail, screens.chosenLine, screens.addingExpense = &detail, "", false
 }
 
 // OpenFair opens one fair's detail on its stand.
@@ -292,3 +290,7 @@ func (screens *Screens) Detail() Detail {
 func (screens *Screens) StartFair(day calendar.Date) {
 	screens.editor = &eventEditor{draft: Draft{ID: screens.newID()}, start: calendar.Typed(day), end: calendar.Typed(day)}
 }
+
+// OpenStandWith tells the event's page how to open the stand of an event, for its «Abrir el
+// puesto».
+func (screens *Screens) OpenStandWith(open func(Event)) { screens.openStand = open }

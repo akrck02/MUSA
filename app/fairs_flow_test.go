@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/Itros97/MUSA/events"
-	"github.com/Itros97/MUSA/money"
+	"github.com/Itros97/MUSA/sales"
 	"github.com/akrck02/go-ui/uitest"
 )
 
@@ -50,30 +50,23 @@ func TestANewFairIsSaved(t *testing.T) {
 	}
 }
 
-func TestSellingOneAtAFairAndUndoingIt(t *testing.T) {
+func TestASaleIsUndoneFromTheEventsPage(t *testing.T) {
 	program, window, name := openFair(t)
 	before, _ := fairNamed(t, program, name)
-	line := before.Stock[0]
-	steps(t, window, clickIn(window, line.VariantID, "Vender 1 · "+money.Format(line.Price)))
+	steps(t, window, clickIn(window, before.Sales[0].ID, "##Deshacer venta"))
 	settle(window)
-	sold, _ := fairNamed(t, program, name)
-	if len(sold.Sales) != len(before.Sales)+1 || sold.Stock[0].Sold != line.Sold+1 {
-		t.Fatalf("selling one left %d sales and %d sold, from %d and %d", len(sold.Sales), sold.Stock[0].Sold, len(before.Sales), line.Sold)
-	}
-	steps(t, window, click(window, "Deshacer"))
-	settle(window)
-	undone, _ := fairNamed(t, program, name)
-	if len(undone.Sales) != len(before.Sales) || undone.Stock[0].Sold != line.Sold {
-		t.Errorf("undoing left %d sales and %d sold, not %d and %d", len(undone.Sales), undone.Stock[0].Sold, len(before.Sales), line.Sold)
+	after, _ := fairNamed(t, program, name)
+	if len(after.Sales) != len(before.Sales)-1 {
+		t.Errorf("%d sales after undoing one of %d", len(after.Sales), len(before.Sales))
 	}
 }
 
 func TestAnExpenseIsAddedToAFair(t *testing.T) {
 	program, window, name := openFair(t)
 	before, _ := fairNamed(t, program, name)
-	steps(t, window, click(window, "Gastos (1)"))
+	steps(t, window, click(window, "Añadir gasto"))
 	settle(window)
-	steps(t, window, typeInto(window, "Stand, gasolina, comida…", "Mesa"), typeInto(window, "En euros", "15"), click(window, "Añadir gasto"))
+	steps(t, window, typeInto(window, "Stand, gasolina, comida…", "Mesa"), typeInto(window, "En euros", "15"), click(window, "Guardar"))
 	settle(window)
 	after, _ := fairNamed(t, program, name)
 	if len(after.Expenses) != len(before.Expenses)+1 {
@@ -84,13 +77,29 @@ func TestAnExpenseIsAddedToAFair(t *testing.T) {
 func TestMoreStockIsTakenToAFair(t *testing.T) {
 	program, window, name := openFair(t)
 	before, _ := fairNamed(t, program, name)
-	steps(t, window, click(window, "Llevar más stock"))
+	steps(t, window, click(window, "Llevar"))
 	settle(window)
 	steps(t, window, click(window, "Llevar"))
 	settle(window)
 	after, _ := fairNamed(t, program, name)
 	if taken(after) != taken(before)+1 {
 		t.Errorf("%d pieces taken after taking one more to %d", taken(after), taken(before))
+	}
+}
+
+func TestWhatIsLeftOfAProductReturnsFromItsRow(t *testing.T) {
+	program, window, name := openFair(t)
+	before, _ := fairNamed(t, program, name)
+	line := before.Stock[0]
+	steps(t, window, click(window, sales.ItemLabel(line.ProductName, line.VariantName)))
+	settle(window)
+	steps(t, window, click(window, "Devolver"))
+	settle(window)
+	steps(t, window, click(window, "Devolver"))
+	settle(window)
+	after, _ := fairNamed(t, program, name)
+	if taken(after) != taken(before)-line.Remaining() {
+		t.Errorf("%d pieces taken after returning %d of %d", taken(after), line.Remaining(), taken(before))
 	}
 }
 
@@ -114,8 +123,10 @@ func TestClosingAFairMakesItReadOnly(t *testing.T) {
 	if closed.Event.Status != events.Closed {
 		t.Fatalf("the fair is %s after closing it", closed.Event.Status)
 	}
-	if _, err := window.Element("Llevar más stock"); err == nil {
-		t.Errorf("a closed fair still takes stock")
+	for _, action := range []string{"Llevar", "Abrir el puesto", "Añadir gasto", "Deshacer venta"} {
+		if _, err := window.Element(action); err == nil {
+			t.Errorf("a closed event still offers «%s»", action)
+		}
 	}
 }
 
@@ -146,5 +157,25 @@ func TestTheNextEventComesFirstAmongThoseToCome(t *testing.T) {
 	}
 	if soon.Rect.Y > later.Rect.Y {
 		t.Errorf("the event in three days is listed after the one in December")
+	}
+}
+
+func TestANarrowWindowStacksTheEventsCardsInOneColumn(t *testing.T) {
+	_, window, _ := openFair(t)
+	const phoneWidth, phoneHeight = 400, 2400
+	if err := window.Resize(phoneWidth, phoneHeight); err != nil {
+		t.Fatal(err)
+	}
+	settle(window)
+	var tops []float32
+	for _, title := range []string{"Lo que llevas", "Ventas", "Añadir gasto"} {
+		element, err := window.Element(title)
+		if err != nil {
+			t.Fatal(err)
+		}
+		tops = append(tops, element.Rect.Y)
+	}
+	if tops[0] >= tops[1] || tops[1] >= tops[2] {
+		t.Errorf("the cards are not one under another, in order: tops %v", tops)
 	}
 }

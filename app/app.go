@@ -107,6 +107,10 @@ func New(database *storage.Database, options Options) (*App, error) {
 		return event.Name
 	})
 	program.stand = stand.NewScreens(fairs, products, sold, storage.NewID, now)
+	program.fairs.OpenStandWith(func(event events.Event) {
+		program.Open(Stand)
+		program.stand.Choose(stand.Fair{Event: event, Events: fairs, Products: products})
+	})
 	program.projects = projects.NewScreens(commissions, people, products, storage.NewID, now, options.OpenLink)
 	program.Open(Home)
 	return program, nil

@@ -3,7 +3,6 @@ package events
 import (
 	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/akrck02/go-renderer/draw2d"
 	ui "github.com/akrck02/go-ui"
@@ -21,7 +20,6 @@ type sheetKind int
 const (
 	noSheet sheetKind = iota
 	takeSheet
-	sellSheet
 	returnSheet
 	closeSheet
 	deleteSheet
@@ -34,7 +32,6 @@ type sheet struct {
 	choice    int
 	choices   []stockChoice
 	quantity  string
-	price     string
 	problem   string
 }
 
@@ -46,79 +43,91 @@ type stockChoice struct {
 // expenseForm is the new expense's fields, as typed.
 type expenseForm struct{ concept, amount string }
 
+// Measures of an event's page, in pixels.
+const (
+	pageGap       = 16 // between the figures, the cards and the columns
+	figuresTop    = 26 // from the header to the figures
+	cardPadding   = 20
+	rowPaddingY   = 12
+	rowGap        = 12
+	dotSide       = 10
+	meterWidth    = 140
+	countWidth    = 70
+	timeWidth     = 50
+	stockShare    = 1.3 // how much wider the stock card is than the column of sales and expenses
+	amountWidth   = 120 // the amount of a new expense
+	cardTitleSize = 18
+)
+
+// drawDetail is an event's page: its header, its four figures, what was taken to it on the left,
+// and its sales and expenses on the right; on a narrow window, one card under another.
 func (screens *Screens) drawDetail(context *ui.Context) {
 	detail := screens.detail
 	event := detail.Event
 	open := event.Status == Open
-	look.PageHeader(context, event.Name, event.WhenAndWhere(), func() {
-		if context.FlatIconButton("arrow-left", "Volver") {
-			screens.detail = nil
-			screens.Reload()
-		}
-		statusPill(context, event.Status)
-		screens.detailMenu(context, event, open)
-	})
+	screens.detailHeader(context, event, open)
 	if screens.detail == nil {
 		return
 	}
-	// On a wide window the stand gets a register beside it, which holds the figures instead.
-	register := look.Wide(context) && screens.detailTab == 0
-	if !register {
-		look.Figures(context, 4, func() { screens.figures(context) })
-		screens.undoBanner(context)
-	}
-	labels := []string{"Puesto", fmt.Sprintf("Ventas (%d)", len(detail.Sales)), fmt.Sprintf("Gastos (%d)", len(detail.Expenses))}
-	context.Tabs("detail-tab", &screens.detailTab, labels...)
-	switch {
-	case screens.detailTab == 1:
-		screens.salesSection(context, open)
-	case screens.detailTab == 2:
-		screens.expensesSection(context, open)
-	case register:
-		context.Box(ui.Layout{Width: ui.Grow(), Gap: context.Theme.Gap}, func() {
-			context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Gap: context.Theme.Gap}, func() {
-				screens.stockSection(context, open, 2)
-			})
-			context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Fixed(registerWidth), Gap: context.Theme.Gap}, func() {
-				screens.registerPanel(context, open)
+	look.Space(context, figuresTop)
+	screens.figureCards(context)
+	look.Space(context, pageGap)
+	if look.Narrow(context) {
+		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Gap: pageGap}, func() {
+			screens.stockCard(context, open)
+			screens.salesCard(context, open)
+			screens.expensesCard(context, open)
+		})
+	} else {
+		context.Box(ui.Layout{Width: ui.Grow(), Gap: pageGap}, func() {
+			context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.GrowBy(stockShare)}, func() { screens.stockCard(context, open) })
+			context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Gap: pageGap}, func() {
+				screens.salesCard(context, open)
+				screens.expensesCard(context, open)
 			})
 		})
-	default:
-		screens.stockSection(context, open, look.Columns(context, 2))
 	}
 	if screens.sheet.kind != noSheet {
 		screens.drawSheet(context)
 	}
 }
 
-// registerWidth is how wide the register beside the stand is, in pixels.
-const registerWidth = 340
-
-// registerShown is how many of the latest sales the register lists; the Ventas tab has them all.
-const registerShown = 6
-
-func (screens *Screens) figures(context *ui.Context) {
-	summary := Summarise(*screens.detail)
-	look.Figure(context, "Bruto", money.Format(summary.Gross), false)
-	look.Figure(context, "Coste de lo vendido", money.Format(summary.CostOfGoods), false)
-	look.Figure(context, "Gastos", money.Format(summary.Expenses), false)
-	look.Figure(context, "Beneficio", money.Format(summary.Profit()), summary.Profit() < 0)
+// detailHeader is the event's name, when and where with its state, «Volver», «Abrir el puesto»
+// while it is open, and «⋯» with the rest.
+func (screens *Screens) detailHeader(context *ui.Context, event Event, open bool) {
+	look.PageHeader(context, event.Name, event.WhenAndWhere(), func() {
+		if look.ToolButton(context, "arrow-left", "Volver") {
+			screens.detail = nil
+			screens.Reload()
+			return
+		}
+		statusPill(context, event.Status)
+		if open && screens.openStand != nil && look.MainButton(context, "store", "Abrir el puesto") {
+			screens.openStand(event)
+		}
+		screens.detailMenu(context, event, open)
+	})
 }
 
-// registerPanel is the till beside the stand, as on a shop's tablet: the fair's figures, the
-// undo of the last sale and the latest sales, all in sight while selling.
-func (screens *Screens) registerPanel(context *ui.Context, open bool) {
-	look.Figures(context, 2, func() { screens.figures(context) })
-	screens.undoBanner(context)
-	look.Section(context, "Últimas ventas", func() {
-		if len(screens.detail.Sales) == 0 {
-			context.Text("Sin ventas todavía.", ui.TextStyle{Color: context.Theme.InkSoft})
-		}
-		for index, sale := range screens.detail.Sales {
-			if index == registerShown {
-				break
-			}
-			screens.saleRow(context, sale, open)
+// figureCards are the event's accounts, a card each: sold, the cost of what was sold, expenses and
+// profit, red below zero.
+func (screens *Screens) figureCards(context *ui.Context) {
+	summary := Summarise(*screens.detail)
+	figures := []struct {
+		label    string
+		value    money.Money
+		negative bool
+	}{
+		{"Vendido", summary.Gross, false},
+		{"Coste de lo vendido", summary.CostOfGoods, false},
+		{"Gastos", summary.Expenses, false},
+		{"Beneficio", summary.Profit(), summary.Profit() < 0},
+	}
+	context.Box(ui.Layout{Width: ui.Grow(), Columns: look.Columns(context, len(figures)), Gap: pageGap}, func() {
+		for _, figure := range figures {
+			look.Card(context, ui.Layout{Width: ui.Grow(), Padding: ui.Pad(cardPadding)}, func() {
+				look.Figure(context, figure.label, money.Format(figure.value), figure.negative)
+			})
 		}
 	})
 }
@@ -138,97 +147,102 @@ func (screens *Screens) detailMenu(context *ui.Context, event Event, open bool) 
 	})
 }
 
-// undoTime is how long the note of a quick sale stays, with its undo button.
-const undoTime = 8 * time.Second
+// detailCard is one card of the page: its title, an action on its right when there is one, and
+// its rows. It returns true on the frame the action is tapped.
+func detailCard(context *ui.Context, title, action string, rows func()) bool {
+	acted := false
+	look.Card(context, ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(cardPadding)}, func() {
+		context.Box(ui.Layout{Width: ui.Grow(), AlignY: ui.Center}, func() {
+			context.Box(ui.Layout{Width: ui.Grow()}, func() {
+				context.Text(title, ui.TextStyle{Size: cardTitleSize, Weight: draw2d.Bold})
+			})
+			if action != "" {
+				acted = context.IconButton("plus", action)
+			}
+		})
+		rows()
+	})
+	return acted
+}
 
-// stockSection is the stand: a card per product taken, each sold with one touch at its price,
-// which is how a sale happens at a fair; a different quantity or price is one touch further.
-func (screens *Screens) stockSection(context *ui.Context, open bool, columns int) {
-	theme := context.Theme
-	if len(screens.detail.Stock) == 0 {
-		if look.Empty(context, "package-plus", "El puesto está vacío",
-			"Lleva stock del catálogo para poder vender aquí. Lo que no vendas vuelve al cerrar el evento.",
-			map[bool]string{true: "Llevar stock", false: ""}[open]) {
-			screens.sheet = sheet{kind: takeSheet, quantity: "1", choices: screens.stockChoices()}
-		}
-		return
+// row is one line of a card, with a fine line above it but the first.
+func row(context *ui.Context, first bool, content func()) {
+	if !first {
+		context.Separator()
 	}
-	context.Box(ui.Layout{Width: ui.Grow(), Columns: columns, Gap: theme.Gap}, func() {
-		for _, line := range screens.detail.Stock {
+	context.Box(ui.Layout{Width: ui.Grow(), Padding: ui.PadXY(0, rowPaddingY), Gap: rowGap, AlignY: ui.Center}, content)
+}
+
+// stockCard is what was taken to the event: a row per product with how many are left of how many
+// and a thin bar. Tapping a row of an open event offers to take more or return what is left.
+func (screens *Screens) stockCard(context *ui.Context, open bool) {
+	action := ""
+	if open {
+		action = "Llevar"
+	}
+	if detailCard(context, "Lo que llevas", action, func() {
+		if len(screens.detail.Stock) == 0 {
+			look.Space(context, rowPaddingY)
+			context.Text("Aún no has llevado nada. Lo que no vendas vuelve al catálogo al cerrar el evento.",
+				ui.TextStyle{Color: context.Theme.InkSoft})
+		}
+		for index, line := range screens.detail.Stock {
 			context.Push(line.VariantID)
-			screens.standCard(context, line, open)
+			row(context, index == 0, func() { screens.stockRow(context, line, index, open) })
 			context.Pop()
 		}
-	})
-	if open && context.IconButton("package-plus", "Llevar más stock") {
+	}) {
 		screens.sheet = sheet{kind: takeSheet, quantity: "1", choices: screens.stockChoices()}
 	}
 }
 
-func (screens *Screens) standCard(context *ui.Context, line StockLine, open bool) {
+// stockRow is one product taken: its colour, its name and version, a bar of what was sold and
+// how many are left; chosen, «Llevar más» and «Devolver» instead of the bar.
+func (screens *Screens) stockRow(context *ui.Context, line StockLine, index int, open bool) {
 	theme := context.Theme
-	look.Card(context, ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(14), Gap: 8}, func() {
-		context.Frame(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Gap: 2}, ui.Look{Clip: true}, func() {
-			context.Text(sales.ItemLabel(line.ProductName, line.VariantName), ui.TextStyle{Weight: draw2d.Bold})
-			context.Text(fmt.Sprintf("Quedan %d de %d · %d vendidas", line.Remaining(), line.Taken, line.Sold),
-				ui.TextStyle{Size: theme.SmallTextSize, Color: theme.InkSoft})
-		})
-		look.Meter(context, line.Sold, line.Taken)
-		if !open {
-			return
+	side := ui.Fixed(dotSide)
+	context.Frame(ui.Layout{Width: side, Height: side}, ui.Look{Fill: catalogue.ListFill(index), Radius: dotSide / 2}, nil)
+	name := sales.ItemLabel(line.ProductName, line.VariantName)
+	if open && context.Clickable(name, ui.Layout{Width: ui.Grow()}, ui.Looks{}, func() {
+		context.Text(name, ui.TextStyle{})
+	}) {
+		screens.toggleLine(line.VariantID)
+	}
+	if !open {
+		context.Box(ui.Layout{Width: ui.Grow()}, func() { context.Text(name, ui.TextStyle{}) })
+	}
+	if screens.chosenLine == line.VariantID && open {
+		if context.Button("Llevar más") {
+			screens.sheet = sheet{kind: takeSheet, quantity: "1", choices: screens.stockChoices(), choice: screens.choiceOf(line.VariantID)}
 		}
-		if line.Remaining() == 0 {
-			look.Pill(context, "Agotado en el puesto", look.Neutral(theme))
-			return
+		if context.Button("Devolver") {
+			screens.sheet = sheet{kind: returnSheet, variantID: line.VariantID, quantity: strconv.Itoa(line.Remaining())}
 		}
-		context.Box(ui.Layout{Width: ui.Grow(), Gap: 6, AlignY: ui.Center}, func() {
-			if context.IconButton("shopping-bag", "Vender 1 · "+money.Format(line.Price)) {
-				screens.quickSell(line)
-			}
-			context.Spacer()
-			context.MenuButton("ellipsis", "##Más", func() {
-				if context.MenuItem("calculator", "Otra cantidad o precio", "") {
-					screens.sheet = sheet{kind: sellSheet, variantID: line.VariantID, quantity: "1", price: money.FormatForInput(line.Price)}
-				}
-				if context.MenuItem("undo-2", "Devolver al catálogo", "") {
-					screens.sheet = sheet{kind: returnSheet, variantID: line.VariantID, quantity: strconv.Itoa(line.Remaining())}
-				}
-			})
-		})
+		return
+	}
+	context.Box(ui.Layout{Width: ui.Fixed(meterWidth)}, func() { look.Meter(context, line.Remaining(), line.Taken) })
+	context.Box(ui.Layout{Width: ui.Fixed(countWidth), AlignX: ui.End}, func() {
+		context.Text(fmt.Sprintf("%d de %d", line.Remaining(), line.Taken), ui.TextStyle{Color: theme.InkSoft})
 	})
 }
 
-// quickSell sells one unit at the list price, and offers to undo it for a few seconds: a mistaken
-// touch costs one more touch, not a question before every sale.
-func (screens *Screens) quickSell(line StockLine) {
-	refused, err := screens.store.Sell(screens.detail.Event.ID, line.VariantID, 1, line.Price)
-	if !screens.tell(refused, err, "") {
+// toggleLine shows the actions of a stock row, or hides them when they were shown.
+func (screens *Screens) toggleLine(variantID string) {
+	if screens.chosenLine == variantID {
+		screens.chosenLine = ""
 		return
 	}
-	screens.noteUntil = time.Time{} // the undo banner says it instead
-	if len(screens.detail.Sales) > 0 {
-		screens.lastSale = screens.detail.Sales[0].ID
-		screens.lastWords = "Vendido: " + sales.ItemLabel(line.ProductName, line.VariantName) + " · " + money.Format(line.Price)
-		screens.lastUntil = time.Now().Add(undoTime)
-	}
+	screens.chosenLine = variantID
 }
 
-func (screens *Screens) undoBanner(context *ui.Context) {
-	if screens.lastSale == "" || time.Now().After(screens.lastUntil) {
-		return
-	}
-	theme := context.Theme
-	context.RequestFrame(time.Until(screens.lastUntil))
-	tone := look.Positive(theme)
-	context.Frame(ui.Layout{Width: ui.Grow(), Padding: ui.PadXY(14, 8), Gap: 10, AlignY: ui.Center}, ui.Look{Fill: tone.Fill, Radius: theme.PanelRadius}, func() {
-		context.IconSized("circle-check", theme.IconSize, theme.Positive)
-		context.Frame(ui.Layout{Width: ui.Grow()}, ui.Look{Clip: true}, func() { context.Text(screens.lastWords, ui.TextStyle{Weight: draw2d.Bold}) })
-		if context.FlatIconButton("undo-2", "Deshacer") {
-			refused, err := screens.store.Undo(screens.lastSale)
-			screens.lastSale = ""
-			screens.tell(refused, err, "Venta deshecha")
+// choiceOf is where a variant is among the stock that can be taken, or the first.
+func (screens *Screens) choiceOf(variantID string) int {
+	for index, choice := range screens.stockChoices() {
+		if choice.variantID == variantID {
+			return index
 		}
-	})
+	}
+	return 0
 }
 
 // stockChoices lists the physical variants with stock in the catalogue.
@@ -250,63 +264,84 @@ func (screens *Screens) stockChoices() []stockChoice {
 	return choices
 }
 
-func (screens *Screens) salesSection(context *ui.Context, open bool) {
-	theme := context.Theme
-	look.Section(context, "Ventas", func() {
+// salesCard is every sale of the event, newest first, each with its undo while it is open.
+func (screens *Screens) salesCard(context *ui.Context, open bool) {
+	detailCard(context, "Ventas", "", func() {
 		if len(screens.detail.Sales) == 0 {
-			context.Text("Sin ventas todavía.", ui.TextStyle{Color: theme.InkSoft})
+			look.Space(context, rowPaddingY)
+			context.Text("Sin ventas todavía.", ui.TextStyle{Color: context.Theme.InkSoft})
 		}
-		for _, sale := range screens.detail.Sales {
-			screens.saleRow(context, sale, open)
-		}
-	})
-}
-
-// saleRow is one sale of the fair: what, when and how much, with its undo while the fair is open.
-func (screens *Screens) saleRow(context *ui.Context, sale sales.Sale, open bool) {
-	theme := context.Theme
-	context.Push(sale.ID)
-	defer context.Pop()
-	line := sale.Lines[0]
-	context.Box(ui.Layout{Width: ui.Grow(), Gap: 8, AlignY: ui.Center}, func() {
-		context.Frame(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Gap: 2}, ui.Look{Clip: true}, func() {
-			context.Text(fmt.Sprintf("%d × %s", line.Quantity, sales.ItemLabel(line.ProductName, line.VariantName)), ui.TextStyle{})
-			context.Text(sale.SoldAt.Format("15:04")+" · "+calendar.Words(calendar.Of(sale.SoldAt)), ui.TextStyle{Size: theme.SmallTextSize, Color: theme.InkSoft})
-		})
-		context.Text(money.Format(sale.Total()), ui.TextStyle{Weight: draw2d.Bold})
-		if open && context.FlatIconButton("undo-2", "##Deshacer venta") {
-			refused, err := screens.store.Undo(sale.ID)
-			screens.tell(refused, err, "Venta deshecha")
-		}
-	})
-}
-
-func (screens *Screens) expensesSection(context *ui.Context, open bool) {
-	look.Section(context, "Gastos", func() {
-		for _, expense := range screens.detail.Expenses {
-			context.Push(expense.ID)
-			context.Box(ui.Layout{Width: ui.Grow(), Gap: 8, AlignY: ui.Center}, func() {
-				context.Box(ui.Layout{Width: ui.Grow()}, func() { context.Text(expense.Concept, ui.TextStyle{}) })
-				context.Text(money.Format(expense.Amount), ui.TextStyle{Weight: draw2d.Bold})
-				if open && context.DangerFlatIconButton("trash-2", "##Quitar gasto") {
-					refused, err := screens.store.DeleteExpense(screens.detail.Event.ID, expense.ID)
-					screens.tell(refused, err, "Gasto quitado")
-				}
-			})
+		for index, sale := range screens.detail.Sales {
+			context.Push(sale.ID)
+			row(context, index == 0, func() { screens.saleRow(context, sale, open) })
 			context.Pop()
 		}
-		if !open {
-			return
+	})
+}
+
+// saleRow is one sale: when, what and how much, with its undo while the event is open.
+func (screens *Screens) saleRow(context *ui.Context, sale sales.Sale, open bool) {
+	theme := context.Theme
+	line := sale.Lines[0]
+	context.Box(ui.Layout{Width: ui.Fixed(timeWidth)}, func() {
+		context.Text(sale.SoldAt.Format("15:04"), ui.TextStyle{Color: theme.InkSoft})
+	})
+	context.Frame(ui.Layout{Width: ui.Grow()}, ui.Look{Clip: true}, func() {
+		context.Text(fmt.Sprintf("%d × %s", line.Quantity, sales.ItemLabel(line.ProductName, line.VariantName)), ui.TextStyle{})
+	})
+	context.Text(money.Format(sale.Total()), ui.TextStyle{Weight: draw2d.Bold})
+	if open && context.FlatIconButton("undo-2", "##Deshacer venta") {
+		refused, err := screens.store.Undo(sale.ID)
+		screens.tell(refused, err, "Venta deshecha")
+	}
+}
+
+// expensesCard is what the event cost, each with its red × while it is open, and «Añadir», which
+// opens a small form for one more.
+func (screens *Screens) expensesCard(context *ui.Context, open bool) {
+	action := ""
+	if open {
+		action = "Añadir gasto"
+	}
+	if detailCard(context, "Gastos", action, func() {
+		if len(screens.detail.Expenses) == 0 && !screens.addingExpense {
+			look.Space(context, rowPaddingY)
+			context.Text("Sin gastos apuntados.", ui.TextStyle{Color: context.Theme.InkSoft})
 		}
-		context.Box(ui.Layout{Direction: look.Across(context), Width: ui.Grow(), Gap: 8}, func() {
-			look.Field(context, "Concepto", "concept", &screens.newExpense.concept, "Stand, gasolina, comida…", "")
-			context.Box(ui.Layout{Width: ui.Fixed(120)}, func() {
-				look.Field(context, "Importe (€)", "amount", &screens.newExpense.amount, "En euros", "")
-			})
-			if context.IconButton("plus", "Añadir gasto") {
-				screens.addExpense()
-			}
+		for index, expense := range screens.detail.Expenses {
+			context.Push(expense.ID)
+			row(context, index == 0, func() { screens.expenseRow(context, expense, open) })
+			context.Pop()
+		}
+		if open && screens.addingExpense {
+			screens.expenseForm(context)
+		}
+	}) {
+		screens.addingExpense = !screens.addingExpense
+	}
+}
+
+// expenseRow is one expense: what for and how much, with its red × while the event is open.
+func (screens *Screens) expenseRow(context *ui.Context, expense Expense, open bool) {
+	context.Box(ui.Layout{Width: ui.Grow()}, func() { context.Text(expense.Concept, ui.TextStyle{}) })
+	context.Text(money.Format(expense.Amount), ui.TextStyle{Weight: draw2d.Bold})
+	if open && context.DangerFlatIconButton("trash-2", "##Quitar gasto") {
+		refused, err := screens.store.DeleteExpense(screens.detail.Event.ID, expense.ID)
+		screens.tell(refused, err, "Gasto quitado")
+	}
+}
+
+// expenseForm is the new expense's concept and amount, and the button that adds it.
+func (screens *Screens) expenseForm(context *ui.Context) {
+	look.Space(context, rowPaddingY)
+	context.Box(ui.Layout{Direction: look.Across(context), Width: ui.Grow(), Gap: rowGap, AlignY: ui.End}, func() {
+		look.Field(context, "Concepto", "concept", &screens.newExpense.concept, "Stand, gasolina, comida…", "")
+		context.Box(ui.Layout{Width: ui.Fixed(amountWidth)}, func() {
+			look.Field(context, "Importe (€)", "amount", &screens.newExpense.amount, "En euros", "")
 		})
+		if context.PrimaryButton("Guardar##expense") {
+			screens.addExpense()
+		}
 	})
 }
 
@@ -318,6 +353,6 @@ func (screens *Screens) addExpense() {
 	}
 	refused, err := screens.store.AddExpense(screens.detail.Event.ID, screens.newExpense.concept, amount)
 	if screens.tell(refused, err, "Gasto añadido") {
-		screens.newExpense = expenseForm{}
+		screens.newExpense, screens.addingExpense = expenseForm{}, false
 	}
 }

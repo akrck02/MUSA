@@ -1,6 +1,6 @@
 # 6. Tags that explain themselves, and an event page like the rest
 
-> Status: building · Author's approval: proposal ☑ plan ☑ (2026-10-24, from the mock-ups) · Lives in: `catalogue` (the product
+> Status: built, pending review · Author's approval: proposal ☑ plan ☑ (2026-10-24, from the mock-ups) · Lives in: `catalogue` (the product
 > editor's tags), `events` (the event's page), `look`
 > Depends on: proposals 1 to 5 (MUSA as it is on `feature/go-ui`)
 
@@ -90,11 +90,18 @@ Mercado de Otoño                          [Abrir el puesto]  [⋯]
 
 - [x] T1 `EntryField` in Go UI, with its test and docs (R2)
 - [x] T2 The tag field, its chips and suggestions; tests for Enter, comma, suggestion and × (R1–R4)
-- [ ] T3 The event page's header, figures and «Abrir el puesto» (R5, R6, R10)
-- [ ] T4 «Lo que llevas» with «Llevar más» and «Devolver» (R7)
-- [ ] T5 «Ventas» and «Gastos» cards (R8, R9)
-- [ ] T6 Narrow layout and a closed event (R10, R11)
+- [x] T3 The event page's header, figures and «Abrir el puesto» (R5, R6, R10)
+- [x] T4 «Lo que llevas» with «Llevar más» and «Devolver» (R7)
+- [x] T5 «Ventas» and «Gastos» cards (R8, R9)
+- [x] T6 Narrow layout and a closed event (R10, R11)
 
 ## Result
 
-*To fill at the end.*
+- **Tags**: one field with a chip and × per tag; Enter or a comma adds; up to five quiet suggestions.
+  Go UI gained `EntryField`.
+- **The event page**: header with state pill, «Abrir el puesto» and «⋯»; four figures; «Lo que
+  llevas» with «Llevar», and «Llevar más» / «Devolver» on a tapped row; «Ventas» with undo;
+  «Gastos» with «Añadir gasto». The old tabs, «Vender 1» and register panel are gone.
+- Checked by tests (`app/catalogue_flow_test.go`, `app/fairs_flow_test.go`, `app/app_test.go`),
+  including a closed event and a narrow window, and by a capture compared with the mock-up.
+- Still for a person: try it on the iPad; the take sheet keeps its old look.

@@ -105,16 +105,13 @@ func TestAProductWithoutANameIsNotSaved(t *testing.T) {
 	}
 }
 
-func TestSellingAtAFairLeavesFewerOnTheStand(t *testing.T) {
+func TestAnOpenEventOpensItsStand(t *testing.T) {
 	program, window := openApp(t, true)
 	program.Show("fair")
 	window.Frame()
-	before := program.fairs.Detail().Stock[0]
-	// One touch sells one at the stand's price, with no sheet to confirm: undo is offered instead.
-	steps(t, window, clickIn(window, before.VariantID, "Vender 1 · "+money.Format(before.Price)))
-	after := program.fairs.Detail().Stock[0]
-	if after.Remaining() != before.Remaining()-1 {
-		t.Errorf("remaining %d, then %d", before.Remaining(), after.Remaining())
+	steps(t, window, click(window, "Abrir el puesto"))
+	if program.place != Stand {
+		t.Errorf("«Abrir el puesto» leaves the app on %v", program.place)
 	}
 }
 

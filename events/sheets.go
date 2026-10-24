@@ -6,20 +6,16 @@ import (
 	ui "github.com/akrck02/go-ui"
 
 	"github.com/Itros97/MUSA/look"
-	"github.com/Itros97/MUSA/money"
 )
 
 func (screens *Screens) drawSheet(context *ui.Context) {
-	titles := map[sheetKind]string{takeSheet: "Llevar stock al evento", sellSheet: "Vender", returnSheet: "Devolver al catálogo",
+	titles := map[sheetKind]string{takeSheet: "Llevar stock al evento", returnSheet: "Devolver al catálogo",
 		closeSheet: "¿Cerrar el evento?", deleteSheet: "¿Eliminar el evento?"}
 	current := &screens.sheet
 	if context.Sheet(titles[current.kind], ui.SheetOptions{}, func() {
 		switch current.kind {
 		case takeSheet:
 			screens.takeFields(context)
-		case sellSheet:
-			look.Field(context, "Cantidad", "quantity", &current.quantity, "1", "")
-			look.Field(context, "Precio por unidad (€)", "price", &current.price, "", "")
 		case returnSheet:
 			look.Field(context, "Cantidad", "quantity", &current.quantity, "1", "")
 		case closeSheet:
@@ -61,7 +57,7 @@ func (screens *Screens) confirmSheet() {
 	current := &screens.sheet
 	eventID := screens.detail.Event.ID
 	quantity, err := strconv.Atoi(current.quantity)
-	if err != nil && (current.kind == takeSheet || current.kind == sellSheet || current.kind == returnSheet) {
+	if err != nil && (current.kind == takeSheet || current.kind == returnSheet) {
 		current.problem = "Escribe un número entero"
 		return
 	}
@@ -73,13 +69,6 @@ func (screens *Screens) confirmSheet() {
 			return
 		}
 		refused, err = screens.store.MoveStock(eventID, current.choices[current.choice].variantID, quantity)
-	case sellSheet:
-		price, found := money.Parse(current.price)
-		if !found {
-			current.problem = "Escribe un precio como 12 o 12,50"
-			return
-		}
-		refused, err = screens.store.Sell(eventID, current.variantID, quantity, price)
 	case returnSheet:
 		refused, err = screens.store.ReturnStock(eventID, current.variantID, quantity)
 	case closeSheet:
@@ -93,7 +82,7 @@ func (screens *Screens) confirmSheet() {
 	}
 	kind := current.kind
 	screens.sheet = sheet{}
-	screens.tell(refused, err, map[sheetKind]string{takeSheet: "Stock llevado al evento", sellSheet: "Venta apuntada",
+	screens.tell(refused, err, map[sheetKind]string{takeSheet: "Stock llevado al evento",
 		returnSheet: "Stock devuelto al catálogo", closeSheet: "Evento cerrado", deleteSheet: "Evento eliminado"}[kind])
 	if kind == deleteSheet {
 		screens.detail = nil
@@ -102,7 +91,7 @@ func (screens *Screens) confirmSheet() {
 }
 
 // confirmWords are the words of each sheet's confirm button.
-var confirmWords = map[sheetKind]string{takeSheet: "Llevar", sellSheet: "Apuntar venta", returnSheet: "Devolver",
+var confirmWords = map[sheetKind]string{takeSheet: "Llevar", returnSheet: "Devolver",
 	closeSheet: "Cerrar evento", deleteSheet: "Eliminar"}
 
 // confirmButton is a sheet's confirm button: red when it deletes the event.
