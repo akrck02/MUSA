@@ -45,7 +45,7 @@ func TestTheChosenPillMovesWithItsRowWhenThePageScrolls(test *testing.T) {
 		test.Fatal(err)
 	}
 	window.Frames(3)
-	top = 120 // as if the page scrolled: the row is somewhere else, the tab is still chosen
+	top = 120      // as if the page scrolled: the row is somewhere else, the tab is still chosen
 	window.Frame() // the very frame it moves: the pill must not lag behind by one
 	pill := slidingPills["scrolled"]
 	target, _ := window.ElementIn("scrolled", "Dos")

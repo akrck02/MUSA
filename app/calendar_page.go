@@ -47,7 +47,7 @@ func (program *App) drawWeek(context *ui.Context) {
 				if day == today {
 					name = "hoy"
 				}
-				weekDay(context, day, today, name, program.today.plan.on(day))
+				program.weekDay(context, day, today, name, program.today.plan.on(day))
 			}
 		})
 	})
@@ -55,7 +55,7 @@ func (program *App) drawWeek(context *ui.Context) {
 
 // weekDay is one day of the week: its name, its number, and its entries; today stands on the
 // sunken colour with its number in the accent.
-func weekDay(context *ui.Context, day, today calendar.Date, name string, entries []agendaEntry) {
+func (program *App) weekDay(context *ui.Context, day, today calendar.Date, name string, entries []agendaEntry) {
 	theme := context.Theme
 	fill, number := theme.Background, theme.Ink
 	if day == today {
@@ -66,7 +66,9 @@ func weekDay(context *ui.Context, day, today calendar.Date, name string, entries
 		context.Text(name, ui.TextStyle{Size: weekDayNameSize, Color: theme.InkSoft})
 		context.Text(strconv.Itoa(day.Day), ui.TextStyle{Size: weekDayNumber, Weight: draw2d.Bold, Color: number})
 		for _, entry := range entries {
-			entryChip(context, entry)
+			if entryChip(context, entry) {
+				program.openEntry(entry)
+			}
 		}
 	})
 }
@@ -124,7 +126,7 @@ func (program *App) drawMonthCalendar(context *ui.Context) {
 			for index, day := range grid {
 				cell := monthCellOf(day, today, shown, index%days == 0)
 				cell.corner = program.cornerOf(theme, cell, index, len(grid), days)
-				monthCell(context, cell, program.today.plan.on(day))
+				program.monthCell(context, cell, program.today.plan.on(day))
 			}
 		})
 	})
@@ -166,8 +168,9 @@ func cellFill(theme ui.Theme, cell cellOfMonth) draw2d.Color {
 }
 
 // monthCell is one day of the month's table: a fine line above it and on its left (the first of a
-// row has none there), its number (on an accent pill today) and its entries as bars.
-func monthCell(context *ui.Context, cell cellOfMonth, entries []agendaEntry) {
+// row has none there), its number (on an accent pill today) and its entries as bars. Tapping an
+// entry opens it; tapping the day shows all it holds.
+func (program *App) monthCell(context *ui.Context, cell cellOfMonth, entries []agendaEntry) {
 	theme := context.Theme
 	ink := theme.Ink
 	if cell.quiet {
@@ -177,7 +180,10 @@ func monthCell(context *ui.Context, cell cellOfMonth, entries []agendaEntry) {
 	if cell.corner != nil {
 		background = ui.Look{Backdrop: cell.corner, Clip: true}
 	}
-	context.Frame(ui.Layout{Width: ui.Grow(), Height: ui.Fixed(monthDayHeight)}, background, func() {
+	layout := ui.Layout{Width: ui.Grow(), Height: ui.Fixed(monthDayHeight)}
+	looks := ui.Looks{Normal: background, Hovered: background, Pressed: background}
+	label := "Ver el " + calendar.LongWords(cell.day)
+	clicked := context.Clickable(label, layout, looks, func() {
 		if !cell.first {
 			context.Frame(ui.Layout{Width: ui.Fixed(1), Height: ui.Grow()}, ui.Look{Fill: theme.Line}, nil)
 		}
@@ -190,11 +196,17 @@ func monthCell(context *ui.Context, cell cellOfMonth, entries []agendaEntry) {
 						context.Text("+"+strconv.Itoa(len(entries)-monthEntries), ui.TextStyle{Size: chipTextSize, Color: theme.InkSoft})
 						break
 					}
-					entryBar(context, entry)
+					if entryBar(context, entry) {
+						program.openEntry(entry)
+					}
 				}
 			})
 		})
 	})
+	context.Describe(ui.Description{Role: ui.ButtonRole, Label: label})
+	if clicked {
+		program.home.dayShown = cell.day
+	}
 }
 
 // dayNumber is a day's number, on an accent pill when it is today.

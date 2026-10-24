@@ -85,14 +85,39 @@ func (screens *Screens) drawBoard(context *ui.Context, onTheWay []Sale) {
 	look.Paragraph(context, deliveredNote, ui.TextStyle{Size: noteSize, Color: context.Theme.InkSoft})
 }
 
+// drawColumn is the orders in one status; an order dragged from the column before and dropped on
+// it moves on.
 func (screens *Screens) drawColumn(context *ui.Context, status Status, onTheWay []Sale) {
-	theme := context.Theme
 	var orders []Sale
 	for _, sale := range onTheWay {
 		if sale.Status == status {
 			orders = append(orders, sale)
 		}
 	}
+	accepts := func(payload any) bool {
+		dragged, isOrder := payload.(draggedOrder)
+		next, found := dragged.status.Next()
+		return isOrder && found && next == status // an order moves one step on, as its button does
+	}
+	payload, dropped := context.DropTarget("column "+string(status), ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, accepts, func() {
+		screens.columnPanel(context, status, orders)
+	})
+	if dropped {
+		dragged := payload.(draggedOrder)
+		problems, err := screens.store.Advance(dragged.id)
+		screens.afterAdvance(dragged.status, problems, err)
+	}
+}
+
+// draggedOrder is an order carried to the next column.
+type draggedOrder struct {
+	id     string
+	status Status
+}
+
+// columnPanel is a column's card: its icon, name and count, and its orders.
+func (screens *Screens) columnPanel(context *ui.Context, status Status, orders []Sale) {
+	theme := context.Theme
 	panel := ui.Look{Fill: theme.Surface, Border: theme.Line, BorderWidth: 1, Radius: panelRadius}
 	context.Frame(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Grow(), Padding: ui.Pad(panelPadding)}, panel, func() {
 		context.Box(ui.Layout{Width: ui.Grow(), Gap: panelTitleGap, AlignY: ui.Center, Padding: ui.Padding{Bottom: panelTitleBottom}}, func() {
@@ -124,7 +149,8 @@ func iconCircle(context *ui.Context, icon string) {
 // boardRow is one order on the board: its products' pictures, who and what on the left, the
 // button that moves it on the right.
 func (screens *Screens) boardRow(context *ui.Context, sale Sale) {
-	context.Box(ui.Layout{Width: ui.Grow(), Padding: ui.PadXY(0, orderPaddingY), Gap: orderGap, AlignY: ui.Center}, func() {
+	dragged := draggedOrder{id: sale.ID, status: sale.Status}
+	context.DragSource(whoOrdered(sale), dragged, ui.Layout{Width: ui.Grow(), Padding: ui.PadXY(0, orderPaddingY), Gap: orderGap, AlignY: ui.Center}, func() {
 		screens.thumbs(context, sale)
 		nameAndDetail(context, sale, sourceWords(sale), whoOrdered(sale), fmt.Sprintf("%s · %s", piecesWords(sale), money.Format(sale.Total())))
 		if actionButton(context, actionWords[sale.Status]) {

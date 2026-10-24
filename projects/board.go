@@ -69,9 +69,9 @@ func (screens *Screens) drawBoard(context *ui.Context) {
 	})
 }
 
-// column is one stage: its name and count, its projects and a link to add one.
+// column is one stage: its name and count, its projects and a link to add one. A card dragged
+// from another column and dropped on it moves there.
 func (screens *Screens) column(context *ui.Context, stage Stage) {
-	theme := context.Theme
 	var inStage []Project
 	for _, project := range screens.projects {
 		if project.Stage == stage && Matches(project, screens.people[project.CustomerID].Name, screens.query) {
@@ -80,6 +80,33 @@ func (screens *Screens) column(context *ui.Context, stage Stage) {
 	}
 	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Grow().Between(columnMinimum, 0),
 		Padding: ui.Pad(columnPadding)}
+	accepts := func(payload any) bool {
+		dragged, isProject := payload.(draggedProject)
+		return isProject && dragged.stage != stage && dragged.stage != Delivered // a delivered project stays delivered
+	}
+	payload, dropped := context.DropTarget("column "+string(stage), ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, accepts, func() {
+		screens.columnCards(context, stage, inStage, layout)
+	})
+	if dropped {
+		screens.moveDropped(payload.(draggedProject), stage)
+	}
+}
+
+// draggedProject is a project carried from its column to another.
+type draggedProject struct {
+	id, title string
+	stage     Stage
+}
+
+// moveDropped puts a project dropped on a column in that column's stage.
+func (screens *Screens) moveDropped(dragged draggedProject, stage Stage) {
+	problems, err := screens.store.Move(dragged.id, stage)
+	screens.afterAction(problems, err, StageWords(stage)+": "+dragged.title)
+}
+
+// columnCards is a column's panel: its name and count, its cards and «Añadir proyecto».
+func (screens *Screens) columnCards(context *ui.Context, stage Stage, inStage []Project, layout ui.Layout) {
+	theme := context.Theme
 	context.Frame(layout, ui.Look{Fill: theme.Sunken, Radius: columnRadius}, func() {
 		context.Box(ui.Layout{Width: ui.Grow(), Padding: ui.Padding{Left: 4, Top: 2, Right: 4, Bottom: columnTitleBottom}}, func() {
 			context.Box(ui.Layout{Width: ui.Grow()}, func() {
@@ -134,7 +161,8 @@ func (screens *Screens) card(context *ui.Context, project Project) {
 	normal := ui.Look{Fill: colours.surface, Border: colours.line, BorderWidth: 1, Radius: cardRadius}
 	hovered := normal
 	hovered.Border = colours.fade(context.Theme.ControlLine)
-	context.Box(ui.Layout{Width: ui.Grow(), Padding: ui.Padding{Bottom: cardBottom}}, func() {
+	dragged := draggedProject{id: project.ID, title: project.Title, stage: project.Stage}
+	context.DragSource(project.Title, dragged, ui.Layout{Width: ui.Grow(), Padding: ui.Padding{Bottom: cardBottom}}, func() {
 		layout := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(cardPadding)}
 		if context.Clickable(project.Title, layout, ui.Looks{Normal: normal, Hovered: hovered, Pressed: hovered}, func() {
 			strip := ui.Look{Fill: colours.fade(catalogue.ListFill(screens.created(project))), Radius: stripRadius}

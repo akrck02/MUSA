@@ -7,6 +7,7 @@ import (
 
 	"github.com/akrck02/go-ui/uitest"
 
+	"github.com/Itros97/MUSA/calendar"
 	"github.com/Itros97/MUSA/catalogue"
 	"github.com/Itros97/MUSA/customers"
 	"github.com/Itros97/MUSA/demo"
@@ -370,5 +371,90 @@ func TestOpeningAProjectsEditorLeavesThePageUnderItStill(t *testing.T) {
 	steps(t, window, click(window, "Nuevo proyecto"))
 	if after := program.pageName(); after != before {
 		t.Errorf("the page became %q from %q, so it would rise in again under the dialog", after, before)
+	}
+}
+
+func TestDraggingAProjectToAnotherColumnMovesIt(t *testing.T) {
+	program, window := openApp(t, true)
+	program.Open(Projects)
+	window.Frames(2)
+	all, err := program.stores.Projects.All()
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := ""
+	for _, project := range all {
+		if project.Title == "Retrato de familia" {
+			id = project.ID
+		}
+	}
+	card, err := window.ElementIn(id, "Retrato de familia")
+	if err != nil {
+		t.Fatal(err)
+	}
+	centreX, centreY := card.Rect.X+card.Rect.Width/2, card.Rect.Y+card.Rect.Height/2
+	window.Drag(centreX, centreY, centreX+card.Rect.Width+40, centreY)
+	window.Frames(2)
+	all, err = program.stores.Projects.All()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, project := range all {
+		if project.Title == "Retrato de familia" && project.Stage != projects.Drawing {
+			t.Errorf("the project is in %s after being dropped on «Dibujando»", project.Stage)
+		}
+	}
+}
+
+func TestDraggingAnOrderToTheNextColumnSendsIt(t *testing.T) {
+	program, window := openApp(t, true)
+	program.Open(Sales)
+	window.Frames(2)
+	row, err := window.Element("Marcos")
+	if err != nil {
+		t.Fatal(err)
+	}
+	window.Drag(row.Rect.X, row.Rect.Y+row.Rect.Height/2, row.Rect.X+640, row.Rect.Y+row.Rect.Height/2)
+	window.Frames(2)
+	all, err := program.stores.Sales.All()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, sale := range all {
+		if sale.Customer == "Marcos" && sale.Status != sales.Sent {
+			t.Errorf("Marcos's order is %s after being dropped on «Enviado»", sale.Status)
+		}
+	}
+}
+
+func TestTappingAProjectOnTheCalendarOpensItsEditor(t *testing.T) {
+	program, window := openApp(t, true)
+	program.Open(Home)
+	program.home.tab = 1
+	window.Frames(2)
+	steps(t, window, click(window, "Logo para tienda"))
+	window.Frames(2)
+	if program.place != Projects || program.pageName() == "" || window.Click("Pasar a entregado") != nil {
+		t.Errorf("tapping the project on the calendar did not open its editor (place %v)", program.place)
+	}
+}
+
+func TestTappingADayOnTheCalendarShowsWhatItHolds(t *testing.T) {
+	program, window := openApp(t, true)
+	program.Open(Home)
+	program.home.tab = 1
+	window.Frames(2)
+	day := "Ver el " + calendar.LongWords(program.today.date)
+	cell, err := window.Element(day)
+	if err != nil {
+		t.Fatal(err)
+	}
+	window.ClickAt(cell.Rect.X+cell.Rect.Width-4, cell.Rect.Y+4) // beside its number, away from its entries
+	window.Frames(2)
+	if program.home.dayShown != program.today.date {
+		t.Fatalf("the day's detail is not open")
+	}
+	if _, err := window.ElementIn("day detail", "Nueva feria"); err != nil {
+		t.Errorf("the day's detail has no «Nueva feria»: %v", err)
 	}
 }

@@ -20,6 +20,7 @@ const toastTime = 3 * time.Second
 type homeState struct {
 	tab         int           // index in homeTabs
 	month       calendar.Date // a day of the month the calendar shows; zero for this month
+	dayShown    calendar.Date // the day whose detail is open over the calendar; zero for none
 	note        string
 	noteWarning bool
 	noteUntil   time.Time
@@ -42,6 +43,7 @@ func (program *App) drawHome(context *ui.Context) {
 	}
 	if program.home.tab == 1 {
 		program.drawMonthCalendar(context)
+		program.drawDayDetail(context)
 	} else {
 		program.drawSummary(context)
 	}

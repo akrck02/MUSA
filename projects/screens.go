@@ -155,6 +155,16 @@ func (screens *Screens) tell(warning bool, words string) {
 	screens.Reload()
 }
 
+// Edit opens the editor of the project with this id, when there is one.
+func (screens *Screens) Edit(id string) {
+	for _, project := range screens.projects {
+		if project.ID == id {
+			screens.edit(project)
+			return
+		}
+	}
+}
+
 // ShowEditor opens the editor of the first project, for captures.
 func (screens *Screens) ShowEditor() {
 	if len(screens.projects) > 0 {
