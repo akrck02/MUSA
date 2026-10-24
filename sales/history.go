@@ -167,7 +167,8 @@ func (screens *Screens) historyRow(context *ui.Context, sale Sale) bool {
 	}
 	label := fmt.Sprintf("%s · %s · %s", day, screens.who(sale), money.Format(sale.Total()))
 	layout := ui.Layout{Width: ui.Grow(), Padding: ui.PadXY(0, rowPaddingY), Gap: rowGap, AlignY: ui.Center}
-	clicked := context.Clickable(label, layout, ui.Looks{Pressed: ui.Look{Fill: theme.Sunken}}, func() {
+	// No pressed fill: the sale's dialog answers the tap, and a fill would linger under it.
+	clicked := context.Clickable(label, layout, ui.Looks{}, func() {
 		context.Box(ui.Layout{Width: ui.Fixed(dateWidth)}, func() {
 			context.Text(day, ui.TextStyle{Size: daySize, Color: theme.InkSoft})
 		})

@@ -85,7 +85,7 @@ func (program *App) developmentTools(context *ui.Context) {
 			if context.IconButton("sparkles", "Rellenar con datos de prueba") {
 				program.fillWithDemo()
 			}
-			if context.IconButton("trash-2", "Vaciar base de datos") {
+			if context.DangerIconButton("trash-2", "Vaciar base de datos") {
 				program.home.askingWipe = true
 			}
 		})
@@ -102,7 +102,7 @@ func (program *App) askWipe(context *ui.Context) {
 			if context.Button("Cancelar") {
 				program.home.askingWipe = false
 			}
-			if context.PrimaryButton("Vaciar") {
+			if context.DangerButton("Vaciar") {
 				program.home.askingWipe = false
 				program.tell(program.stores.Database.Wipe(), "Base de datos vacía")
 				program.Open(Home)

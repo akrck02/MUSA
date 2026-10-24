@@ -132,7 +132,7 @@ func (screens *Screens) detailMenu(context *ui.Context, event Event, open bool) 
 		if open && context.MenuItem("lock", "Cerrar evento", "") {
 			screens.sheet = sheet{kind: closeSheet}
 		}
-		if context.MenuItem("trash-2", "Eliminar", "") {
+		if context.DangerMenuItem("trash-2", "Eliminar", "") {
 			screens.sheet = sheet{kind: deleteSheet}
 		}
 	})
@@ -288,7 +288,7 @@ func (screens *Screens) expensesSection(context *ui.Context, open bool) {
 			context.Box(ui.Layout{Width: ui.Grow(), Gap: 8, AlignY: ui.Center}, func() {
 				context.Box(ui.Layout{Width: ui.Grow()}, func() { context.Text(expense.Concept, ui.TextStyle{}) })
 				context.Text(money.Format(expense.Amount), ui.TextStyle{Weight: draw2d.Bold})
-				if open && context.FlatIconButton("trash-2", "##Quitar gasto") {
+				if open && context.DangerFlatIconButton("trash-2", "##Quitar gasto") {
 					refused, err := screens.store.DeleteExpense(screens.detail.Event.ID, expense.ID)
 					screens.tell(refused, err, "Gasto quitado")
 				}

@@ -302,7 +302,7 @@ func stockCell(context *ui.Context, typed *variantForm) bool {
 func removeButton(context *ui.Context) bool {
 	side := ui.Fixed(removeVersionSide)
 	clicked := context.Clickable("##Quitar versión", ui.Layout{Width: side, Height: side, AlignX: ui.Center, AlignY: ui.Center}, ui.Looks{}, func() {
-		context.IconSized("x", lowWordsSize, context.Theme.InkQuiet)
+		context.IconSized("x", lowWordsSize, context.Theme.Danger) // it destroys the version
 	})
 	context.Describe(ui.Description{Role: ui.ButtonRole, Label: "Quitar versión"})
 	return clicked

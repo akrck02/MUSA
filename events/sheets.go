@@ -34,8 +34,7 @@ func (screens *Screens) drawSheet(context *ui.Context) {
 			if context.Button("Cancelar") {
 				screens.sheet = sheet{}
 			}
-			if context.PrimaryButton(map[sheetKind]string{takeSheet: "Llevar", sellSheet: "Apuntar venta", returnSheet: "Devolver",
-				closeSheet: "Cerrar evento", deleteSheet: "Eliminar"}[current.kind] + "##confirm") {
+			if confirmButton(context, current.kind) {
 				screens.confirmSheet()
 			}
 		})
@@ -100,4 +99,17 @@ func (screens *Screens) confirmSheet() {
 		screens.detail = nil
 		screens.Reload()
 	}
+}
+
+// confirmWords are the words of each sheet's confirm button.
+var confirmWords = map[sheetKind]string{takeSheet: "Llevar", sellSheet: "Apuntar venta", returnSheet: "Devolver",
+	closeSheet: "Cerrar evento", deleteSheet: "Eliminar"}
+
+// confirmButton is a sheet's confirm button: red when it deletes the event.
+func confirmButton(context *ui.Context, kind sheetKind) bool {
+	label := confirmWords[kind] + "##confirm"
+	if kind == deleteSheet {
+		return context.DangerButton(label)
+	}
+	return context.PrimaryButton(label)
 }

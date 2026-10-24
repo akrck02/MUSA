@@ -153,7 +153,7 @@ func (screens *Screens) lineSection(context *ui.Context) {
 				context.Box(ui.Layout{Width: ui.Fixed(120)}, func() {
 					look.Field(context, "Precio (€)", "price", &line.price, "", screens.lineProblem(line.id, CodeNegativePrice))
 				})
-				removed = len(editing.lines) > 1 && context.FlatIconButton("trash-2", "##Quitar línea")
+				removed = len(editing.lines) > 1 && context.DangerFlatIconButton("trash-2", "##Quitar línea")
 			})
 			for _, problem := range editing.problems {
 				if problem.Code == CodeNotEnoughStock && problem.VariantID == editing.choices[line.choice].variantID {

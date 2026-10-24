@@ -11,11 +11,12 @@ const (
 )
 
 // pageTheme is Bubble's theme with the text as the author's design sets it: a body of 14 pixels
-// on lines one and a half times as tall, big or small, and fields bordered by the soft line of
-// cards. Titles set their own line height.
+// on lines one and a half times as tall, big or small, and fields and buttons bordered by the soft
+// line of cards. Titles set their own line height.
 func pageTheme(theme ui.Theme) ui.Theme {
 	theme.TextSize, theme.SmallTextSize = bodySize, smallSize
 	theme.LineHeight, theme.HeadingLineHeight = lineHeight, lineHeight
-	theme.FieldLine = theme.Line // the author's design borders fields with the same soft line as cards
+	// The author's design borders fields and buttons with the same soft line as cards.
+	theme.FieldLine, theme.ControlLine = theme.Line, theme.Line
 	return theme
 }

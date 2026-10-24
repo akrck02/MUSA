@@ -106,7 +106,7 @@ func (screens *Screens) editorActions(context *ui.Context) {
 	editing := screens.editor
 	context.Box(ui.Layout{Width: ui.Grow(), Gap: 8, AlignY: ui.Center}, func() {
 		saved := editing.project.ID != ""
-		if saved && editing.project.Stage != Delivered && context.IconButton("trash-2", "##Eliminar proyecto") {
+		if saved && editing.project.Stage != Delivered && context.DangerIconButton("trash-2", "##Eliminar proyecto") {
 			problems, err := screens.store.Delete(editing.project.ID)
 			screens.afterAction(problems, err, "Proyecto eliminado")
 		}

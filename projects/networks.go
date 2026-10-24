@@ -59,7 +59,7 @@ func (screens *Screens) networkRow(context *ui.Context, network *customers.Netwo
 		context.Box(ui.Layout{Width: ui.Grow(), Gap: 8, AlignY: ui.Center}, func() {
 			context.IconSized(nameOr(network.Icon, "at-sign"), context.Theme.IconSize, context.Theme.InkSoft)
 			context.TextFieldWith("name", &network.Name, ui.TextFieldOptions{Placeholder: name})
-			if network.ID != "" && context.FlatIconButton("trash-2", "##Quitar "+network.Name) {
+			if network.ID != "" && context.DangerFlatIconButton("trash-2", "##Quitar "+network.Name) {
 				screens.deleteNetwork(*network)
 			}
 		})

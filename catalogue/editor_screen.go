@@ -57,7 +57,7 @@ func (screens *Screens) lifeButtons(context *ui.Context) {
 			screens.editor = nil
 			return
 		}
-		if context.FlatIconButton("trash-2", "Eliminar") {
+		if context.DangerFlatIconButton("trash-2", "Eliminar") {
 			screens.editor.asking = "delete"
 		}
 	})
@@ -71,7 +71,7 @@ func (screens *Screens) askDelete(context *ui.Context) {
 			if context.Button("Cancelar") {
 				screens.editor.asking = ""
 			}
-			if context.PrimaryButton("Eliminar") {
+			if context.DangerButton("Eliminar") {
 				screens.tell(screens.store.Delete(edited.product.ID), "Producto eliminado")
 				screens.editor = nil
 			}

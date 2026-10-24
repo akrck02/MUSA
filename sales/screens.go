@@ -175,7 +175,7 @@ func (screens *Screens) detailSheet(context *ui.Context) {
 			context.Text(ProblemWords(Problem{Code: CodeManagedByEvent}), ui.TextStyle{Size: theme.SmallTextSize, Color: theme.InkSoft})
 			return
 		}
-		if context.IconButton("trash-2", "Eliminar venta") {
+		if context.DangerIconButton("trash-2", "Eliminar venta") {
 			problems, err := screens.store.Delete(sale.ID)
 			screens.opened = ""
 			screens.afterDelete(problems, err)
