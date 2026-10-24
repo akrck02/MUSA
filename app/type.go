@@ -8,6 +8,7 @@ const (
 	bodySize   = 14
 	smallSize  = 13
 	lineHeight = 1.5
+	focusShade = 0.55 // how far a focused field's line goes towards the accent
 )
 
 // pageTheme is Bubble's theme with the text as the author's design sets it: a body of 14 pixels
@@ -18,5 +19,7 @@ func pageTheme(theme ui.Theme) ui.Theme {
 	theme.LineHeight, theme.HeadingLineHeight = lineHeight, lineHeight
 	// The author's design borders fields and buttons with the same soft line as cards.
 	theme.FieldLine, theme.ControlLine = theme.Line, theme.Line
+	// The field being typed in is lit by its line deepened towards the accent, not by a dark ring.
+	theme.FocusRing = theme.Line.Mix(theme.Primary, focusShade)
 	return theme
 }
