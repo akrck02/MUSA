@@ -74,3 +74,24 @@ func ShortWeekday(date Date) string {
 func MonthWords(date Date) string {
 	return fmt.Sprintf("%s de %d", fullMonthNames[date.Month-1], date.Year)
 }
+
+// LongRangeWords writes when something happens as people say it, the year only when it is not
+// this year's: "Sábado 7 de noviembre" for one day, "12 y 13 de diciembre" for two, "12 al 14 de
+// diciembre" for more, "30 de noviembre al 2 de diciembre" across months.
+func LongRangeWords(start, end Date, thisYear int) string {
+	year := ""
+	if end.Year != thisYear {
+		year = fmt.Sprintf(" de %d", end.Year)
+	}
+	month := func(date Date) string { return fullMonthNames[date.Month-1] }
+	switch {
+	case start == end:
+		weekday := weekdayNames[start.At(0, time.UTC).Weekday()]
+		return fmt.Sprintf("%s%s %d de %s%s", strings.ToUpper(weekday[:1]), weekday[1:], start.Day, month(start), year)
+	case start.Month != end.Month || start.Year != end.Year:
+		return fmt.Sprintf("%d de %s al %d de %s%s", start.Day, month(start), end.Day, month(end), year)
+	case end == start.AddDays(1):
+		return fmt.Sprintf("%d y %d de %s%s", start.Day, end.Day, month(end), year)
+	}
+	return fmt.Sprintf("%d al %d de %s%s", start.Day, end.Day, month(end), year)
+}

@@ -74,7 +74,7 @@ type piece struct {
 	units int
 }
 
-// fairs are a closed one from last month, the one on today with its first sales, and three to come.
+// fairs are a closed one from last month, the one on today with its first sales, and two to come.
 func (filler *filler) fairs(today calendar.Date) {
 	summer := filler.event("Mercadillo de verano", "Plaza Mayor", today.AddDays(-30), today.AddDays(-29))
 	filler.take(summer, []piece{{"LAM-GAT-A5", 6}, {"PEG-LUN-B", 15}, {"PEG-NUB", 10}})
@@ -87,7 +87,7 @@ func (filler *filler) fairs(today calendar.Date) {
 
 	// Forty-two pieces, as the author's design counts them.
 	autumn := filler.event("Mercado de Otoño", "Paseo del Río", today, today)
-	filler.take(autumn, []piece{{"LAM-GAT-A5", 4}, {"PEG-LUN-M", 3}, {"LLA-RAN", 4}, {"PEG-OLA", 6},
+	filler.take(autumn, []piece{{"LAM-GAT-A5", 4}, {"PEG-LUN-M", 3}, {"PEG-LUN-B", 4}, {"LLA-RAN", 4}, {"PEG-OLA", 6},
 		{"PEG-CAF", 2}, {"PEG-PLA", 5}, {"LAM-ZOR-A5", 3}, {"PEG-NUB", 8}, {"PEG-CER", 4}, {"PEG-CAC", 3}})
 	filler.sellLines(autumn, []piece{{"LAM-GAT-A5", 2}, {"LLA-RAN", 1}})
 	filler.sellLines(autumn, []piece{{"PEG-LUN-M", 1}})
@@ -95,7 +95,6 @@ func (filler *filler) fairs(today calendar.Date) {
 
 	harbour := filler.event("Feria del Puerto", "Muelle Norte", today.AddDays(3), today.AddDays(3))
 	filler.take(harbour, []piece{{"LAM-BOS-A4", 6}, {"PEG-NUB", 10}, {"LLA-TAC", 8}, {"LAM-KOI-A4", 8}, {"LAM-DON-A4", 10}})
-	filler.event("Feria del Libro", "Recinto Ferial", today.AddDays(17), today.AddDays(18))
 	filler.event("Mercadillo de Invierno", "Centro cultural", today.AddDays(38), today.AddDays(39))
 }
 

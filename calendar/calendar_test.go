@@ -97,3 +97,22 @@ func TestADayIsWithinARangeThatIncludesItsEnds(t *testing.T) {
 		t.Error("the ends of a range are not in it, or the day after is")
 	}
 }
+
+func TestAFairsDaysAreWrittenAsPeopleSayThem(t *testing.T) {
+	day := func(year int, month time.Month, number int) Date { return Date{year, month, number} }
+	cases := map[string]struct {
+		start, end Date
+		want       string
+	}{
+		"one day":           {day(2026, 11, 7), day(2026, 11, 7), "Sábado 7 de noviembre"},
+		"two days":          {day(2026, 12, 12), day(2026, 12, 13), "12 y 13 de diciembre"},
+		"several days":      {day(2026, 12, 12), day(2026, 12, 14), "12 al 14 de diciembre"},
+		"across two months": {day(2026, 11, 30), day(2026, 12, 2), "30 de noviembre al 2 de diciembre"},
+		"another year":      {day(2027, 1, 9), day(2027, 1, 10), "9 y 10 de enero de 2027"},
+	}
+	for name, each := range cases {
+		if got := LongRangeWords(each.start, each.end, 2026); got != each.want {
+			t.Errorf("%s: %q, not %q", name, got, each.want)
+		}
+	}
+}

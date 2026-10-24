@@ -3,6 +3,7 @@ package stand
 import (
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/akrck02/go-renderer/draw2d"
@@ -22,12 +23,6 @@ const noteTime = 3 * time.Second
 
 // tileWidth is the width a product tile wants; the grid fits as many as the window allows.
 const tileWidth = 210
-
-// How much bigger than a heading the choice's title and the fair on today are.
-const (
-	choiceTitleScale = 1.4
-	heroTitleScale   = 1.6
-)
 
 // step is where the checkout is: browsing the stand, or one of the payment dialogs over it.
 type step int
@@ -134,46 +129,82 @@ func (screens *Screens) tell(warning bool, words string) {
 	screens.note, screens.noteWarning, screens.noteUntil = words, warning, time.Now().Add(noteTime)
 }
 
-// Measures of the choice of stands, in pixels.
+// Measures of the choice of stands, in pixels, as in the author's design.
 const (
-	choiceWidth   = 980
-	heroBadgeSide = 100
-	choiceBadge   = 64
-	choiceColumns = 3
-	choiceHeight  = 230
+	choiceWidth       = 976
+	choiceTop         = 40 // under the page's own top
+	choiceTitleSize   = 40
+	choiceTitleLine   = 1.2
+	choiceLeadSize    = 20
+	choiceLeadAbove   = 8
+	choiceLeadBelow   = 36
+	heroRadius        = 24
+	heroPadding       = 32
+	heroGap           = 28
+	heroBadgeSide     = 104
+	heroIconSize      = 52
+	heroBadgeAlpha    = 0.12
+	heroLiveSize      = 15
+	heroNameSize      = 34
+	heroNameSpace     = 6
+	heroWordsSize     = 18
+	heroSoftAlpha     = 0.85
+	heroButtonSize    = 20
+	heroButtonPadX    = 30
+	heroButtonPadY    = 16
+	choiceColumns     = 3
+	choiceGap         = 16
+	choiceCardRadius  = 20
+	choiceCardPadding = 26
+	choiceCardGap     = 14
+	choiceBadge       = 72
+	choiceIconSize    = 40
+	choiceNameSize    = 22
+	choiceWordsSize   = 17
 )
 
 // drawChoice is where the artist picks what to sell from: the fair on today, big and dark, then the
-// other open fairs and the whole stock.
+// other open fairs by date and the whole stock.
 func (screens *Screens) drawChoice(context *ui.Context) {
 	theme := context.Theme
 	context.Box(ui.Layout{Width: ui.Grow(), AlignX: ui.Center}, func() {
-		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Fixed(choiceWidth), Gap: theme.Gap, Padding: ui.Padding{Top: theme.Padding}}, func() {
-			context.Text("¿Dónde vendes hoy?", ui.TextStyle{Size: theme.HeadingSize * choiceTitleScale, Weight: draw2d.Bold})
-			context.Text("Elige la feria y lo que vendas quedará apuntado en ella.", ui.TextStyle{Color: theme.InkSoft})
+		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Fixed(choiceWidth), Padding: ui.Padding{Top: choiceTop}}, func() {
+			context.Text("¿Dónde vendes hoy?", ui.TextStyle{Size: choiceTitleSize, Weight: draw2d.Bold, LineHeight: choiceTitleLine})
+			look.Space(context, choiceLeadAbove)
+			context.Text("Elige la feria y lo que vendas quedará apuntado en ella.", ui.TextStyle{Size: choiceLeadSize, Color: theme.InkSoft})
+			look.Space(context, choiceLeadBelow)
 			if screens.loadErr != nil {
 				look.Empty(context, "triangle-alert", "No se pudieron leer las ferias", screens.loadErr.Error(), "")
 				return
 			}
-			today := calendar.Of(screens.now())
-			others := screens.fairs
-			if index := slices.IndexFunc(screens.fairs, func(fair events.Event) bool { return today.Within(fair.StartDate, fair.EndDate) }); index >= 0 {
-				screens.heroCard(context, screens.fairs[index])
-				others = slices.Delete(slices.Clone(screens.fairs), index, index+1)
-			}
-			context.Grid(look.Columns(context, choiceColumns), func() {
-				for _, fair := range others {
-					context.Push(fair.ID)
-					if screens.choiceCard(context, "calendar", fair.Name, calendar.RangeWords(fair.StartDate, fair.EndDate)) {
-						screens.chooseFair(fair)
-					}
-					context.Pop()
-				}
-				if screens.choiceCard(context, "package", "Todo el stock", "Todos tus productos, para vender fuera de una feria") {
-					screens.Choose(WholeStock{Sales: screens.sales, Products: screens.products, Now: screens.now})
-				}
-			})
+			screens.choices(context)
 		})
+	})
+}
+
+// choices are the fair on today, if any, and a card for each other open fair and the whole stock.
+func (screens *Screens) choices(context *ui.Context) {
+	today := calendar.Of(screens.now())
+	others := slices.Clone(screens.fairs)
+	slices.SortStableFunc(others, func(first, second events.Event) int {
+		return strings.Compare(first.StartDate.String(), second.StartDate.String())
+	})
+	if index := slices.IndexFunc(others, func(fair events.Event) bool { return today.Within(fair.StartDate, fair.EndDate) }); index >= 0 {
+		screens.heroCard(context, others[index])
+		look.Space(context, choiceGap)
+		others = slices.Delete(others, index, index+1)
+	}
+	context.Box(ui.Layout{Width: ui.Grow(), Columns: look.Columns(context, choiceColumns), Gap: choiceGap}, func() {
+		for _, fair := range others {
+			context.Push(fair.ID)
+			if screens.choiceCard(context, "calendar", fair.Name, calendar.LongRangeWords(fair.StartDate, fair.EndDate, today.Year)) {
+				screens.chooseFair(fair)
+			}
+			context.Pop()
+		}
+		if screens.choiceCard(context, "package", "Todo el stock", "Todos tus productos, para vender fuera de una feria") {
+			screens.Choose(WholeStock{Sales: screens.sales, Products: screens.products, Now: screens.now})
+		}
 	})
 }
 
@@ -181,55 +212,62 @@ func (screens *Screens) chooseFair(fair events.Event) {
 	screens.Choose(Fair{Event: fair, Events: screens.events, Products: screens.products})
 }
 
-// heroCard is the fair on today: dark, with what the artist took and «Vender aquí».
+// heroCard is the fair on today: dark, with what the artist took and «Vender aquí». All of it
+// opens the fair's stand.
 func (screens *Screens) heroCard(context *ui.Context, fair events.Event) {
 	theme := context.Theme
 	light := theme.OnPrimary
-	layout := ui.Layout{Width: ui.Grow(), Padding: ui.Pad(theme.Padding * 1.8), Gap: 28, AlignY: ui.Center}
-	context.Frame(layout, ui.Look{Fill: theme.Primary, Radius: theme.PanelRadius}, func() {
-		badge := ui.Layout{Width: ui.Fixed(heroBadgeSide), Height: ui.Fixed(heroBadgeSide), AlignX: ui.Center, AlignY: ui.Center}
-		context.Frame(badge, ui.Look{Fill: light.WithAlpha(0.12), Radius: heroBadgeSide / 2}, func() {
-			context.IconSized("tent", theme.IconSize*1.5, light)
+	soft := theme.Primary.Mix(light, heroSoftAlpha)
+	normal := ui.Look{Fill: theme.Primary, Radius: heroRadius}
+	layout := ui.Layout{Width: ui.Grow(), Padding: ui.Pad(heroPadding), Gap: heroGap, AlignY: ui.Center}
+	if context.Clickable(fair.Name, layout, ui.Looks{Normal: normal, Hovered: normal, Pressed: normal}, func() {
+		side := ui.Fixed(heroBadgeSide)
+		badge := ui.Layout{Width: side, Height: side, AlignX: ui.Center, AlignY: ui.Center}
+		context.Frame(badge, ui.Look{Fill: theme.Primary.Mix(light, heroBadgeAlpha), Radius: heroBadgeSide / 2}, func() {
+			context.IconSized("tent", heroIconSize, light)
 		})
-		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Gap: 4}, func() {
-			context.Text("● EN CURSO", ui.TextStyle{Size: theme.SmallTextSize, Weight: draw2d.Bold, Color: light.WithAlpha(0.8)})
-			context.Text(fair.Name, ui.TextStyle{Size: theme.HeadingSize * heroTitleScale, Weight: draw2d.Bold, Color: light})
-			context.Text(screens.heroWords(fair), ui.TextStyle{Color: light.WithAlpha(0.8)})
+		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow()}, func() {
+			context.Text("● EN CURSO", ui.TextStyle{Size: heroLiveSize, Weight: draw2d.Bold, Color: soft})
+			look.Space(context, heroNameSpace)
+			context.Text(fair.Name, ui.TextStyle{Size: heroNameSize, Weight: draw2d.Bold, Color: light})
+			look.Space(context, heroNameSpace)
+			context.Text(screens.heroWords(fair), ui.TextStyle{Size: heroWordsSize, Color: soft})
 		})
-		pill := ui.Look{Fill: theme.Surface, Radius: theme.ControlHeight / 2}
-		button := ui.Layout{Height: ui.Fixed(theme.ControlHeight * 1.1), Padding: ui.PadXY(22, 0), AlignY: ui.Center}
-		if context.Clickable("Vender aquí", button, ui.Looks{Normal: pill, Hovered: pill, Pressed: pill}, func() {
-			context.Text("Vender aquí", ui.TextStyle{Weight: draw2d.Bold})
-		}) {
-			screens.chooseFair(fair)
-		}
-	})
+		pill := ui.Look{Fill: light, Radius: roundRadius}
+		context.Frame(ui.Layout{Padding: ui.PadXY(heroButtonPadX, heroButtonPadY)}, pill, func() {
+			context.Text("Vender aquí", ui.TextStyle{Size: heroButtonSize, Weight: draw2d.Bold, Color: theme.Primary})
+		})
+	}) {
+		screens.chooseFair(fair)
+	}
 }
 
-// heroWords is where the fair is and how many pieces the artist has there.
+// heroWords is how many pieces the artist has at the fair on today.
 func (screens *Screens) heroWords(fair events.Event) string {
-	words := "Hoy"
-	if fair.Location != "" {
-		words += " · " + fair.Location
-	}
 	detail, err := screens.events.Detail(fair.ID)
 	if err != nil {
-		return words // the count is a nicety; the fair can still be chosen
+		return "Hoy" // the count is a nicety; the fair can still be chosen
 	}
 	left := 0
 	for _, line := range detail.Stock {
 		left += line.Remaining()
 	}
-	return words + fmt.Sprintf(" · llevas %d piezas", left)
+	return fmt.Sprintf("Hoy · llevas %d piezas", left)
 }
 
 func (screens *Screens) choiceCard(context *ui.Context, icon, title, subtitle string) bool {
 	theme := context.Theme
-	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Fixed(choiceHeight), Padding: ui.Pad(18), Gap: 10}
-	return look.ClickableCard(context, title, layout, func() {
-		look.Badge(context, icon, choiceBadge)
-		look.Paragraph(context, title, ui.TextStyle{Weight: draw2d.Bold})
-		look.Paragraph(context, subtitle, ui.TextStyle{Size: theme.SmallTextSize, Color: theme.InkSoft})
+	normal := ui.Look{Fill: theme.Surface, Border: theme.Line, BorderWidth: 1, Radius: choiceCardRadius}
+	hovered := normal
+	hovered.Border = theme.ControlLine
+	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Grow(), Padding: ui.Pad(choiceCardPadding + 1), Gap: choiceCardGap}
+	return context.Clickable(title, layout, ui.Looks{Normal: normal, Hovered: hovered, Pressed: hovered}, func() {
+		side := ui.Fixed(choiceBadge)
+		context.Frame(ui.Layout{Width: side, Height: side, AlignX: ui.Center, AlignY: ui.Center}, ui.Look{Fill: theme.Sunken, Radius: choiceBadge / 2}, func() {
+			context.IconSized(icon, choiceIconSize, theme.Primary)
+		})
+		look.Paragraph(context, title, ui.TextStyle{Size: choiceNameSize, Weight: draw2d.Bold})
+		look.Paragraph(context, subtitle, ui.TextStyle{Size: choiceWordsSize, Color: theme.InkSoft})
 	})
 }
 
