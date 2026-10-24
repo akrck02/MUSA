@@ -148,3 +148,16 @@ func TestTheBoardCountsItsProjectsInWords(test *testing.T) {
 		test.Errorf("got %q and %q", projectCount(1), projectCount(5))
 	}
 }
+
+func TestASearchFindsProjectsByTitleOrCustomerWhateverTheAccents(t *testing.T) {
+	lighthouse := Project{Title: "Retrato del faro"}
+	cases := []struct {
+		query string
+		want  bool
+	}{{"", true}, {"FARO", true}, {"ines", true}, {"barco", false}}
+	for _, each := range cases {
+		if got := Matches(lighthouse, "Inés", each.query); got != each.want {
+			t.Errorf("Matches(%q) = %v, want %v", each.query, got, each.want)
+		}
+	}
+}

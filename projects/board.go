@@ -68,7 +68,7 @@ func (screens *Screens) column(context *ui.Context, stage Stage) {
 	theme := context.Theme
 	var inStage []Project
 	for _, project := range screens.projects {
-		if project.Stage == stage {
+		if project.Stage == stage && Matches(project, screens.people[project.CustomerID].Name, screens.query) {
 			inStage = append(inStage, project)
 		}
 	}

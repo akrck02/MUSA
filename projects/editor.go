@@ -70,6 +70,9 @@ func (screens *Screens) customerFields(context *ui.Context) {
 		look.Field(context, "Para", "customer", &editing.person.Name, "Lucía", editing.problems["customer"])
 		look.Field(context, "Contacto", "contact", &editing.person.Contact, "Email o teléfono", "")
 	})
+	if look.Link(context, "Editar redes") {
+		screens.openNetworks()
+	}
 	context.Box(ui.Layout{Width: ui.Grow(), Columns: look.Columns(context, len(screens.networks)), Gap: theme.Gap}, func() {
 		for _, network := range screens.networks {
 			handle := editing.handles[network.ID]

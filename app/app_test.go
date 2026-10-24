@@ -240,7 +240,7 @@ func TestTheArtistCanAddASocialNetwork(t *testing.T) {
 	program, window := openApp(t, false)
 	program.Open(Projects)
 	window.Frame()
-	steps(t, window, click(window, "Redes"),
+	steps(t, window, click(window, "Nuevo proyecto"), click(window, "Editar redes"),
 		typeInto(window, "Nueva red", "Mastodon"),
 		typeInto(window, "https://ejemplo.com/{user}", "https://mastodon.social/@{user}"),
 		click(window, "Guardar redes"))

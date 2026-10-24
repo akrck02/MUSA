@@ -31,6 +31,9 @@ type Screens struct {
 	loadErr  error
 	editor   *editor
 	settings *networkSettings // the networks sheet, while open
+	// searching shows the search field; query is what is typed in it.
+	searching bool
+	query     string
 
 	note        string
 	noteWarning bool
@@ -98,11 +101,19 @@ func (screens *Screens) Back() bool {
 	return true
 }
 
+// searchWidth is the width of the search field, in pixels.
+const searchWidth = 320
+
 // Draw draws the board, and the editor over it when one is open.
 func (screens *Screens) Draw(context *ui.Context) {
 	look.PageHeader(context, "Proyectos", screens.subtitle(), func() {
-		if look.ToolButton(context, "at-sign", "Redes") {
-			screens.openNetworks()
+		if screens.searching {
+			context.Box(ui.Layout{Width: ui.Fixed(searchWidth)}, func() {
+				context.TextFieldWith("search", &screens.query, ui.TextFieldOptions{Placeholder: "Buscar por título o cliente"})
+			})
+		}
+		if look.ToolButton(context, "search", "Buscar") {
+			screens.searching = !screens.searching
 		}
 		if look.MainButton(context, "plus", "Nuevo proyecto") {
 			screens.startProject(ToStart)

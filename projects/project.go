@@ -4,9 +4,11 @@ package projects
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/Itros97/MUSA/calendar"
+	"github.com/Itros97/MUSA/catalogue"
 	"github.com/Itros97/MUSA/money"
 )
 
@@ -83,4 +85,11 @@ func DeliveredWords(delivered time.Time) string {
 		return "Entregado"
 	}
 	return fmt.Sprintf("Entregado el %d", delivered.Day())
+}
+
+// Matches tells whether a project, made for customer, answers a search: its title or the
+// customer's name holds query, whatever the case and the accents. An empty query matches all.
+func Matches(project Project, customer, query string) bool {
+	wanted := catalogue.Fold(strings.TrimSpace(query))
+	return strings.Contains(catalogue.Fold(project.Title), wanted) || strings.Contains(catalogue.Fold(customer), wanted)
 }
