@@ -2,22 +2,12 @@ package app
 
 import (
 	"strconv"
-	"strings"
 
 	"github.com/akrck02/go-renderer/draw2d"
 	ui "github.com/akrck02/go-ui"
 
 	"github.com/Itros97/MUSA/calendar"
 	"github.com/Itros97/MUSA/look"
-)
-
-// Heights of the calendar's days, in pixels, and how many entries each shows before "+N".
-const (
-	monthDayHeight = 112
-	monthEntries   = 2
-	monthLine      = 0.5
-	todaySide      = 24
-	legendDot      = 10
 )
 
 // Measures of the week on the home page, in pixels, as in the author's design.
@@ -81,6 +71,34 @@ func weekDay(context *ui.Context, day, today calendar.Date, name string, entries
 	})
 }
 
+// Measures of the month's calendar, in pixels, as in the author's design.
+const (
+	monthHeaderTop    = 18
+	monthHeaderBottom = 12
+	monthHeaderGap    = 12
+	monthTitleSize    = 24
+	monthTitleWidth   = 200
+	roundSide         = 44
+	roundIconSize     = 20
+	newFairSpace      = 16
+	newFairPaddingX   = 18
+	newFairPaddingY   = 10
+	newFairSize       = 16
+	legendGap         = 16
+	legendSize        = 15
+	monthRadius       = 18
+	weekdayPaddingX   = 12
+	weekdayPaddingY   = 10
+	weekdaySize       = 14
+	monthDayHeight    = 96
+	monthDayPadding   = 8
+	monthDaySize      = 14
+	todayPaddingX     = 8
+	todayPaddingY     = 2
+	monthEntries      = 2
+	legendDot         = 10
+)
+
 // drawMonthCalendar is a whole month, as a wall calendar, with buttons to the months around it.
 func (program *App) drawMonthCalendar(context *ui.Context) {
 	theme := context.Theme
@@ -91,67 +109,128 @@ func (program *App) drawMonthCalendar(context *ui.Context) {
 	}
 	program.monthHeader(context, shown)
 	grid := shown.MonthGrid()
-	look.Card(context, ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(1)}, func() {
-		context.Grid(len(today.Week()), func() {
-			for _, day := range grid[:len(today.Week())] {
-				context.Box(ui.Layout{Width: ui.Grow(), Padding: ui.PadXY(10, 8)}, func() {
-					context.Text(calendar.ShortWeekday(day), ui.TextStyle{Size: theme.SmallTextSize, Color: theme.InkSoft})
+	days := len(today.Week())
+	card := ui.Look{Fill: theme.Surface, Border: theme.Line, BorderWidth: 1, Radius: monthRadius, Clip: true}
+	context.Frame(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(1)}, card, func() {
+		context.Box(ui.Layout{Width: ui.Grow(), Columns: days}, func() {
+			for _, day := range grid[:days] {
+				context.Box(ui.Layout{Width: ui.Grow(), Padding: ui.PadXY(weekdayPaddingX, weekdayPaddingY)}, func() {
+					context.Text(calendar.ShortWeekday(day), ui.TextStyle{Size: weekdaySize, Color: theme.InkSoft})
 				})
 			}
 		})
 		context.Separator()
-		context.Box(ui.Layout{Width: ui.Grow(), Columns: len(today.Week())}, func() {
-			for _, day := range grid {
-				monthCell(context, day, today, program.today.plan.on(day), day.Month != shown.Month)
+		context.Box(ui.Layout{Width: ui.Grow(), Columns: days}, func() {
+			for index, day := range grid {
+				cell := monthCellOf(day, today, shown, index%days == 0)
+				cell.corner = program.cornerOf(theme, cell, index, len(grid), days)
+				monthCell(context, cell, program.today.plan.on(day))
 			}
 		})
 	})
 }
 
-// monthCell is one day of the month's table: a fine line around it, its number (in a dark circle
-// today) and its entries as plain bars.
-func monthCell(context *ui.Context, day, today calendar.Date, entries []agendaEntry, quiet bool) {
-	theme := context.Theme
-	fill := theme.Surface
-	ink := theme.Ink
-	if quiet {
-		fill, ink = theme.Sunken.WithAlpha(0.5), theme.InkQuiet
+// cellOfMonth is how one day of the month's table is drawn.
+type cellOfMonth struct {
+	day          calendar.Date
+	today, quiet bool // quiet: a day of another month
+	first        bool // the first of its row, with no line on its left
+	// corner, when not nil, paints a cell in a bottom corner of the table, rounded as the table.
+	corner *look.Corners
+}
+
+func monthCellOf(day, today, shown calendar.Date, first bool) cellOfMonth {
+	return cellOfMonth{day: day, today: day == today, quiet: day.Month != shown.Month, first: first}
+}
+
+// cornerOf is the rounded fill of a cell in a bottom corner of the table, or nil for the others.
+func (program *App) cornerOf(theme ui.Theme, cell cellOfMonth, index, cells, days int) *look.Corners {
+	lastRow := index >= cells-days
+	if !lastRow || (!cell.first && index != cells-1) {
+		return nil
 	}
-	layout := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Fixed(monthDayHeight), Padding: ui.Pad(8), Gap: 4}
-	context.Frame(layout, ui.Look{Fill: fill, Border: theme.Line, BorderWidth: monthLine, Clip: true}, func() {
-		number := strconv.Itoa(day.Day)
-		if day == today {
-			side := ui.Fixed(todaySide)
-			context.Frame(ui.Layout{Width: side, Height: side, AlignX: ui.Center, AlignY: ui.Center}, ui.Look{Fill: theme.Primary, Radius: todaySide / 2}, func() {
-				context.Text(number, ui.TextStyle{Size: theme.SmallTextSize, Weight: draw2d.Bold, Color: theme.OnPrimary})
+	corner, rounded := &program.home.corners[0], look.BottomLeft
+	if !cell.first {
+		corner, rounded = &program.home.corners[1], look.BottomRight
+	}
+	*corner = look.Corners{Fill: cellFill(theme, cell), Radius: monthRadius - 1, Rounded: rounded}
+	return corner
+}
+
+// cellFill is a day's background: the page's colour for a day of another month.
+func cellFill(theme ui.Theme, cell cellOfMonth) draw2d.Color {
+	if cell.quiet {
+		return theme.Background
+	}
+	return theme.Surface
+}
+
+// monthCell is one day of the month's table: a fine line above it and on its left (the first of a
+// row has none there), its number (on an accent pill today) and its entries as bars.
+func monthCell(context *ui.Context, cell cellOfMonth, entries []agendaEntry) {
+	theme := context.Theme
+	ink := theme.Ink
+	if cell.quiet {
+		ink = theme.InkQuiet
+	}
+	background := ui.Look{Fill: cellFill(theme, cell), Clip: true}
+	if cell.corner != nil {
+		background = ui.Look{Backdrop: cell.corner, Clip: true}
+	}
+	context.Frame(ui.Layout{Width: ui.Grow(), Height: ui.Fixed(monthDayHeight)}, background, func() {
+		if !cell.first {
+			context.Frame(ui.Layout{Width: ui.Fixed(1), Height: ui.Grow()}, ui.Look{Fill: theme.Line}, nil)
+		}
+		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Height: ui.Grow()}, func() {
+			context.Separator()
+			context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(monthDayPadding)}, func() {
+				dayNumber(context, cell.day.Day, cell.today, ink)
+				for index, entry := range entries {
+					if index == monthEntries {
+						context.Text("+"+strconv.Itoa(len(entries)-monthEntries), ui.TextStyle{Size: chipTextSize, Color: theme.InkSoft})
+						break
+					}
+					entryBar(context, entry)
+				}
 			})
-		} else {
-			context.Text(number, ui.TextStyle{Size: theme.SmallTextSize, Weight: draw2d.Bold, Color: ink})
-		}
-		for index, entry := range entries {
-			if index == monthEntries {
-				context.Text("+"+strconv.Itoa(len(entries)-monthEntries), ui.TextStyle{Size: theme.SmallTextSize, Color: theme.InkSoft})
-				break
-			}
-			entryBar(context, entry)
-		}
+		})
 	})
 }
 
-// monthHeader is the month's name between the arrows to the months around it, and «Nueva feria».
-func (program *App) monthHeader(context *ui.Context, shown calendar.Date) {
+// dayNumber is a day's number, on an accent pill when it is today.
+func dayNumber(context *ui.Context, number int, today bool, ink draw2d.Color) {
 	theme := context.Theme
+	style := ui.TextStyle{Size: monthDaySize, Weight: draw2d.Bold, Color: ink}
+	if !today {
+		context.Text(strconv.Itoa(number), style)
+		return
+	}
+	style.Color = theme.OnPrimary
+	context.Box(ui.Layout{}, func() {
+		context.Frame(ui.Layout{Padding: ui.PadXY(todayPaddingX, todayPaddingY)}, ui.Look{Fill: theme.Primary, Radius: monthDaySize}, func() {
+			context.Text(strconv.Itoa(number), style)
+		})
+	})
+}
+
+// monthHeader is the month's name between the arrows to the months around it, «Nueva feria», the
+// legend and a link to every fair.
+func (program *App) monthHeader(context *ui.Context, shown calendar.Date) {
 	// Months are counted from their first day: the 31st of one month has no twin in the next.
 	shown = calendar.Date{Year: shown.Year, Month: shown.Month, Day: 1}
-	context.Box(ui.Layout{Width: ui.Grow(), Gap: 12, AlignY: ui.Center}, func() {
-		if context.IconButton("chevron-left", "##Mes anterior") {
+	look.Space(context, monthHeaderTop)
+	context.Box(ui.Layout{Width: ui.Grow(), Gap: monthHeaderGap, AlignY: ui.Center, Padding: ui.Padding{Bottom: monthHeaderBottom}}, func() {
+		if roundButton(context, "chevron-left", "Mes anterior") {
 			program.home.month = shown.AddMonths(-1)
 		}
-		context.Text(capitalised(calendar.MonthWords(shown)), ui.TextStyle{Size: theme.HeadingSize, Weight: draw2d.Bold})
-		if context.IconButton("chevron-right", "##Mes siguiente") {
+		context.Box(ui.Layout{Width: ui.Fit().Between(monthTitleWidth, 0)}, func() {
+			context.Text(calendar.MonthTitle(shown), ui.TextStyle{Size: monthTitleSize, Weight: draw2d.Bold, LineHeight: weekTitleHeight})
+		})
+		if roundButton(context, "chevron-right", "Mes siguiente") {
 			program.home.month = shown.AddMonths(1)
 		}
-		if context.PrimaryIconButton("plus", "Nueva feria") {
+		look.Space(context, newFairSpace-monthHeaderGap)
+		if newFairButton(context) {
 			program.Open(Fairs)
 			program.fairs.StartFair(program.today.date)
 		}
@@ -163,33 +242,66 @@ func (program *App) monthHeader(context *ui.Context, shown calendar.Date) {
 	})
 }
 
+// roundButton is a round button with only an icon, on the surface with a fine line.
+func roundButton(context *ui.Context, icon, label string) bool {
+	theme := context.Theme
+	normal := ui.Look{Fill: theme.Surface, Border: theme.Line, BorderWidth: 1, Radius: roundSide / 2}
+	hovered := normal
+	hovered.Fill = theme.Sunken
+	side := ui.Fixed(roundSide)
+	clicked := context.Clickable(label, ui.Layout{Width: side, Height: side, AlignX: ui.Center, AlignY: ui.Center},
+		ui.Looks{Normal: normal, Hovered: hovered, Pressed: hovered}, func() {
+			context.IconSized(icon, roundIconSize, theme.Ink)
+		})
+	context.Describe(ui.Description{Role: ui.ButtonRole, Label: label})
+	return clicked
+}
+
+// newFairButton is «Nueva feria» on the accent, a little smaller than a page's main button.
+func newFairButton(context *ui.Context) bool {
+	theme := context.Theme
+	normal := ui.Look{Fill: theme.Primary, Radius: goRadius}
+	hovered := normal
+	hovered.Fill = theme.Primary.Mix(theme.Ink, hoverDarkening)
+	layout := ui.Layout{Padding: ui.PadXY(newFairPaddingX, newFairPaddingY), Gap: mainGap, AlignY: ui.Center}
+	clicked := context.Clickable("Nueva feria", layout, ui.Looks{Normal: normal, Hovered: hovered, Pressed: hovered}, func() {
+		context.IconSized("plus", goIconSize, theme.OnPrimary)
+		context.Text("Nueva feria", ui.TextStyle{Size: newFairSize, Weight: draw2d.Bold, Color: theme.OnPrimary})
+	})
+	context.Describe(ui.Description{Role: ui.ButtonRole, Label: "Nueva feria"})
+	return clicked
+}
+
+// mainGap is the space between a main button's icon and its words.
+const mainGap = 10
+
 // legend says what each colour of the calendar stands for.
 func legend(context *ui.Context) {
 	theme := context.Theme
-	for _, item := range []agendaEntry{{words: "Ferias", fair: true}, {words: "Proyectos", project: true}, {words: "Envíos"}} {
-		context.Box(ui.Layout{Gap: 6, AlignY: ui.Center}, func() {
-			side := ui.Fixed(legendDot)
-			context.Frame(ui.Layout{Width: side, Height: side}, ui.Look{Fill: legendColor(theme, item), Radius: legendDot / 2}, nil)
-			context.Text(item.words, ui.TextStyle{Size: theme.SmallTextSize, Color: theme.InkSoft})
-		})
-	}
+	context.Box(ui.Layout{Gap: legendGap, AlignY: ui.Center}, func() {
+		for _, item := range []agendaEntry{{words: "Ferias", fair: true}, {words: "Proyectos", project: true}, {words: "Envíos"}} {
+			context.Box(ui.Layout{Gap: chipGap, AlignY: ui.Center}, func() {
+				side := ui.Fixed(legendDot)
+				context.Frame(ui.Layout{Width: side, Height: side}, ui.Look{Fill: legendColor(theme, item), Radius: legendDot / 2}, nil)
+				context.Text(item.words, ui.TextStyle{Size: legendSize, Color: theme.InkSoft})
+			})
+		}
+	})
 }
 
-// capitalised is words with a capital first letter: "Noviembre de 2026".
-func capitalised(words string) string {
-	for index, letter := range words {
-		return strings.ToUpper(string(letter)) + words[index+len(string(letter)):]
-	}
-	return words
-}
+// The deep colours of the legend's dots, as in the author's design.
+var (
+	projectDot = draw2d.MustHex("#E8C9B0")
+	orderDot   = draw2d.MustHex("#B9CFC4")
+)
 
-// legendColor is the deep colour of an entry's kind, for the legend's dots.
+// legendColor is the colour of an entry's kind, for the legend's dots.
 func legendColor(theme ui.Theme, entry agendaEntry) draw2d.Color {
 	switch {
 	case entry.fair:
 		return theme.Primary
 	case entry.project:
-		return theme.Warning
+		return projectDot
 	}
-	return theme.Positive
+	return orderDot
 }

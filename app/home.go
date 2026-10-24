@@ -24,6 +24,9 @@ type homeState struct {
 	noteWarning bool
 	noteUntil   time.Time
 	askingWipe  bool
+	// corners are the fills of the month's bottom corner cells, kept so drawing them allocates
+	// nothing.
+	corners [2]look.Corners
 }
 
 // homeTabs are the two views of the home page.

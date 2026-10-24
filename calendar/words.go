@@ -75,6 +75,12 @@ func MonthWords(date Date) string {
 	return fmt.Sprintf("%s de %d", fullMonthNames[date.Month-1], date.Year)
 }
 
+// MonthTitle is a month as a wall calendar heads it: "Noviembre 2026".
+func MonthTitle(date Date) string {
+	name := fullMonthNames[date.Month-1]
+	return fmt.Sprintf("%s%s %d", strings.ToUpper(name[:1]), name[1:], date.Year)
+}
+
 // LongRangeWords writes when something happens as people say it, the year only when it is not
 // this year's: "Sábado 7 de noviembre" for one day, "12 y 13 de diciembre" for two, "12 al 14 de
 // diciembre" for more, "30 de noviembre al 2 de diciembre" across months.

@@ -116,3 +116,9 @@ func TestAFairsDaysAreWrittenAsPeopleSayThem(t *testing.T) {
 		}
 	}
 }
+
+func TestAMonthIsHeadedAsOnAWallCalendar(t *testing.T) {
+	if title := MonthTitle(Date{Year: 2026, Month: time.November, Day: 4}); title != "Noviembre 2026" {
+		t.Errorf("got %q", title)
+	}
+}

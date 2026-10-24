@@ -104,14 +104,34 @@ func entryFill(theme ui.Theme, entry agendaEntry) draw2d.Color {
 	return orderFill
 }
 
-// entryBar is an entry in the month's table: its words on a small plain bar.
+// Measures of an entry in the month's table, in pixels, as in the author's design.
+const (
+	barTop      = 5
+	barRadius   = 8
+	barPaddingX = 8
+	barPaddingY = 4
+)
+
+// The colours of the month's entries, as in the author's design: lighter than the week's.
+var (
+	monthFairAlpha   = float32(0x22) / 255
+	monthProjectFill = draw2d.MustHex("#E8C9B066")
+	monthOrderFill   = draw2d.MustHex("#B9CFC466")
+)
+
+// entryBar is an entry in the month's table: its words on a small bar of its kind's colour.
 func entryBar(context *ui.Context, entry agendaEntry) {
 	theme := context.Theme
-	layout := ui.Layout{Width: ui.Grow(), Height: ui.Fixed(barChipHeight), Padding: ui.PadXY(6, 0), AlignY: ui.Center}
-	context.Frame(layout, ui.Look{Fill: entryFill(theme, entry), Radius: theme.ControlRadius / 2, Clip: true}, func() {
-		context.Text(entry.words, ui.TextStyle{Size: theme.SmallTextSize})
+	fill := monthOrderFill
+	switch {
+	case entry.fair:
+		fill = theme.Primary.WithAlpha(monthFairAlpha)
+	case entry.project:
+		fill = monthProjectFill
+	}
+	look.Space(context, barTop)
+	layout := ui.Layout{Width: ui.Grow(), Padding: ui.PadXY(barPaddingX, barPaddingY)}
+	context.Frame(layout, ui.Look{Fill: fill, Radius: barRadius, Clip: true}, func() {
+		context.Text(entry.words, ui.TextStyle{Size: chipTextSize})
 	})
 }
-
-// barChipHeight is the height of an entry in the month's table, in pixels.
-const barChipHeight = 22

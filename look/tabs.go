@@ -9,8 +9,8 @@ import (
 
 // Measures of the tabs, in pixels, as in the author's design.
 const (
-	tabCountSize        = 14
-	pillRadius          = 999
+	tabCountSize = 14
+	pillRadius   = 999
 )
 
 // Tab is one choice of a row of tabs: an optional icon, its words and an optional count.
