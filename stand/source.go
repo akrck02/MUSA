@@ -17,6 +17,7 @@ import (
 // Item is one thing on the stand: a variant, its price and how many are left to sell.
 type Item struct {
 	VariantID string
+	ProductID string // the versions of one product share it and one tile
 	Label     string // the product and the version, for a sale's line: "Luna · Mate"
 	// Name is the product's: it paints the item's picture until products have photos, the same
 	// for every version, so the artist learns it.
@@ -67,7 +68,7 @@ func (fair Fair) Items() ([]Item, error) {
 		if err != nil {
 			return nil, err
 		}
-		items = append(items, Item{VariantID: line.VariantID, Label: sales.ItemLabel(line.ProductName, line.VariantName),
+		items = append(items, Item{VariantID: line.VariantID, ProductID: product.ID, Label: sales.ItemLabel(line.ProductName, line.VariantName),
 			Name: line.ProductName, Version: line.VariantName,
 			Price: line.Price, Left: line.Remaining(), Tags: tagNames(product.Tags)})
 	}
@@ -131,7 +132,7 @@ func (stock WholeStock) Items() ([]Item, error) {
 			continue
 		}
 		for _, variant := range product.Variants {
-			items = append(items, Item{VariantID: variant.ID, Label: sales.ItemLabel(product.Name, variant.Name),
+			items = append(items, Item{VariantID: variant.ID, ProductID: product.ID, Label: sales.ItemLabel(product.Name, variant.Name),
 				Name: product.Name, Version: variant.Name,
 				Price: variant.Price, Left: variant.Stock, Tags: tagNames(product.Tags)})
 		}

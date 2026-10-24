@@ -216,3 +216,39 @@ func TestTappingATagsNameDoesNotRemoveIt(t *testing.T) {
 		t.Errorf("the tag went: %v", err)
 	}
 }
+
+// tagNamed is the stored tag with a name.
+func tagNamed(t *testing.T, program *App, name string) catalogue.Tag {
+	t.Helper()
+	tags, err := program.stores.Products.Tags()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tag := range tags {
+		if tag.Name == name {
+			return tag
+		}
+	}
+	t.Fatalf("no tag called «%s»", name)
+	return catalogue.Tag{}
+}
+
+func TestAnIconChosenForATagIsKeptAndCanBeForgotten(t *testing.T) {
+	program, window := openApp(t, true)
+	program.Open(Catalogue)
+	settle(window)
+	steps(t, window, click(window, "Etiquetas"))
+	settle(window)
+	steps(t, window, click(window, "Cambiar el icono de Pegatinas"))
+	settle(window)
+	steps(t, window, click(window, "Icono sparkles"))
+	settle(window)
+	if icon := tagNamed(t, program, "Pegatina").Icon(); icon != "sparkles" {
+		t.Fatalf("the tag's icon is %q after choosing «sparkles»", icon)
+	}
+	steps(t, window, click(window, "Volver al icono automático"))
+	settle(window)
+	if icon := tagNamed(t, program, "Pegatina").Icon(); icon != catalogue.TagIcon("Pegatina") {
+		t.Errorf("the tag's icon is %q after going back to the guessed one", icon)
+	}
+}

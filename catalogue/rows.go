@@ -87,7 +87,7 @@ func readVariants(rows storage.Querier, products map[string]*Product) error {
 
 func readProductTags(rows storage.Querier, products map[string]*Product) error {
 	result, err := rows.QueryContext(context.Background(), `
-		SELECT pt.product_id, t.id, t.name, t.color
+		SELECT pt.product_id, t.id, t.name, t.color, t.icon
 		FROM product_tag pt JOIN tag t ON t.id = pt.tag_id
 		WHERE t.deleted_at IS NULL
 		ORDER BY pt.position`)
@@ -98,7 +98,7 @@ func readProductTags(rows storage.Querier, products map[string]*Product) error {
 	for result.Next() {
 		var productID string
 		var tag Tag
-		if err := result.Scan(&productID, &tag.ID, &tag.Name, &tag.Color); err != nil {
+		if err := result.Scan(&productID, &tag.ID, &tag.Name, &tag.Color, &tag.ChosenIcon); err != nil {
 			return storageFailed("read tags", err)
 		}
 		if product, found := products[productID]; found {

@@ -48,6 +48,8 @@ type Screens struct {
 	items   []Item
 	loadErr error
 	tag     int                               // index in tags()
+	icons   map[string]string                 // each tag's icon, by its folded name
+	asking  []Item                            // the versions of the product whose version is asked
 	search  look.Search                       // by product or version
 	shapes  map[draw2d.Color]*look.TopRounded // the pictures' fills, kept so drawing them allocates nothing
 	fade    *look.Fade                        // under the floating basket
@@ -87,6 +89,30 @@ func (screens *Screens) Reload() {
 	if screens.source != nil && err == nil {
 		screens.items, screens.loadErr = screens.source.Items()
 	}
+	if screens.loadErr == nil {
+		screens.loadErr = screens.readIcons()
+	}
+}
+
+// readIcons reads the icon of each tag, chosen or guessed.
+func (screens *Screens) readIcons() error {
+	tags, err := screens.products.Tags()
+	if err != nil {
+		return err
+	}
+	screens.icons = map[string]string{}
+	for _, tag := range tags {
+		screens.icons[catalogue.TagKey(tag.Name)] = tag.Icon()
+	}
+	return nil
+}
+
+// tagIcon is a tag's icon, by its name.
+func (screens *Screens) tagIcon(name string) string {
+	if icon, found := screens.icons[catalogue.TagKey(name)]; found {
+		return icon
+	}
+	return catalogue.TagIcon(name)
 }
 
 // Back closes the dialog open, or leaves the stand for the choice of stands; false when only the
@@ -103,6 +129,11 @@ func (screens *Screens) Back() bool {
 	return true
 }
 
+// BasketQuantity is how many of a version are in the basket.
+func (screens *Screens) BasketQuantity(variantID string) int {
+	return screens.basket.Quantity(variantID)
+}
+
 // Choose opens a stand; nil goes back to the choice of stands. The basket starts empty.
 func (screens *Screens) Choose(source Source) {
 	screens.source, screens.tag, screens.step = source, 0, browsing
@@ -116,6 +147,7 @@ func (screens *Screens) Draw(context *ui.Context) {
 		screens.drawChoice(context)
 	} else {
 		screens.drawRegister(context)
+		screens.drawVersionQuestion(context)
 		screens.drawCheckout(context)
 	}
 	if time.Now().Before(screens.noteUntil) {
@@ -323,9 +355,9 @@ func (screens *Screens) drawRegister(context *ui.Context) {
 	width, _ := context.Size()
 	columns := min(tilesColumns, max(2, int(width/tileWidth)))
 	context.Box(ui.Layout{Width: ui.Grow(), Columns: columns, Gap: tilesGap}, func() {
-		for position, item := range screens.shown(tags) {
-			context.Push(item.VariantID)
-			screens.tile(context, item, catalogue.ListFill(position))
+		for position, versions := range ByProduct(screens.shown(tags)) {
+			context.Push(versions[0].ProductID)
+			screens.productTile(context, versions, catalogue.ListFill(position))
 			context.Pop()
 		}
 	})
@@ -342,7 +374,7 @@ func (screens *Screens) top(context *ui.Context, tags []string) {
 			if len(tags) > 0 {
 				tabs := make([]look.Tab, len(tags))
 				for index, tag := range tags {
-					tabs[index] = look.Tab{Icon: catalogue.TagIcon(tag), Label: catalogue.Plural(tag)}
+					tabs[index] = look.Tab{Icon: screens.tagIcon(tag), Label: catalogue.Plural(tag)}
 				}
 				look.PillTabs(context, "tag", &screens.tag, tabs, look.LargeTabs)
 			}

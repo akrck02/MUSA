@@ -24,6 +24,16 @@ type Tag struct {
 	ID    string
 	Name  string
 	Color TagColor
+	// ChosenIcon is the icon the artist chose for the tag; empty when they chose none.
+	ChosenIcon string
+}
+
+// Icon is the tag's icon: the one the artist chose, or the one guessed from its name.
+func (tag Tag) Icon() string {
+	if tag.ChosenIcon != "" {
+		return tag.ChosenIcon
+	}
+	return TagIcon(tag.Name)
 }
 
 // MaximumSuggestions is how many tags the editor suggests at once.

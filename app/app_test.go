@@ -182,7 +182,8 @@ func TestPayingInCashAtTheStandRecordsALocalSaleAndTakesTheStock(t *testing.T) {
 		t.Fatalf("no product on the stand (%v)", err)
 	}
 	item := items[0]
-	steps(t, window, clickIn(window, item.VariantID, item.Label+" · "+money.Format(item.Price)), click(window, "Cobrar"), click(window, "Pagar en efectivo"),
+	pick(t, window, items, item)
+	steps(t, window, click(window, "Cobrar"), click(window, "Pagar en efectivo"),
 		click(window, money.Format(5000)), click(window, "Confirmar"))
 	if _, err := window.Element("Seguir vendiendo"); err != nil {
 		t.Fatal("the sale did not close:", err)
@@ -266,7 +267,8 @@ func TestUndoingACashSaleAtTheStandGivesItsPiecesBack(t *testing.T) {
 		t.Fatalf("no product on the stand (%v)", err)
 	}
 	item := items[0]
-	steps(t, window, clickIn(window, item.VariantID, item.Label+" · "+money.Format(item.Price)), click(window, "Cobrar"),
+	pick(t, window, items, item)
+	steps(t, window, click(window, "Cobrar"),
 		click(window, "Pagar en efectivo"), click(window, "Justo"), click(window, "Confirmar"), click(window, "Deshacer el cobro"))
 	after, _ := program.stores.Sales.All()
 	if len(after) != len(before) {

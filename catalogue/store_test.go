@@ -153,3 +153,28 @@ func TestEachErrorConstructorCarriesItsOwnCode(t *testing.T) {
 		}
 	}
 }
+
+func TestATagKeepsTheIconChosenForItAndForgetsItOnRequest(test *testing.T) {
+	store := testStore(test)
+	mustSave(test, store, ProductDraft{Product: physicalProduct("p1", "Luna"), TagNames: []string{"cosis"}})
+	tag := mustFind(test, store, "p1").Tags[0]
+	if tag.Icon() != "tag" {
+		test.Fatalf("an unknown tag starts with %q, not the plain tag", tag.Icon())
+	}
+	if err := store.SetTagIcon(tag.ID, "sparkles"); err != nil {
+		test.Fatal(err)
+	}
+	if icon := mustFind(test, store, "p1").Tags[0].Icon(); icon != "sparkles" {
+		test.Errorf("the product's tag shows %q after choosing «sparkles»", icon)
+	}
+	if err := store.SetTagIcon(tag.ID, ""); err != nil {
+		test.Fatal(err)
+	}
+	tags, err := store.Tags()
+	if err != nil {
+		test.Fatal(err)
+	}
+	if tags[0].Icon() != "tag" {
+		test.Errorf("the tag shows %q after going back to the guessed icon", tags[0].Icon())
+	}
+}

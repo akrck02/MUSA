@@ -64,9 +64,17 @@ func (screens *Screens) drawList(context *ui.Context) {
 		}
 		screens.restockBanner(context)
 		look.Space(context, bannerSpaceBelow)
-		screens.tagBar(context)
+		context.Box(ui.Layout{Width: ui.Grow(), Gap: tagBarGap, AlignY: ui.Center}, func() {
+			context.Box(ui.Layout{Width: ui.Grow()}, func() { screens.tagBar(context) })
+			if len(screens.tags) > 0 && context.IconButton("pencil", "Etiquetas") {
+				screens.editingTags = true
+			}
+		})
 		look.Space(context, tagBarSpaceBelow)
 		screens.cards(context, shown)
+	}
+	if screens.editingTags {
+		screens.tagsSheet(context)
 	}
 	if screens.choosingKind {
 		screens.kindSheet(context)
@@ -172,7 +180,7 @@ func (screens *Screens) tagBar(context *ui.Context) {
 	kind := kindTabs[screens.kindTab]
 	tabs := []look.Tab{{Label: "Todo", Count: len(Filter(screens.products, Query{Kind: kind})), HasCount: true}}
 	for _, tag := range screens.tagsOfKind() {
-		tabs = append(tabs, look.Tab{Label: Plural(tag.Name), Count: screens.countWithTag(tag.ID), HasCount: true})
+		tabs = append(tabs, look.Tab{Icon: tag.Icon(), Label: Plural(tag.Name), Count: screens.countWithTag(tag.ID), HasCount: true})
 	}
 	if archived := len(Filter(screens.products, Query{Kind: kind, Archived: true})); archived > 0 {
 		tabs = append(tabs, look.Tab{Label: "Archivados", Count: archived, HasCount: true})

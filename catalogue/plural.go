@@ -45,6 +45,11 @@ var tagIcons = map[string]string{
 	"postal": "mail", "poster": "image", "camiseta": "shirt", "taza": "coffee", "libro": "book-open", "fanzine": "book-open",
 }
 
+// TagIconChoices are the icons an artist can give a tag: kinds of work, tools and themes.
+var TagIconChoices = []string{"tag", "printer", "sticky-note", "key", "badge", "magnet", "mail", "image",
+	"shirt", "coffee", "book-open", "palette", "brush", "pencil", "sparkles", "heart", "star", "cat",
+	"flower", "leaf", "moon", "sun", "gift", "package"}
+
 // TagIcon is the icon of a tag: one for the kinds of work an artist usually sells, in the singular
 // or the plural, and a plain tag for the rest.
 func TagIcon(name string) string {

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"slices"
 	"testing"
 
@@ -21,13 +22,30 @@ func openStand(t *testing.T) (*App, *uitest.Window, stand.Item) {
 		t.Fatalf("no product on the stand (%v)", err)
 	}
 	item := items[0]
-	steps(t, window, clickIn(window, item.VariantID, tileLabel(item)))
-	settle(window)
+	pick(t, window, items, item)
 	return program, window, item
 }
 
-// tileLabel is how a product's tile is read on the stand: «Luna · Mate · 3 €».
-func tileLabel(item stand.Item) string { return item.Label + " · " + money.Format(item.Price) }
+// pick puts one of an item in the basket the way the artist does: tapping its product's tile and,
+// when the product has several versions, choosing the item's version.
+func pick(t *testing.T, window *uitest.Window, items []stand.Item, item stand.Item) {
+	t.Helper()
+	versions := 0
+	for _, each := range items {
+		if each.ProductID == item.ProductID {
+			versions++
+		}
+	}
+	if versions == 1 {
+		steps(t, window, clickIn(window, item.ProductID, item.Label+" · "+money.Format(item.Price)))
+		settle(window)
+		return
+	}
+	steps(t, window, clickIn(window, item.ProductID, fmt.Sprintf("%s · %d versiones", item.Name, versions)))
+	settle(window)
+	steps(t, window, click(window, item.Version))
+	settle(window)
+}
 
 func salesCount(t *testing.T, program *App) int {
 	t.Helper()
@@ -95,7 +113,9 @@ func TestClearingTheCashTypedStartsAgain(t *testing.T) {
 }
 
 func TestTakingOneOutOfTheBasketEmptiesIt(t *testing.T) {
-	_, window, _ := openStand(t)
+	_, window, item := openStand(t)
+	steps(t, window, clickIn(window, item.ProductID, item.Name+" · 3 versiones"))
+	settle(window)
 	steps(t, window, click(window, "Quitar uno"))
 	settle(window)
 	if _, err := window.Element("Cobrar"); err == nil {
@@ -127,5 +147,22 @@ func TestCambiarGoesBackToTheChoiceOfStands(t *testing.T) {
 	settle(window)
 	if _, err := window.Element("Todo el stock Todos tus productos, para vender fuera de un evento"); err != nil {
 		t.Errorf("Cambiar did not go back to the choice of stands: %v", err)
+	}
+}
+
+func TestAProductOfThreeVersionsIsOneTileOnTheStand(t *testing.T) {
+	_, window, item := openStand(t)
+	if _, err := window.Element(item.Name + " · 3 versiones"); err != nil {
+		t.Fatal(err)
+	}
+	if slices.Contains(window.Texts(), item.Label+" · "+money.Format(item.Price)) {
+		t.Errorf("a version of «%s» still has a tile of its own", item.Name)
+	}
+}
+
+func TestChoosingAVersionPutsThatVersionInTheBasket(t *testing.T) {
+	program, _, item := openStand(t)
+	if quantity := program.stand.BasketQuantity(item.VariantID); quantity != 1 {
+		t.Errorf("%d of «%s» in the basket after choosing it", quantity, item.Label)
 	}
 }

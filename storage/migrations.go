@@ -54,6 +54,8 @@ var migrations = []string{
 	);`,
 	// The artist's settings, by name: the theme they chose, for now.
 	"CREATE TABLE setting (name TEXT PRIMARY KEY, value TEXT NOT NULL)",
+	// A tag can carry the icon the artist chose for it; empty keeps the one guessed from its name.
+	"ALTER TABLE tag ADD COLUMN icon TEXT NOT NULL DEFAULT ''",
 }
 
 // migrate takes the steps a database has not taken yet, each in its own transaction.

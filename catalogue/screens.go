@@ -33,6 +33,8 @@ type Screens struct {
 	shapes  map[draw2d.Color]*look.TopRounded // the pictures' fills, kept so drawing them allocates nothing
 
 	choosingKind bool
+	editingTags  bool   // the sheet of tags and their icons is open
+	iconsOf      string // the tag, by its ID, whose choice of icons is open in that sheet
 	stockOf      string // the product whose quick stock sheet is open
 	editor       *editor
 

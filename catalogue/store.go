@@ -75,7 +75,7 @@ func StockIn(rows storage.Querier, variantID string) (stock int, found bool, err
 // Tags reads every tag, sorted by name.
 func (store *Store) Tags() ([]Tag, error) {
 	rows, err := store.database.Rows().QueryContext(context.Background(),
-		"SELECT id, name, color FROM tag WHERE deleted_at IS NULL ORDER BY normalized_name")
+		"SELECT id, name, color, icon FROM tag WHERE deleted_at IS NULL ORDER BY normalized_name")
 	if err != nil {
 		return nil, storageFailed("read tags", err)
 	}
@@ -83,12 +83,19 @@ func (store *Store) Tags() ([]Tag, error) {
 	var tags []Tag
 	for rows.Next() {
 		var tag Tag
-		if err := rows.Scan(&tag.ID, &tag.Name, &tag.Color); err != nil {
+		if err := rows.Scan(&tag.ID, &tag.Name, &tag.Color, &tag.ChosenIcon); err != nil {
 			return nil, storageFailed("read tags", err)
 		}
 		tags = append(tags, tag)
 	}
 	return tags, rows.Err()
+}
+
+// SetTagIcon gives the tag with this id an icon; an empty icon goes back to the one guessed from
+// its name.
+func (store *Store) SetTagIcon(id, icon string) error {
+	return execute(store.database.Rows(), "set tag icon", statement{
+		"UPDATE tag SET icon = ?, updated_at = ? WHERE id = ?", []any{icon, storage.Milliseconds(store.now()), id}})
 }
 
 // Save checks a draft and stores it as a product, making the tags it names that do not exist yet.
@@ -234,7 +241,7 @@ func (store *Store) resolveTags(rows storage.Querier, names []string, now time.T
 		key := Fold(name)
 		tag := Tag{}
 		err := rows.QueryRowContext(context.Background(),
-			"SELECT id, name, color FROM tag WHERE normalized_name = ? AND deleted_at IS NULL", key).Scan(&tag.ID, &tag.Name, &tag.Color)
+			"SELECT id, name, color, icon FROM tag WHERE normalized_name = ? AND deleted_at IS NULL", key).Scan(&tag.ID, &tag.Name, &tag.Color, &tag.ChosenIcon)
 		if errors.Is(err, sql.ErrNoRows) {
 			tag = Tag{ID: store.newID(), Name: name, Color: TagColorFor(key)}
 			at := storage.Milliseconds(now)
