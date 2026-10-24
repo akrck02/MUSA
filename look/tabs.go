@@ -43,13 +43,18 @@ func Segmented(context *ui.Context, name string, selected *int, tabs []Tab, size
 	theme := context.Theme
 	changed := false
 	track := ui.Look{Fill: theme.Sunken, Radius: size.TrackRadius}
+	pillLook := ui.Look{Fill: theme.Surface, Radius: size.Radius, Shadow: true}
+	pill, sliding := slideTo(context, name, tabs[*selected].Label, pillLook)
+	if sliding {
+		track.Backdrop = pill
+	}
 	context.Push(name)
 	context.Frame(ui.Layout{Padding: ui.Pad(size.TrackPadding)}, track, func() {
 		for index, tab := range tabs {
 			chosen := index == *selected
 			normal := ui.Look{Radius: size.Radius}
-			if chosen {
-				normal = ui.Look{Fill: theme.Surface, Radius: size.Radius, Shadow: true}
+			if chosen && !sliding {
+				normal = pillLook
 			}
 			hovered := normal
 			if !chosen {
@@ -91,15 +96,23 @@ var LargeTabs = PillSize{TextSize: 20, IconSize: 22, PaddingX: 22, PaddingY: 12,
 func PillTabs(context *ui.Context, name string, selected *int, tabs []Tab, size PillSize) bool {
 	theme := context.Theme
 	changed := false
+	pillLook := ui.Look{Fill: theme.Surface, Border: theme.Line, BorderWidth: cardBorder, Radius: pillRadius}
+	row := ui.Look{}
+	pill, sliding := slideTo(context, name, tabs[*selected].Label, pillLook)
+	if sliding {
+		row.Backdrop = pill
+	}
 	context.Push(name)
-	context.Box(ui.Layout{Width: ui.Grow(), Gap: size.Between, Wrap: true}, func() {
+	context.Frame(ui.Layout{Width: ui.Grow(), Gap: size.Between, Wrap: true}, row, func() {
 		for index, tab := range tabs {
 			chosen := index == *selected
 			// Only the chosen tab has a line, and it is that much wider; the row is as tall as it.
 			normal, side := ui.Look{Radius: pillRadius}, size.PaddingX
 			if chosen {
-				normal = ui.Look{Fill: theme.Surface, Border: theme.Line, BorderWidth: cardBorder, Radius: pillRadius}
 				side += cardBorder
+				if !sliding {
+					normal = pillLook
+				}
 			}
 			hovered := normal
 			if !chosen {

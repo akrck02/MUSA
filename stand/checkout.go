@@ -1,6 +1,8 @@
 package stand
 
 import (
+	"fmt"
+
 	"github.com/akrck02/go-renderer/draw2d"
 	ui "github.com/akrck02/go-ui"
 
@@ -41,9 +43,13 @@ func (screens *Screens) drawCheckout(context *ui.Context) {
 		return
 	}
 	theme := context.Theme
-	options := ui.LayerOptions{AlignX: ui.Center, AlignY: ui.Center, Width: ui.Fixed(widths[screens.step])}
+	opened := context.Appear("checkout", look.DialogMotion)
+	stepShown := context.Appear(fmt.Sprint("checkout step ", screens.step), look.DialogMotion)
+	options := ui.LayerOptions{AlignX: ui.Center, AlignY: ui.Center, Width: ui.Fixed(widths[screens.step]),
+		Hidden: 1 - opened, Leave: look.Leaving(look.DialogRise)}
+	card := look.Arriving(ui.Look{Fill: theme.Surface, Radius: dialogRadius, Shadow: true}, stepShown, look.DialogRise)
 	if context.Modal("checkout", options, func() {
-		context.Frame(ui.Layout{Direction: ui.Stacked, Width: ui.Grow()}, ui.Look{Fill: theme.Surface, Radius: dialogRadius, Shadow: true}, func() {
+		context.Frame(ui.Layout{Direction: ui.Stacked, Width: ui.Grow()}, card, func() {
 			context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(dialogPadding)}, func() { draw(context) })
 			if screens.step != paid {
 				screens.cornerClose(context)

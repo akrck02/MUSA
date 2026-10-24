@@ -230,5 +230,8 @@ func (screens *Screens) StartOrder() {
 // ShowHistory opens the sales history tab, for captures.
 func (screens *Screens) ShowHistory() { screens.view = 1 }
 
+// ShowingHistory tells whether the sales history shows, rather than the orders on their way.
+func (screens *Screens) ShowingHistory() bool { return screens.view == 1 }
+
 // NameEvents tells the screens how to name a fair by its id, so a fair's sales show its name.
 func (screens *Screens) NameEvents(name func(id string) string) { screens.eventName = name }

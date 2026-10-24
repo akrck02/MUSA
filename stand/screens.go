@@ -433,9 +433,11 @@ func (screens *Screens) DrawBasketBar(context *ui.Context, above float32) {
 	context.Overlay("fade", fadeOptions, func() {
 		context.Frame(ui.Layout{Width: ui.Grow(), Height: ui.Fixed(fadeHeight)}, ui.Look{Backdrop: screens.fade}, nil)
 	})
-	options := ui.LayerOptions{AlignX: ui.End, AlignY: ui.End, Padding: ui.Padding{Right: basketRight, Bottom: above + basketAbove}}
+	options := ui.LayerOptions{AlignX: ui.End, AlignY: ui.End, Padding: ui.Padding{Right: basketRight, Bottom: above + basketAbove},
+		Leave: look.Leaving(look.DialogRise)}
+	shown := context.Appear("basket", look.DialogMotion)
 	context.Overlay("basket", options, func() {
-		screens.basketBar(context, count)
+		context.Frame(ui.Layout{}, look.Arriving(ui.Look{}, shown, look.DialogRise), func() { screens.basketBar(context, count) })
 	})
 }
 

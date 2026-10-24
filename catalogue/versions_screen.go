@@ -327,9 +327,9 @@ func (screens *Screens) moreDetails(context *ui.Context) {
 		}) {
 			editing.detailsOpen = !editing.detailsOpen
 		}
-		if editing.detailsOpen {
+		context.Fold("details", editing.detailsOpen, look.DialogMotion, ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Gap: theme.Gap}, func() {
 			screens.details(context)
 			screens.lifeButtons(context)
-		}
+		})
 	})
 }

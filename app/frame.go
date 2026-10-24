@@ -1,6 +1,8 @@
 package app
 
 import (
+	"fmt"
+
 	"github.com/akrck02/go-renderer/draw2d"
 	ui "github.com/akrck02/go-ui"
 
@@ -96,11 +98,18 @@ func (program *App) scrollingPage(context *ui.Context) {
 		top = registerTop
 	}
 	padding := ui.Padding{Top: top, Left: side, Right: side, Bottom: pageBottom}
+	shown := context.Appear("page "+program.pageName(), look.PageMotion)
 	context.ScrollArea("page", ui.Layout{Width: ui.Grow(), Height: ui.Grow()}, func() {
-		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: padding}, func() {
+		context.Frame(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: padding}, look.Arriving(ui.Look{}, shown, look.PageRise), func() {
 			program.page(context)
 		})
 	})
+}
+
+// pageName tells pages apart, so a new one rises in: the place, and which of its pages shows.
+func (program *App) pageName() string {
+	return fmt.Sprint(program.place, program.home.tab, program.catalogue.Editing(), program.stand.Selling(),
+		program.sales.ShowingHistory(), program.projects.Editing())
 }
 
 // spaced writes the brand in capitals with Bubble's letter spacing, letter by letter.

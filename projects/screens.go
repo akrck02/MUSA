@@ -92,6 +92,9 @@ func digitalChoices(products *catalogue.Store) ([]productChoice, error) {
 	return choices, nil
 }
 
+// Editing tells whether a project's editor is open over the board.
+func (screens *Screens) Editing() bool { return screens.editor != nil }
+
 // Back closes the editor or the networks sheet; false when only the board was open.
 func (screens *Screens) Back() bool {
 	if screens.editor == nil && screens.settings == nil {
