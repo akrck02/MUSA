@@ -456,3 +456,20 @@ func TestTappingADayOnTheCalendarShowsWhatItHolds(t *testing.T) {
 		t.Errorf("the day's detail has no «Nueva feria»: %v", err)
 	}
 }
+
+func TestAProductRunningLowOpensItsPageFromHome(t *testing.T) {
+	program, window := openApp(t, true)
+	settle(window)
+	const tabletWidth, tabletHeight = 1280, 1600
+	if err := window.Resize(tabletWidth, tabletHeight); err != nil {
+		t.Fatal(err)
+	}
+	program.Open(Home)
+	settle(window)
+	row := restockRowsOf(program.today.restock)[0]
+	steps(t, window, click(window, "Abrir "+row.words))
+	settle(window)
+	if program.place != Catalogue || !program.catalogue.Editing() {
+		t.Errorf("tapping «%s» leaves the app on %v, editing %v", row.words, program.place, program.catalogue.Editing())
+	}
+}

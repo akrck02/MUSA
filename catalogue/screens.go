@@ -149,5 +149,15 @@ func (screens *Screens) EditFirstWith(versions int) {
 	}
 }
 
+// Edit opens the editor of the product with this id; it reports false when there is none.
+func (screens *Screens) Edit(id string) bool {
+	product, found := screens.product(id)
+	if !found {
+		return false
+	}
+	screens.edit(product)
+	return true
+}
+
 // Editing tells whether a product's editor is open.
 func (screens *Screens) Editing() bool { return screens.editor != nil }

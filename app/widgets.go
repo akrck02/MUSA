@@ -40,6 +40,7 @@ const (
 	restockRows     = 3
 	restockTitleGap = 6
 	restockRowY     = 9
+	restockRowX     = 8 // so the hovered row has room around its swatch, in pixels
 	restockGap      = 12
 	swatchSide      = 32
 	swatchRadius    = 9
@@ -216,7 +217,10 @@ func (program *App) restockWidget(context *ui.Context) {
 			if index > 0 {
 				context.Separator()
 			}
-			restockLine(context, index, row)
+			if restockLine(context, index, row) {
+				program.Open(Catalogue)
+				program.catalogue.Edit(row.productID)
+			}
 		}
 	}, func() {
 		if len(rows) > 0 && link(context, fmt.Sprintf("Ver los %d", len(rows))) {
@@ -226,10 +230,14 @@ func (program *App) restockWidget(context *ui.Context) {
 	})
 }
 
-// restockLine is one version running low: its colour, its name and what is left.
-func restockLine(context *ui.Context, index int, row restockRow) {
+// restockLine is one version running low: its colour, its name and what is left. The whole row is
+// a button that opens its product; it returns true on the frame it is tapped.
+func restockLine(context *ui.Context, index int, row restockRow) bool {
 	theme := context.Theme
-	context.Box(ui.Layout{Width: ui.Grow(), Padding: ui.PadXY(0, restockRowY), Gap: restockGap, AlignY: ui.Center}, func() {
+	hovered := ui.Look{Fill: theme.Sunken, Radius: theme.ControlRadius}
+	layout := ui.Layout{Width: ui.Grow(), Padding: ui.PadXY(restockRowX, restockRowY), Gap: restockGap, AlignY: ui.Center}
+	label := "Abrir " + row.words
+	clicked := context.Clickable(label, layout, ui.Looks{Hovered: hovered, Pressed: hovered}, func() {
 		side := ui.Fixed(swatchSide)
 		context.Frame(ui.Layout{Width: side, Height: side}, ui.Look{Fill: catalogue.ListFill(index), Radius: swatchRadius}, nil)
 		context.Frame(ui.Layout{Width: ui.Grow()}, ui.Look{Clip: true}, func() {
@@ -241,12 +249,14 @@ func restockLine(context *ui.Context, index int, row restockRow) {
 		}
 		context.Text(fmt.Sprint(row.left), ui.TextStyle{Weight: draw2d.Bold, Color: colour})
 	})
+	context.Describe(ui.Description{Role: ui.ButtonRole, Label: label})
+	return clicked
 }
 
 // restockRow is one version running low: its product, how it is called and what is left.
 type restockRow struct {
-	product, words string
-	left           int
+	productID, words string
+	left             int
 }
 
 // restockRowsOf lists the versions running low of products: "Gato astronauta A3", "Luna Mate".
@@ -255,7 +265,7 @@ func restockRowsOf(products []catalogue.Product) []restockRow {
 	for _, product := range products {
 		for _, variant := range product.Variants {
 			if variant.LowStock() {
-				rows = append(rows, restockRow{product: product.Name, words: strings.TrimSpace(product.Name + " " + variant.Name), left: variant.Stock})
+				rows = append(rows, restockRow{productID: product.ID, words: strings.TrimSpace(product.Name + " " + variant.Name), left: variant.Stock})
 			}
 		}
 	}
