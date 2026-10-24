@@ -22,6 +22,7 @@ const (
 	dialogPadding   = 32
 	dialogRadius    = 16
 	titleSize       = 28
+	titleHeight     = 1.2 // a heading's line, as the design's h2
 	roundSide       = 48
 	roundInset      = 20
 	headGap         = 14
@@ -42,40 +43,33 @@ func (screens *Screens) drawCheckout(context *ui.Context) {
 	theme := context.Theme
 	options := ui.LayerOptions{AlignX: ui.Center, AlignY: ui.Center, Width: ui.Fixed(widths[screens.step])}
 	if context.Modal("checkout", options, func() {
-		layout := ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(dialogPadding)}
-		context.Frame(layout, ui.Look{Fill: theme.Surface, Radius: dialogRadius, Shadow: true}, func() { draw(context) })
+		context.Frame(ui.Layout{Direction: ui.Stacked, Width: ui.Grow()}, ui.Look{Fill: theme.Surface, Radius: dialogRadius, Shadow: true}, func() {
+			context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Padding: ui.Pad(dialogPadding)}, func() { draw(context) })
+			if screens.step != paid {
+				screens.cornerClose(context)
+			}
+		})
 	}) {
 		screens.step = browsing
 	}
 }
 
 // methodDialog asks how the customer pays: two big cards, cash or card, under the total and what
-// the basket holds. Its × sits in the corner.
+// the basket holds.
 func (screens *Screens) methodDialog(context *ui.Context) {
 	theme := context.Theme
-	context.Box(ui.Layout{Direction: ui.Stacked, Width: ui.Grow()}, func() {
-		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow()}, func() {
-			dialogTitle(context, "Cobrar "+money.Format(screens.basket.Total()))
-			look.Space(context, summarySpace)
-			context.Text(piecesWords(screens.basket.Count())+": "+screens.basket.Words(), ui.TextStyle{Size: summarySize, Color: theme.InkSoft})
-			look.Space(context, summarySpaceOut)
-			context.Box(ui.Layout{Width: ui.Grow(), Columns: 2, Gap: methodGap}, func() {
-				if screens.methodCard(context, "coins", "Pagar en efectivo") {
-					screens.received.Clear()
-					screens.step = payingCash
-				}
-				if screens.methodCard(context, "credit-card", "Pagar con tarjeta") {
-					screens.step = payingCard
-				}
-			})
-		})
-		// The × keeps its place in the dialog's corner, 20 pixels in, over the title's line.
-		inset := float32(roundInset - dialogPadding)
-		context.Box(ui.Layout{Width: ui.Grow(), Padding: ui.Padding{Top: inset, Right: inset}, AlignX: ui.End}, func() {
-			if roundButton(context, "x", "Cerrar") {
-				screens.step = browsing
-			}
-		})
+	dialogTitle(context, "Cobrar "+money.Format(screens.basket.Total()))
+	look.Space(context, summarySpace)
+	context.Text(piecesWords(screens.basket.Count())+": "+screens.basket.Words(), ui.TextStyle{Size: summarySize, Color: theme.InkSoft})
+	look.Space(context, summarySpaceOut)
+	context.Box(ui.Layout{Width: ui.Grow(), Columns: 2, Gap: methodGap}, func() {
+		if screens.methodCard(context, "coins", "Pagar en efectivo") {
+			screens.received.Clear()
+			screens.step = payingCash
+		}
+		if screens.methodCard(context, "credit-card", "Pagar con tarjeta") {
+			screens.step = payingCard
+		}
 	})
 }
 
@@ -111,13 +105,19 @@ func circle(context *ui.Context, icon string, side, iconSize float32, fill, ink 
 	})
 }
 
-// dialogHead is a dialog's ‹, its title and its ×: ‹ goes back to the choice of method.
+// dialogHead is a dialog's ‹ and its title: ‹ goes back to the choice of method.
 func (screens *Screens) dialogHead(context *ui.Context, title string) {
 	context.Box(ui.Layout{Width: ui.Grow(), Gap: headGap, AlignY: ui.Center}, func() {
 		if roundButton(context, "chevron-left", "Atrás") {
 			screens.step = choosingMethod
 		}
 		context.Box(ui.Layout{Width: ui.Grow()}, func() { dialogTitle(context, title) })
+	})
+}
+
+// cornerClose is a dialog's ×, in its top right corner, 20 pixels in, over whatever line is there.
+func (screens *Screens) cornerClose(context *ui.Context) {
+	context.Box(ui.Layout{Width: ui.Grow(), Padding: ui.Padding{Top: roundInset, Right: roundInset}, AlignX: ui.End}, func() {
 		if roundButton(context, "x", "Cerrar") {
 			screens.step = browsing
 		}
@@ -140,7 +140,7 @@ func roundButton(context *ui.Context, icon, label string) bool {
 const roundIconSize = 22
 
 func dialogTitle(context *ui.Context, title string) {
-	context.Text(title, ui.TextStyle{Size: titleSize, Weight: draw2d.Bold})
+	context.Text(title, ui.TextStyle{Size: titleSize, Weight: draw2d.Bold, LineHeight: titleHeight})
 }
 
 // sell records the basket, paid with method; on success the stand shows what is left.
