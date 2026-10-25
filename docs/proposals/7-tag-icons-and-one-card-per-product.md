@@ -1,6 +1,6 @@
 # 7. Tag icons the artist chooses, and one stand card per product
 
-> Status: built, pending review · Author's approval: proposal ☑ plan ☑ (2026-10-24) · Lives in: `catalogue` (tags), `stand`
+> Status: done · Author's approval: proposal ☑ plan ☑ (2026-10-24) · Lives in: `catalogue` (tags), `stand`
 > (the grid), `storage` (a table for the icons)
 > Depends on: proposal 6
 

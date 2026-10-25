@@ -1,6 +1,6 @@
 # 8. Pack for an event the way the stand sells
 
-> Status: built, pending review · Author's approval: proposal ☑ plan ☑ (2026-10-24) · Lives in: `stand` (the grid and the
+> Status: done · Author's approval: proposal ☑ plan ☑ (2026-10-24) · Lives in: `stand` (the grid and the
 > basket), `events` (where packing starts and what it records)
 > Depends on: proposals 6 and 7
 

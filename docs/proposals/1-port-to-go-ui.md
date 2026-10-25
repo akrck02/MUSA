@@ -1,6 +1,6 @@
 # 1. Port MUSA to Go with go-ui and Bubble 4
 
-> Status: planned · Author's approval: proposal ☑ plan ☐
+> Status: done · Author's approval: proposal ☑ plan ☑
 
 ## Why
 
@@ -73,19 +73,19 @@ Go driver fails on Android).
 
 ## Tasks
 
-- [ ] T1 — Go module, `money/`, CI running `gofmt`, `go vet` and the tests · serves R9 · tests ported from `MoneyTest`
-- [ ] T2 — `storage/`: open the file, schema, transactions · serves R5 · test `a product survives closing and reopening the database`
-- [ ] T3 — `catalogue/` logic: models, validation, duplicate, tag normalising and suggestions, filters · R1, R2 · tests ported from `ProductValidator`, `TagSuggesterTest`, `ProductFilterTest`, `TextAndTagTest`
-- [ ] T4 — `catalogue/` storage: save, read, delete, stock baseline kept · R1, R5 · tests ported from the save and duplicate use cases
-- [ ] T5 — `events/` logic and storage: open, take and return stock, sell, undo, expenses, close, summary · R3 · tests ported from `EventValidatorTest` and the event use cases
-- [ ] T6 — `sales/` logic and storage: orders, stock taken and given back, filters, summary · R4 · tests ported from `SaleTest`, `SalesFilterTest`, `SaleTimeTest`
-- [ ] T7 — `demo/`: toy catalogue, events and sales, wipe · R6 · test `demo data fills every module`
-- [ ] T8 — `app/` and `cmd/musa`: theme, home, navigation, narrow and wide layouts · R7, R8 · capture of the home screen
-- [ ] T9 — catalogue screens: list with search, tags and filters; product editor · R1, R2 · go-ui `uitest` of creating a product
-- [ ] T10 — event screens: list, editor, detail with stock, sales and expenses · R3 · `uitest` of selling at a fair
-- [ ] T11 — sales screens: list with period and channel, order editor, detail · R4 · `uitest` of recording an order
-- [ ] T12 — Android: APK with `go-ui-apk`, opened in the emulator · R7 · screenshot from the emulator
-- [ ] T13 — remove Kotlin, rewrite `README.md`, `CLAUDE.md` and `docs/`, screenshots beside the Kotlin ones · R8 · `check_repository.py`
+- [x] T1 — Go module, `money/`, CI running `gofmt`, `go vet` and the tests · serves R9 · tests ported from `MoneyTest`
+- [x] T2 — `storage/`: open the file, schema, transactions · serves R5 · test `a product survives closing and reopening the database`
+- [x] T3 — `catalogue/` logic: models, validation, duplicate, tag normalising and suggestions, filters · R1, R2 · tests ported from `ProductValidator`, `TagSuggesterTest`, `ProductFilterTest`, `TextAndTagTest`
+- [x] T4 — `catalogue/` storage: save, read, delete, stock baseline kept · R1, R5 · tests ported from the save and duplicate use cases
+- [x] T5 — `events/` logic and storage: open, take and return stock, sell, undo, expenses, close, summary · R3 · tests ported from `EventValidatorTest` and the event use cases
+- [x] T6 — `sales/` logic and storage: orders, stock taken and given back, filters, summary · R4 · tests ported from `SaleTest`, `SalesFilterTest`, `SaleTimeTest`
+- [x] T7 — `demo/`: toy catalogue, events and sales, wipe · R6 · test `demo data fills every module`
+- [x] T8 — `app/` and `cmd/musa`: theme, home, navigation, narrow and wide layouts · R7, R8 · capture of the home screen
+- [x] T9 — catalogue screens: list with search, tags and filters; product editor · R1, R2 · go-ui `uitest` of creating a product
+- [x] T10 — event screens: list, editor, detail with stock, sales and expenses · R3 · `uitest` of selling at a fair
+- [x] T11 — sales screens: list with period and channel, order editor, detail · R4 · `uitest` of recording an order
+- [x] T12 — Android: APK with `go-ui-apk`, opened in the emulator · R7 · screenshot from the emulator
+- [x] T13 — remove Kotlin, rewrite `README.md`, `CLAUDE.md` and `docs/`, screenshots beside the Kotlin ones · R8 · `check_repository.py`
 
 ## Result
 

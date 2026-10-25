@@ -1,6 +1,6 @@
 # 4. Orders that travel, payments and commissioned projects
 
-> Status: proposed · Author's approval: proposal ☐ plan ☐ · Lives in: `orders`, `payments` (new), `customers` (new), `projects` (new), `storage`
+> Status: done in part (R1–R6, R11, R12, R15); R7–R10, R13 and R14 wait for Etsy, SumUp and Trello · Author's approval: proposal ☑ plan ☑ · Lives in: `orders`, `payments` (new), `customers` (new), `projects` (new), `storage`
 > Depends on: proposal 3 (definitions, bundles, `orders`)
 
 ## Why

@@ -1,6 +1,6 @@
 # 10. Documentation for the people who build MUSA
 
-> Status: built, pending review · Author's approval: proposal ☑ (2026-10-25) plan ☑ (2026-10-25) · Lives in: `docs/`, the root's
+> Status: done · Author's approval: proposal ☑ (2026-10-25) plan ☑ (2026-10-25) · Lives in: `docs/`, the root's
 > community files, `.github/`, and one style test
 > Depends on: nothing; follows the layout of Go Renderer and Go Engine
 

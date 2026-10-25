@@ -1,6 +1,6 @@
 # 6. Tags that explain themselves, and an event page like the rest
 
-> Status: built, pending review · Author's approval: proposal ☑ plan ☑ (2026-10-24, from the mock-ups) · Lives in: `catalogue` (the product
+> Status: done · Author's approval: proposal ☑ plan ☑ (2026-10-24, from the mock-ups) · Lives in: `catalogue` (the product
 > editor's tags), `events` (the event's page), `look`
 > Depends on: proposals 1 to 5 (MUSA as it is on `feature/go-ui`)
 
