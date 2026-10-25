@@ -13,6 +13,12 @@ Bigger changes go through a proposal in `docs/proposals/`: spec → plan → app
 - **Domain**: `Product` with two kinds, `DigitalProduct` and `PhysicalProduct`.
 - **Platforms**: develop on Linux; iOS builds on a Mac.
 
+## How to work here
+
+Read `docs/8-contributing/` before changing code: the code map, a feature step by step, screens,
+testing, the style guide (checked by `internal/style`) and working together. After changing a
+public name or an error code, run `python3 docs/5-reference/generate.py`.
+
 ## Architecture
 
 One Go package per thing the artist works with (`catalogue`, `events`, `sales`, `stand`, `cash`, `calendar`, `money`), each holding its model, its store and its screens. `storage` opens the database and migrates it; `look` holds the shared pieces of the screens; `app` is the frame and the navigation; `cmd/musa` is the program. Tests sit beside the code.

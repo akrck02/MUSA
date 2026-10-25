@@ -63,6 +63,8 @@ go test ./...             # the tests
 | [The stand](docs/4-guides/4-stand.md) | Selling from a fair or the whole stock, and charging in cash or by card. |
 | [Projects](docs/4-guides/5-projects.md) | Commissions on a board, customers and their networks. |
 | [Roadmap](docs/6-roadmap.md) | The modules still to come and the plan for sync. |
+| [Reference](docs/5-reference/14-error-codes.md) | Every package's public names, and every error code. |
+| [Troubleshooting](docs/7-troubleshooting.md) | The errors people meet building, running and testing, and the fix. |
 
 [Read the docs online →](https://itros97.github.io/MUSA/)
 

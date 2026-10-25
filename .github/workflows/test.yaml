@@ -1,0 +1,45 @@
+# Checks every push and pull request: the formatter, the linter and the tests. MUSA builds against
+# checkouts of Go UI, Go Renderer and Bubble beside it (see go.mod), so they are checked out too,
+# at the branches MUSA is built with.
+name: Test
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: MUSA
+      - uses: actions/checkout@v4
+        with:
+          repository: akrck02/go-ui
+          ref: feature/stacked
+          path: go-ui
+      - uses: actions/checkout@v4
+        with:
+          repository: akrck02/go-renderer
+          ref: feature/system-fonts
+          path: go-renderer
+      - uses: actions/checkout@v4
+        with:
+          repository: akrck02/bubble
+          ref: feature/v4
+          path: bubble
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: MUSA/go.mod
+      - name: OpenGL's and X11's headers, which the window builds against
+        run: sudo apt-get update && sudo apt-get install -y libgl1-mesa-dev xorg-dev
+      - name: Formatted
+        working-directory: MUSA
+        run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
+      - name: Vet
+        working-directory: MUSA
+        run: go vet -tags=x11 ./...
+      - name: Test
+        working-directory: MUSA
+        run: go test -tags=x11 ./...

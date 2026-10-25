@@ -90,18 +90,18 @@ pages link to their final places.
   serves R6 · test: `TestTheCodeFollowsTheStyleGuide`
 - [x] T5 — `8-contributing/5-style-guide.md`: each rule, why, right and wrong, and which the test
   checks · serves R6
-- [ ] T6 — Build «a note on a customer» on its own branch, step by step, then write
+- [x] T6 — Build «a note on a customer» on its own branch, step by step, then write
   `8-contributing/2-a-feature-step-by-step.md` from its commits; the feature itself waits for the
   author's yes before merging · serves R3 · tests: the feature's own
 - [x] T7 — `8-contributing/3-screens.md`, with an `Example` test in `look` for its code · serves R4 ·
   test: `ExampleCard` (or the piece shown)
 - [x] T8 — `8-contributing/4-testing.md`: every kind of test, `cmd/uitest`, captures, what needs a
   screen · serves R5 · each command run here
-- [ ] T9 — `8-contributing/6-working-together.md`: branches, proposals, review, commits, the clash
+- [x] T9 — `8-contributing/6-working-together.md`: branches, proposals, review, commits, the clash
   points (migrations, `app` navigation, `look`) · serves R7
-- [ ] T10 — `CONTRIBUTING.md`, `.github/pull_request_template.md`, issue templates (bug, feature),
+- [x] T10 — `CONTRIBUTING.md`, `.github/pull_request_template.md`, issue templates (bug, feature),
   `.github/workflows/ci.yaml` (gofmt, vet, test, with the `x11` tag and the GLFW headers) · serves R8
-- [ ] T11 — `7-troubleshooting.md` from the errors met so far; `5-reference/` generated with a
+- [x] T11 — `7-troubleshooting.md` from the errors met so far; `5-reference/` generated with a
   script, with the error codes; `9-journey/` outline · serves R9, R1
 - [ ] T12 — Review with the `reviewer` agent, fill **Result** · all
 

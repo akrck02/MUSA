@@ -28,7 +28,7 @@ require (
 
 // Go UI, Go Renderer and Bubble's go-ui adapter are built from checkouts beside this one, as Go UI
 // for Android and Bubble do, until they publish versions that work together (see
-// docs/02-get-started.md).
+// docs/2-get-started.md).
 replace (
 	github.com/akrck02/bubble => ../bubble
 	github.com/akrck02/bubble/goui => ../bubble/goui
