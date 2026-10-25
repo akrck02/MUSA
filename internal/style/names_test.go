@@ -4,6 +4,7 @@ import (
 	"go/ast"
 	"go/token"
 	"strings"
+	"unicode"
 )
 
 // declaredNames are the names a file declares: variables, constants, types, functions, their
@@ -49,18 +50,36 @@ func identifiers(expressions []ast.Expr) []*ast.Ident {
 	return names
 }
 
-// camelCaseWords are the words of a camelCase name, in lower case: "basketQty" is "basket" and
-// "qty".
+// camelCaseWords are the words of a camelCase or snake_case name, in lower case: "basketQty" is
+// "basket" and "qty"; a run of capitals is one word, so "HTTPReq" is "http" and "req".
 func camelCaseWords(name string) []string {
 	var words []string
 	start := 0
-	for index, letter := range name {
-		if index > start && letter >= 'A' && letter <= 'Z' {
-			words = append(words, strings.ToLower(name[start:index]))
+	letters := []rune(name)
+	for index := 1; index < len(letters); index++ {
+		if letters[index] == '_' {
+			words = append(words, strings.ToLower(string(letters[start:index])))
+			start = index + 1
+			continue
+		}
+		if index > start && startsWord(letters, index) {
+			words = append(words, strings.ToLower(string(letters[start:index])))
 			start = index
 		}
 	}
-	return append(words, strings.ToLower(name[start:]))
+	return append(words, strings.ToLower(string(letters[start:])))
+}
+
+// startsWord tells whether the capital at index begins a new word: after a small letter, or as the
+// last capital of a run that a small letter follows ("Req" in "HTTPReq").
+func startsWord(letters []rune, index int) bool {
+	if !unicode.IsUpper(letters[index]) {
+		return false
+	}
+	if !unicode.IsUpper(letters[index-1]) {
+		return true
+	}
+	return index+1 < len(letters) && unicode.IsLower(letters[index+1])
 }
 
 // publicDeclaration is an exported name declared at the top of a file, and its comment's text.

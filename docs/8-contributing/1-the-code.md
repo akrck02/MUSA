@@ -58,7 +58,7 @@ share a shape. Taking `projects` as the example:
 | File | What it holds |
 |---|---|
 | `project.go` | The package comment and the model: `Project`, its `Stage`, plain Go values. |
-| `store.go` | `Store`: reading and writing the model in the database. It knows SQL; nothing else does. |
+| `store.go` | `Store`: reading and writing the model in the database. It and the files beside it that read rows know SQL; nothing else does. |
 | `errors.go` | The package's error codes (`projects.…`), declared once. |
 | `words.go` | Everything the artist reads, in Spanish. |
 | `screens.go` | `Screens`: the state the pages keep between frames, and the page that is open. |

@@ -1,6 +1,6 @@
 # 10. Documentation for the people who build MUSA
 
-> Status: building · Author's approval: proposal ☑ (2026-10-25) plan ☑ (2026-10-25) · Lives in: `docs/`, the root's
+> Status: built, pending review · Author's approval: proposal ☑ (2026-10-25) plan ☑ (2026-10-25) · Lives in: `docs/`, the root's
 > community files, `.github/`, and one style test
 > Depends on: nothing; follows the layout of Go Renderer and Go Engine
 
@@ -16,12 +16,12 @@ guess differently, and the code would drift into three styles.
 
 | Id | Requirement | Check |
 |---|---|---|
-| R1 | The docs follow the layout the other Go projects use, numbered for three readers: who uses MUSA, who changes it, who learns from it. Old links keep working through the renamed pages | a person reads the menu; a test finds no broken relative link |
+| R1 | The docs follow the layout the other Go projects use, numbered for three readers: who uses MUSA, who changes it, who learns from it. Links inside the repository are updated; links to the old published pages break once | a person reads the menu; a test finds no broken relative link |
 | R2 | **The code map**: each package, what it holds, what it may import, and its usual files (`model`, `store`, `screens`, `words`, `errors`, tests) | a person finds where a given screen lives in under a minute |
 | R3 | **How a feature is built**, as a walk-through of one real, small feature from proposal to merge: the model, the migration, the store, the words, the screen, the tests, the docs | a newcomer follows it and ends with a working change |
 | R4 | **How the screens work**: immediate mode, the state a package keeps, `look` and Bubble 4, sheets, navigation through `app`, accessible labels | the page's examples compile (an `Example` test) |
 | R5 | **How to test**: logic tests, store tests on a temporary database, flow tests with `uitest`, the results viewer (`cmd/uitest`), captures, and what still needs a look on screen | each command shown runs |
-| R6 | **The style guide**: the author's guidelines as they apply to MUSA, each rule with a short right and wrong example; the rules a program can check are checked by a test | test `the code follows the style guide` |
+| R6 | **The style guide**: the author's guidelines as they apply to MUSA, each rule with a short right and wrong example; the rules a program can check are checked by a test | the tests in `internal/style` |
 | R7 | **Working together**: branches, proposals, reviews, who approves, commit messages, and the places where parallel work clashes (migrations, `app` navigation, shared `look` pieces) with how to avoid each | read by the three people before starting |
 | R8 | A short `CONTRIBUTING.md` at the root that points into the chapter, a pull request template, issue templates, and CI that runs the formatter, `go vet` and the tests on every push | the files exist; CI runs on a branch |
 | R9 | **Troubleshooting**: the errors people meet when building and running (cgo, the `x11` tag, Metal, a locked database), by their message or code, with the fix | a person finds the fix for each error met so far |
@@ -79,7 +79,7 @@ pages link to their final places.
 
 - [x] T1 — Move the chapters to the new layout (`1-overview`, `2-get-started`, `4-guides/1-inventory`
   … `5-projects`), fix every link, the README's included · `docs/`, `README.md` · serves R1 · test:
-  `TestEveryDocsLinkLeadsToAFile` (new, `docs_test.go` at the root)
+  `TestEveryDocsLinkLeadsToAFile` (new, `docs/links_test.go`)
 - [x] T2 — `3-core-ideas.md`: local first, one package per idea, immediate mode, cents, days, UUIDs ·
   serves R1 · read by a person
 - [x] T3 — `8-contributing/1-the-code.md`: the map, from `03-architecture.md` (which it replaces),
@@ -87,7 +87,7 @@ pages link to their final places.
   `TestPackagesImportOnlyWhatTheMapAllows` (the direction of dependencies, checked)
 - [x] T4 — The style test in `internal/style`, after Go Engine's: short names, comments on public
   names, `errors.New`/`fmt.Errorf` outside `errors.go`, `map[bool]string`; fix what it finds ·
-  serves R6 · test: `TestTheCodeFollowsTheStyleGuide`
+  serves R6 · tests: the six in `internal/style/style_test.go`
 - [x] T5 — `8-contributing/5-style-guide.md`: each rule, why, right and wrong, and which the test
   checks · serves R6
 - [x] T6 — Build «a note on a customer» on its own branch, step by step, then write
@@ -100,11 +100,25 @@ pages link to their final places.
 - [x] T9 — `8-contributing/6-working-together.md`: branches, proposals, review, commits, the clash
   points (migrations, `app` navigation, `look`) · serves R7
 - [x] T10 — `CONTRIBUTING.md`, `.github/pull_request_template.md`, issue templates (bug, feature),
-  `.github/workflows/ci.yaml` (gofmt, vet, test, with the `x11` tag and the GLFW headers) · serves R8
+  `.github/workflows/test.yaml` (gofmt, vet, test, with the `x11` tag and the GLFW headers) · serves R8
 - [x] T11 — `7-troubleshooting.md` from the errors met so far; `5-reference/` generated with a
   script, with the error codes; `9-journey/` outline · serves R9, R1
-- [ ] T12 — Review with the `reviewer` agent, fill **Result** · all
+- [x] T12 — Review with the `reviewer` agent, fill **Result** · all
 
 ## Result
 
-Pending.
+Built: the new layout (R1) with a test of every link; the code map with a test of the
+dependencies (R2); a feature step by step, from the branch `feature/customer-note` (R3); screens,
+with an `Example` test (R4); testing (R5); the style guide, with six checks in `internal/style`,
+and the code brought up to them (R6); working together (R7); `CONTRIBUTING.md`, the templates and
+CI (R8); troubleshooting and a generated reference with every error code (R9).
+
+Reviewed by the `reviewer` agent; its findings were fixed, except:
+
+- CI checks out the sibling libraries by branch, not by commit, so a push there can turn MUSA's
+  CI red. Pinning commits is the author's call.
+- Code constants inside a commented group need no comment of their own; asking for one would
+  touch every `errors.go`.
+- `feature/customer-note` (the example feature) waits for the author's yes to merge.
+
+Still for a person: reading the pages as a newcomer, and the CI's first run on GitHub.

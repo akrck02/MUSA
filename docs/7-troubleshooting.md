@@ -31,12 +31,14 @@ sudo apt install gcc libgl1-mesa-dev xorg-dev        # Debian, Ubuntu
 xcode-select --install                               # macOS
 ```
 
-### `build constraints exclude all Go files` in GLFW, or a Wayland error, on Linux
+### `wayland-client-core.h: No such file` (or another Wayland header), on Linux
 
-GLFW on Linux is built for X11 **or** Wayland. Add the X11 tag, which also runs under XWayland:
+Without a tag, GLFW on Linux is built for X11 **and** Wayland, and needs both sets of headers. MUSA
+builds for X11 only, which also runs under XWayland: add the tag to every command.
 
 ```bash
 go run -tags=x11 ./cmd/musa -demo
+go vet -tags=x11 ./...
 go test -tags=x11 ./...
 ```
 
@@ -89,4 +91,4 @@ function passed in (as `events` does to open the stand), or, if the new arrow is
 ## Every error code
 
 The [error codes](5-reference/14-error-codes.md) page lists every code MUSA returns, and what
-the artist reads for each.
+the artist reads for each problem; failures have no words, because the artist cannot fix them.

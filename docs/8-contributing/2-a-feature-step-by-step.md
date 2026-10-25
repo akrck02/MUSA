@@ -7,8 +7,7 @@ working at each step.
 
 The feature is small on purpose: **a note on a customer**, where the artist writes what to
 remember about them (tastes, sizes, how they pay). It touches the model, the database, the store,
-the screen, the tests and the docs, and nothing else. It was built this way on the branch
-`feature/customer-note`; its two commits are the code below.
+the screen, the tests and the docs, and nothing else. Its two commits are the code below.
 
 ## 0. Decide whether it needs a proposal
 
@@ -76,9 +75,9 @@ in the artist's terms:
 Two rules, because the database counts the steps it has taken:
 
 - **Never edit or reorder a step** once it is on `main`: databases out there have already run it.
-- **Add your step right before merging**, on top of the latest `main`. If two branches each add
-  one, the second to merge moves its step after the first's (see
-  [working together](6-working-together.md)).
+- **Your step is a draft until you merge.** Write it now, so the feature works; when you rebase
+  before merging, check that it is still the last step. If someone else's step was merged in the
+  meantime, move yours after it in that rebase (see [working together](6-working-together.md)).
 
 `DEFAULT ''` lets the old rows read as "no note", so nothing else has to change.
 
@@ -151,7 +150,8 @@ go vet ./...
 go test ./...
 ```
 
-`go test ./...` runs the style test and the code map test too. Then look at it once: run
+On Linux, add `-tags=x11` to these commands and to `go run`. `go test ./...` runs the style test and
+the code map test too. Then look at it once: run
 `go run ./cmd/musa -demo`, open a project, write a note, close and open it again.
 
 Commit: `projects: write a note on the customer from the project's editor`.

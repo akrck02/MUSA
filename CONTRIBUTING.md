@@ -12,6 +12,8 @@ Thank you for helping. Everything you need is in
 
 In short: `gofmt -l .` prints nothing and `go vet ./...` and `go test ./...` pass before a pull
 request; every change in behaviour comes with its test and its docs; anything larger than a fix
-starts as a proposal in [docs/proposals](docs/proposals/).
+starts as a proposal in [docs/proposals](docs/proposals/). On Linux, add `-tags=x11` to the `go`
+commands. After changing a public name or an error code, run
+`python3 docs/5-reference/generate.py`.
 
 Found a bug, or have an idea? Open an issue: the templates ask for what helps.

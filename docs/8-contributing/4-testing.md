@@ -5,7 +5,7 @@ This page is for whoever changes behaviour in MUSA: by the end you know which ki
 write, where it goes, and how to run and watch it.
 
 Every change in behaviour comes with a test. A test exists to prove something a person relies
-on, so its name is a sentence about what must be true: `TestSellingAPackTakesItsPieces`.
+on, so its name is a sentence about what must be true: `TestPayingInCashAtTheStandRecordsALocalSaleAndTakesTheStock`.
 
 ## Run them
 
@@ -17,6 +17,8 @@ go test ./stand -run Basket      # the tests of one package whose name matches
 ```
 
 No test needs a screen: the screen tests draw into memory, with a fake text measurer.
+On Linux, add `-tags=x11` after `run`, `vet` and `test` (see
+[troubleshooting](../7-troubleshooting.md)).
 
 ## Four kinds of test
 

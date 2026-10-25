@@ -43,3 +43,6 @@ jobs:
       - name: Test
         working-directory: MUSA
         run: go test -tags=x11 ./...
+      - name: The reference matches the code
+        working-directory: MUSA
+        run: python3 docs/5-reference/generate.py && git diff --exit-code docs/5-reference

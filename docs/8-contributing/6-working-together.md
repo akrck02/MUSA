@@ -54,7 +54,7 @@ Three people touching one app will meet in a few places. Each has a rule:
 
 | Place | Why it clashes | Rule |
 |---|---|---|
-| `storage/migrations.go` | Steps are counted in order; two branches each adding a step would give two databases different histories | Add your step **last, right before merging**, on top of the latest base. Never edit a step that is merged |
+| `storage/migrations.go` | Steps are counted in order; two branches each adding a step would give two databases different histories Write it on your branch, but before merging rebase on the latest base and make sure your step is **last**. Never edit a step that is merged |
 | `storage/schema.sql` | It makes the first version's tables | Never change it: every change is a migration |
 | `app/app.go` | Every package is wired here: places, `buildScreens`, `Show` | Keep each change to a few lines; rebase often |
 | `look/` | Every screen depends on it | A change to a shared piece goes in its own small pull request, before the feature that needs it |

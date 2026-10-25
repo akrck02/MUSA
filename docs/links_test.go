@@ -42,7 +42,7 @@ func brokenLinks(test *testing.T, page string) []string {
 		test.Fatal(err)
 	}
 	var broken []string
-	for _, match := range relativeLink.FindAllStringSubmatch(string(text), -1) {
+	for _, match := range relativeLink.FindAllStringSubmatch(withoutCode(string(text)), -1) {
 		target := strings.SplitN(match[1], "#", 2)[0]
 		if target == "" || strings.Contains(target, "://") || strings.HasPrefix(target, "mailto:") {
 			continue
@@ -52,4 +52,21 @@ func brokenLinks(test *testing.T, page string) []string {
 		}
 	}
 	return broken
+}
+
+// withoutCode is a page with its fenced code blocks taken out: a link shown as an example of
+// Markdown is not a link.
+func withoutCode(page string) string {
+	var kept []string
+	inCode := false
+	for _, line := range strings.Split(page, "\n") {
+		if strings.HasPrefix(strings.TrimSpace(line), "```") {
+			inCode = !inCode
+			continue
+		}
+		if !inCode {
+			kept = append(kept, line)
+		}
+	}
+	return strings.Join(kept, "\n")
 }

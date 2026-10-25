@@ -44,6 +44,9 @@ func nameProblem(name string) string {
 	if slices.Contains(allowedShortNames, lower) || slices.Contains(shortWords, lower) {
 		return ""
 	}
+	if lower == "ok" {
+		return "does not say what is fine: use a word such as found or readable"
+	}
 	if len(name) < 3 {
 		return "is too short to say what it is"
 	}

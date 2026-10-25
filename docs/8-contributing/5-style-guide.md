@@ -10,14 +10,15 @@ The rules come from the author's guidelines for every project, applied to MUSA. 
 ## 1. English in the code, Spanish on the screen
 
 Code, comments, names, error codes, commit messages and docs are in English. What the artist reads
-is Spanish, and lives in each package's `words.go`.
+is Spanish. A field's label and hint sit beside the field they name; sentences, notes, status
+words and the words of each problem live in the package's `words.go`.
 
 ```go
-// No: Spanish names, and words for the artist buried in the logic
-func (s *Screens) guardar() { s.aviso = "Guardado" }
+// No: Spanish names, and a one-letter receiver
+func (s *Screens) guardar() { s.nota = "Guardado" }
 
-// Yes
-func (screens *Screens) save() { screens.tell(false, savedWords) }
+// Yes (catalogue/screens.go has tell)
+func (screens *Screens) save() { screens.tell(screens.store.Save(screens.draft), "Guardado") }
 ```
 
 ## 2. Names say what things are
@@ -107,9 +108,10 @@ the text.
   `words.go` says it in Spanish. **Failures** are what the artist cannot fix (the disk is full):
   an `*Error` with the code, a detail and the cause underneath.
 - **Errors are made only in `errors.go`,** by small constructors (`productNotFound(id)`). There is
-  no `errors.New` or `fmt.Errorf` anywhere else.
-- **Check codes** with `errors.As` or the package's helper (`demo.CodeOf(err)`), never with
-  `err.Error()`.
+  no `errors.New` or `fmt.Errorf` anywhere else, except in `cmd/musa`'s `main`, which reports to
+  a person and exits.
+- **Check codes** with `errors.As` or the package's helper (`demo.CodeOf(err)`, which uses it), never
+  with `err.Error()`.
 - **Never drop an error silently.** When ignoring one is right, say why on that line:
 
   ```go
@@ -130,7 +132,8 @@ the text.
   the same), and that label is what a screen reader says. A sign alone, such as «−», says nothing.
 - **Colours come from the theme** (`theme.Primary`, `theme.InkSoft`), never written by hand, so
   the dark theme works without a second look.
-- **SQL lives only in stores;** a screen asks its store.
+- **SQL lives only in the store's files** (`store.go`, and the files beside it that read rows);
+  a screen asks its store.
 - **A frame allocates nothing it can avoid:** keep what does not change between frames (the
   tiles' shapes, read data) in the package's `Screens`, and read the store only after a change.
 

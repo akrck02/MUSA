@@ -1,6 +1,9 @@
 package demo
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 // Code is a stable name for what went wrong, for programs to check and people to search for.
 type Code string
@@ -24,8 +27,8 @@ func (failure *Error) Error() string { return fmt.Sprintf("%s: %s", failure.Code
 
 // CodeOf is the code of an error the demo returned, or "" for any other error.
 func CodeOf(err error) Code {
-	failure, isDemo := err.(*Error)
-	if !isDemo {
+	var failure *Error
+	if !errors.As(err, &failure) {
 		return ""
 	}
 	return failure.Code
