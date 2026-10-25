@@ -39,7 +39,7 @@ go run ./cmd/musa -demo   # the app, on a throwaway database with toy data
 go test ./...             # the tests
 ```
 
-[More on getting started →](docs/02-get-started.md)
+[More on getting started →](docs/2-get-started.md)
 
 ## 🧭 What is in it
 
@@ -53,15 +53,15 @@ go test ./...             # the tests
 
 | | |
 |---|---|
-| [Overview](docs/01-overview.md) | What MUSA does today and what it does not do. |
-| [Get started](docs/02-get-started.md) | Build, run and test it, and where the data is stored. |
+| [Overview](docs/1-overview.md) | What MUSA does today and what it does not do. |
+| [Get started](docs/2-get-started.md) | Build, run and test it, and where the data is stored. |
 | [Architecture](docs/03-architecture.md) | One package per idea, and how they depend on each other. |
-| [Inventory](docs/04-inventory.md) | Products, variants, validation rules, filters and duplication. |
-| [Events](docs/06-events.md) | Stock taken to a fair, sales, expenses, profit and closing. |
-| [Sales](docs/07-sales.md) | Orders, their status, the board and the sales history. |
-| [The stand](docs/08-stand.md) | Selling from a fair or the whole stock, and charging in cash or by card. |
-| [Projects](docs/09-projects.md) | Commissions on a board, customers and their networks. |
-| [Roadmap](docs/05-roadmap.md) | The modules still to come and the plan for sync. |
+| [Inventory](docs/4-guides/1-inventory.md) | Products, variants, validation rules, filters and duplication. |
+| [Events](docs/4-guides/2-events.md) | Stock taken to a fair, sales, expenses, profit and closing. |
+| [Sales](docs/4-guides/3-sales.md) | Orders, their status, the board and the sales history. |
+| [The stand](docs/4-guides/4-stand.md) | Selling from a fair or the whole stock, and charging in cash or by card. |
+| [Projects](docs/4-guides/5-projects.md) | Commissions on a board, customers and their networks. |
+| [Roadmap](docs/6-roadmap.md) | The modules still to come and the plan for sync. |
 
 [Read the docs online →](https://itros97.github.io/MUSA/)
 

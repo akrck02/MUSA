@@ -20,12 +20,14 @@ The third module is **sales**: orders from every channel (online shop, social me
 ## What it does not do
 
 - It has no server and no account. One device belongs to one artist.
-- It does not sync between devices yet. See the [roadmap](05-roadmap.md).
+- It does not sync between devices yet. See the [roadmap](6-roadmap.md).
 
 ## Read next
 
-- [Get started](02-get-started.md) to build and run it.
+- [Get started](2-get-started.md) to build and run it.
 - [Architecture](03-architecture.md) to see how the code is laid out.
-- [Inventory](04-inventory.md) for the rules the inventory module follows.
-- [Events](06-events.md) for how stock, sales and profit work at a fair.
-- [Sales](07-sales.md) for orders, channels, shipping and margin.
+- [Inventory](4-guides/1-inventory.md) for the rules the inventory module follows.
+- [Events](4-guides/2-events.md) for how stock, sales and profit work at a fair.
+- [Sales](4-guides/3-sales.md) for orders, channels, shipping and margin.
+- [The stand](4-guides/4-stand.md) for selling at a fair or from the whole stock.
+- [Projects](4-guides/5-projects.md) for commissions, customers and their networks.
