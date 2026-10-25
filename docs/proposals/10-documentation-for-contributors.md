@@ -80,22 +80,22 @@ pages link to their final places.
 - [x] T1 — Move the chapters to the new layout (`1-overview`, `2-get-started`, `4-guides/1-inventory`
   … `5-projects`), fix every link, the README's included · `docs/`, `README.md` · serves R1 · test:
   `TestEveryDocsLinkLeadsToAFile` (new, `docs_test.go` at the root)
-- [ ] T2 — `3-core-ideas.md`: local first, one package per idea, immediate mode, cents, days, UUIDs ·
+- [x] T2 — `3-core-ideas.md`: local first, one package per idea, immediate mode, cents, days, UUIDs ·
   serves R1 · read by a person
-- [ ] T3 — `8-contributing/1-the-code.md`: the map, from `03-architecture.md` (which it replaces),
+- [x] T3 — `8-contributing/1-the-code.md`: the map, from `03-architecture.md` (which it replaces),
   with each package's usual files and what it may import · serves R2 · test:
   `TestPackagesImportOnlyWhatTheMapAllows` (the direction of dependencies, checked)
-- [ ] T4 — The style test in `internal/style`, after Go Engine's: short names, comments on public
+- [x] T4 — The style test in `internal/style`, after Go Engine's: short names, comments on public
   names, `errors.New`/`fmt.Errorf` outside `errors.go`, `map[bool]string`; fix what it finds ·
   serves R6 · test: `TestTheCodeFollowsTheStyleGuide`
-- [ ] T5 — `8-contributing/5-style-guide.md`: each rule, why, right and wrong, and which the test
+- [x] T5 — `8-contributing/5-style-guide.md`: each rule, why, right and wrong, and which the test
   checks · serves R6
 - [ ] T6 — Build «a note on a customer» on its own branch, step by step, then write
   `8-contributing/2-a-feature-step-by-step.md` from its commits; the feature itself waits for the
   author's yes before merging · serves R3 · tests: the feature's own
-- [ ] T7 — `8-contributing/3-screens.md`, with an `Example` test in `look` for its code · serves R4 ·
+- [x] T7 — `8-contributing/3-screens.md`, with an `Example` test in `look` for its code · serves R4 ·
   test: `ExampleCard` (or the piece shown)
-- [ ] T8 — `8-contributing/4-testing.md`: every kind of test, `cmd/uitest`, captures, what needs a
+- [x] T8 — `8-contributing/4-testing.md`: every kind of test, `cmd/uitest`, captures, what needs a
   screen · serves R5 · each command run here
 - [ ] T9 — `8-contributing/6-working-together.md`: branches, proposals, review, commits, the clash
   points (migrations, `app` navigation, `look`) · serves R7

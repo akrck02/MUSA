@@ -25,7 +25,7 @@ The third module is **sales**: orders from every channel (online shop, social me
 ## Read next
 
 - [Get started](2-get-started.md) to build and run it.
-- [Architecture](03-architecture.md) to see how the code is laid out.
+- [Core ideas](3-core-ideas.md) and [contributing](8-contributing/1-the-code.md) to change the code.
 - [Inventory](4-guides/1-inventory.md) for the rules the inventory module follows.
 - [Events](4-guides/2-events.md) for how stock, sales and profit work at a fair.
 - [Sales](4-guides/3-sales.md) for orders, channels, shipping and margin.
