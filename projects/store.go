@@ -228,3 +228,25 @@ func deadlineText(deadline calendar.Date) string {
 	}
 	return deadline.String()
 }
+
+// viewSetting is the setting that keeps the board's view: spacious, or compact when unset.
+const (
+	viewSetting  = "projects.view"
+	spaciousView = "spacious"
+	compactView  = "compact"
+)
+
+// Spacious tells whether the artist chose the board's spacious view; compact until they do.
+func (store *Store) Spacious() (bool, error) {
+	view, _, err := store.database.Setting(viewSetting)
+	return view == spaciousView, err
+}
+
+// SetSpacious keeps the board's view the artist chose, for the next time MUSA opens.
+func (store *Store) SetSpacious(spacious bool) error {
+	view := compactView
+	if spacious {
+		view = spaciousView
+	}
+	return store.database.SetSetting(viewSetting, view)
+}

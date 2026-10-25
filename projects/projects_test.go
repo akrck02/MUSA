@@ -180,3 +180,16 @@ func TestASearchFindsProjectsByTitleOrCustomerWhateverTheAccents(test *testing.T
 		}
 	}
 }
+
+func TestTheBoardRemembersTheViewTheArtistChose(test *testing.T) {
+	fixture := newBench(test)
+	if spacious, err := fixture.projects.Spacious(); err != nil || spacious {
+		test.Fatalf("a new database starts spacious: %v, %v", spacious, err)
+	}
+	if err := fixture.projects.SetSpacious(true); err != nil {
+		test.Fatal(err)
+	}
+	if spacious, err := fixture.projects.Spacious(); err != nil || !spacious {
+		test.Errorf("the spacious view was not kept: %v, %v", spacious, err)
+	}
+}

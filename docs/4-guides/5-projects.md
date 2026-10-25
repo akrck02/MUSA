@@ -15,9 +15,13 @@ the first message to the sales history.
 | Para revisar | sent to the customer for changes |
 | Entregado | finished and handed over |
 
-Each card shows a band of its colour, the title, who it is for with a button for each of their
+In the spacious view, each card shows a band of its colour, the title, who it is for with a button for each of their
 networks, the catalogue product it makes (if any), when it is due and its price. The due date is
 red when late and amber when due today or tomorrow. Due dates also show on the calendar of Inicio.
+
+The board starts **compact**: each card is a coloured dot and its title, so long boards fit. The
+button **Vista amplia** opens every card up as described above, and **Vista compacta** folds them
+again. MUSA remembers the view chosen for the next time it opens.
 
 ## A project
 

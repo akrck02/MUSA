@@ -18,6 +18,9 @@ git clone --branch feature/system-fonts https://github.com/akrck02/go-renderer.g
 git clone --branch feature/v4 https://github.com/akrck02/bubble.git
 ```
 
+The exact commits CI builds with are in `.github/workflows/test.yaml`; when the latest of a
+branch breaks the build, check out that commit.
+
 ### `go: go.mod requires go >= 1.26.0`
 
 Your Go is older. Install a newer one from [go.dev/dl](https://go.dev/dl/).

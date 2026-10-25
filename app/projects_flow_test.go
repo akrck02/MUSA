@@ -148,3 +148,23 @@ func TestTheBoardStartsCompactAndOpensUpOnRequest(test *testing.T) {
 		test.Errorf("the spacious view offers no way back: %v", err)
 	}
 }
+
+func TestTheBoardOpensInTheViewChosenLastTime(test *testing.T) {
+	program, window := openApp(test, true)
+	program.Open(Projects)
+	window.Frames(2)
+	steps(test, window, click(window, "Vista amplia"))
+	reopened, err := New(program.stores.Database, Options{})
+	if err != nil {
+		test.Fatal(err)
+	}
+	reopened.Open(Projects)
+	again, err := uitest.New(reopened.Build, uitest.Size(1280, 1600))
+	if err != nil {
+		test.Fatal(err)
+	}
+	again.Frames(2)
+	if _, err := again.Element("Vista compacta"); err != nil {
+		test.Errorf("MUSA forgot the spacious view: %v", err)
+	}
+}

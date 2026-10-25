@@ -1,6 +1,7 @@
 # Checks every push and pull request: the formatter, the linter and the tests. MUSA builds against
 # checkouts of Go UI, Go Renderer and Bubble beside it (see go.mod), so they are checked out too,
-# at the branches MUSA is built with.
+# at the commits MUSA is built with: a push to those branches never turns MUSA red by itself. Move
+# a commit here when MUSA starts using something newer, in the same pull request.
 name: Test
 on:
   push:
@@ -17,17 +18,17 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: akrck02/go-ui
-          ref: feature/stacked
+          ref: d75b8bfb80111e3608c4ba018b8e2a1a477e5612 # feature/stacked
           path: go-ui
       - uses: actions/checkout@v4
         with:
           repository: akrck02/go-renderer
-          ref: feature/system-fonts
+          ref: e529f421f7c6bd10426fc34dcdea02ce2a3120d2 # feature/system-fonts
           path: go-renderer
       - uses: actions/checkout@v4
         with:
           repository: akrck02/bubble
-          ref: feature/v4
+          ref: b4c18caa0af42b7f9fceb81817c72f4d83fb476d # feature/v4
           path: bubble
       - uses: actions/setup-go@v5
         with:

@@ -49,7 +49,9 @@ type productChoice struct {
 // nil where nothing can open links.
 func NewScreens(store *Store, people *customers.Store, products *catalogue.Store, newID func() string,
 	now func() time.Time, openLink func(link string) bool) *Screens {
-	return &Screens{store: store, customers: people, products: products, newID: newID, now: now, openLink: openLink}
+	screens := &Screens{store: store, customers: people, products: products, newID: newID, now: now, openLink: openLink}
+	screens.spacious, _ = store.Spacious() // a view that cannot be read starts compact, as on a new device
+	return screens
 }
 
 // Reload reads the projects, their customers, the networks and the digital products again.
@@ -164,7 +166,7 @@ func (screens *Screens) ShowEditor() {
 }
 
 // compactButton switches the board between full cards and compact ones; its icon shows the view
-// it switches to.
+// it switches to. The choice is kept for the next time MUSA opens.
 func (screens *Screens) compactButton(context *ui.Context) {
 	icon, label := "layout-grid", "Vista amplia"
 	if screens.spacious {
@@ -172,5 +174,6 @@ func (screens *Screens) compactButton(context *ui.Context) {
 	}
 	if look.ToolButton(context, icon, label) {
 		screens.spacious = !screens.spacious
+		screens.tellFailure(screens.store.SetSpacious(screens.spacious))
 	}
 }
