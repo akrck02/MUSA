@@ -241,7 +241,7 @@ func (program *App) monthHeader(context *ui.Context, shown calendar.Date) {
 	// Months are counted from their first day: the 31st of one month has no twin in the next.
 	shown = calendar.Date{Year: shown.Year, Month: shown.Month, Day: 1}
 	look.Space(context, monthHeaderTop)
-	context.Box(ui.Layout{Width: ui.Grow(), Gap: monthHeaderGap, AlignY: ui.Center, Padding: ui.Padding{Bottom: monthHeaderBottom}}, func() {
+	context.Box(ui.Layout{Width: ui.Grow(), Gap: monthHeaderGap, Wrap: true, AlignY: ui.Center, Padding: ui.Padding{Bottom: monthHeaderBottom}}, func() {
 		if roundButton(context, "chevron-left", "Mes anterior") {
 			program.home.month = shown.AddMonths(-1)
 		}

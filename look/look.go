@@ -243,3 +243,17 @@ func Meter(context *ui.Context, done, whole int) {
 		}
 	})
 }
+
+// pageSides is the most room a page's margins take from the window, both sides together, in
+// pixels (app's frame keeps 32 on each side).
+const pageSides = 64
+
+// AtMost is a width of pixels when the page has room for it, and the whole page's width when it
+// does not: a column designed for a laptop that a phone narrows instead of cutting.
+func AtMost(context *ui.Context, pixels float32) ui.Sizing {
+	width, _ := context.Size()
+	if width < pixels+pageSides {
+		return ui.Grow()
+	}
+	return ui.Fixed(pixels)
+}

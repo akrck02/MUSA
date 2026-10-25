@@ -222,10 +222,10 @@ const (
 func (screens *Screens) drawChoice(context *ui.Context) {
 	theme := context.Theme
 	context.Box(ui.Layout{Width: ui.Grow(), AlignX: ui.Center}, func() {
-		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Fixed(choiceWidth), Padding: ui.Padding{Top: choiceTop}}, func() {
+		context.Box(ui.Layout{Direction: ui.Vertical, Width: look.AtMost(context, choiceWidth), Padding: ui.Padding{Top: choiceTop}}, func() {
 			context.Text("¿Dónde vendes hoy?", ui.TextStyle{Size: choiceTitleSize, Weight: draw2d.Bold, LineHeight: choiceTitleLine})
 			look.Space(context, choiceLeadAbove)
-			context.Text("Elige el evento y lo que vendas quedará apuntado en él.", ui.TextStyle{Size: choiceLeadSize, Color: theme.InkSoft})
+			look.Paragraph(context, "Elige el evento y lo que vendas quedará apuntado en él.", ui.TextStyle{Size: choiceLeadSize, Color: theme.InkSoft})
 			look.Space(context, choiceLeadBelow)
 			if screens.loadErr != nil {
 				look.Empty(context, "triangle-alert", "No se pudieron leer los eventos", screens.loadErr.Error(), "")
@@ -267,11 +267,11 @@ func (screens *Screens) chooseFair(fair events.Event) {
 }
 
 // heroCard is the fair on today: dark, with what the artist took and «Vender aquí». All of it
-// opens the fair's stand.
+// opens the fair's stand. On a phone its parts stack, so a long name keeps its room.
 func (screens *Screens) heroCard(context *ui.Context, fair events.Event) {
 	colours := heroColoursOf(context.Theme)
 	normal := ui.Look{Fill: colours.fill, Border: colours.border, BorderWidth: colours.borderWidth, Radius: heroRadius}
-	layout := ui.Layout{Width: ui.Grow(), Padding: ui.Pad(heroPadding + colours.borderWidth), Gap: heroGap, AlignY: ui.Center}
+	layout := ui.Layout{Direction: look.Across(context), Width: ui.Grow(), Padding: ui.Pad(heroPadding + colours.borderWidth), Gap: heroGap, AlignY: ui.Center}
 	if context.Clickable(fair.Name, layout, ui.Looks{Normal: normal, Hovered: normal, Pressed: normal}, func() {
 		side := ui.Fixed(heroBadgeSide)
 		badge := ui.Layout{Width: side, Height: side, AlignX: ui.Center, AlignY: ui.Center}
@@ -392,31 +392,60 @@ func (screens *Screens) drawRegister(context *ui.Context) {
 	})
 }
 
-// top is where the stand sells from with «Cambiar», a tab per tag, and the search and «+».
+// top is where the stand sells from with «Cambiar», a tab per tag, and the search and «+», in one
+// row; on a phone the tabs go on a row of their own under the rest, so they can wrap.
 func (screens *Screens) top(context *ui.Context, tags []string) {
-	context.Box(ui.Layout{Width: ui.Grow(), AlignY: ui.Center}, func() {
-		if screens.preparing == nil {
-			screens.where(context)
-			look.Space(context, whereSpace)
-			context.Frame(ui.Layout{Width: ui.Fixed(1), Height: ui.Fixed(dividerHeight)}, ui.Look{Fill: context.Theme.Line}, nil)
-			look.Space(context, dividerSpace)
+	if !look.Narrow(context) {
+		context.Box(ui.Layout{Width: ui.Grow(), AlignY: ui.Center}, func() {
+			screens.whereAndDivider(context)
+			context.Box(ui.Layout{Width: ui.Grow()}, func() { screens.tagTabs(context, tags) })
+			screens.tools(context)
+		})
+		return
+	}
+	context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow(), Gap: toolsGap}, func() {
+		context.Box(ui.Layout{Width: ui.Grow(), AlignY: ui.Center}, func() {
+			if screens.preparing == nil {
+				screens.where(context)
+			}
+			context.Spacer()
+			screens.tools(context)
+		})
+		screens.tagTabs(context, tags)
+	})
+}
+
+// whereAndDivider is where the stand sells from and a fine line after it; preparing has neither.
+func (screens *Screens) whereAndDivider(context *ui.Context) {
+	if screens.preparing != nil {
+		return
+	}
+	screens.where(context)
+	look.Space(context, whereSpace)
+	context.Frame(ui.Layout{Width: ui.Fixed(1), Height: ui.Fixed(dividerHeight)}, ui.Look{Fill: context.Theme.Line}, nil)
+	look.Space(context, dividerSpace)
+}
+
+// tagTabs is a tab per tag, when the products have tags.
+func (screens *Screens) tagTabs(context *ui.Context, tags []string) {
+	if len(tags) == 0 {
+		return
+	}
+	tabs := make([]look.Tab, len(tags))
+	for index, tag := range tags {
+		tabs[index] = look.Tab{Icon: screens.tagIcon(tag), Label: catalogue.Plural(tag)}
+	}
+	look.PillTabs(context, "tag", &screens.tag, tabs, look.LargeTabs)
+}
+
+// tools are the search and «Venta libre».
+func (screens *Screens) tools(context *ui.Context) {
+	context.Box(ui.Layout{Gap: toolsGap}, func() {
+		look.SearchField(context, &screens.search, "Buscar producto")
+		look.SearchButton(context, &screens.search)
+		if screens.preparing == nil && look.ToolButton(context, "plus", "Venta libre") {
+			screens.tell(false, "Pronto: vender algo que no está en el catálogo")
 		}
-		context.Box(ui.Layout{Width: ui.Grow()}, func() {
-			if len(tags) > 0 {
-				tabs := make([]look.Tab, len(tags))
-				for index, tag := range tags {
-					tabs[index] = look.Tab{Icon: screens.tagIcon(tag), Label: catalogue.Plural(tag)}
-				}
-				look.PillTabs(context, "tag", &screens.tag, tabs, look.LargeTabs)
-			}
-		})
-		context.Box(ui.Layout{Gap: toolsGap}, func() {
-			look.SearchField(context, &screens.search, "Buscar producto")
-			look.SearchButton(context, &screens.search)
-			if screens.preparing == nil && look.ToolButton(context, "plus", "Venta libre") {
-				screens.tell(false, "Pronto: vender algo que no está en el catálogo")
-			}
-		})
 	})
 }
 

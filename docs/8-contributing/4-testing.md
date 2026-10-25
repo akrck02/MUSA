@@ -102,7 +102,8 @@ which lets animations finish. A few things to know:
 - **Check the store too,** not only the screen: what was saved is what matters.
 
 `app/explore_test.go` opens every page of the app and presses what can be pressed, looking for
-crashes: add a new page to its list.
+crashes, and `app/phone_test.go` checks that every page fits a phone: add a new page to their
+list.
 
 ## Watch them
 

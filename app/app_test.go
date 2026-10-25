@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	ui "github.com/akrck02/go-ui"
 	"github.com/akrck02/go-ui/uitest"
 
 	"github.com/Itros97/MUSA/calendar"
@@ -86,8 +87,12 @@ func TestCreatingAProductPutsItInTheCatalogue(test *testing.T) {
 	if product := products[0]; product.Name != "Lámina de prueba" || product.Kind != catalogue.Physical || product.Variants[0].Price != 1500 {
 		test.Errorf("saved %+v", product)
 	}
-	if _, err := window.Element("Lámina de prueba"); err != nil {
-		test.Error("the new product is not in the list:", err)
+	// the restock banner names it too, so look for its card: a button
+	isCard := func(node ui.AccessibleNode) bool {
+		return node.Role == ui.ButtonRole && node.Label == "Lámina de prueba"
+	}
+	if !slices.ContainsFunc(window.Context().ScreenReaderNodes(), isCard) {
+		test.Error("the new product is not in the list")
 	}
 }
 

@@ -18,6 +18,7 @@ Package look holds the few pieces of Bubble 4 that MUSA's screens need and bubbl
 | `func Across(context *ui.Context) ui.Direction` | Across is the direction of a row that holds words and their actions: side by side on a wide window, the actions under the words on a phone, where long names would run into them. |
 | `func Answering(theme ui.Theme, normal, hovered ui.Look) ui.Looks` | Answering are a button's looks from its look at rest and under the pointer: its border, or its fill when it has none, turns a shade deeper when hovered and deeper still when pressed, so it answers the finger in its own colour. |
 | `func Arriving(look ui.Look, shown, rise float32) ui.Look` | Arriving is a look on its way in: shown goes from 0 (not yet) to 1 (there), as Context.Appear gives it; until then the box is see-through and lower by part of rise. |
+| `func AtMost(context *ui.Context, pixels float32) ui.Sizing` | AtMost is a width of pixels when the page has room for it, and the whole page's width when it does not: a column designed for a laptop that a phone narrows instead of cutting. |
 | `func Badge(context *ui.Context, icon string, size float32)` | Badge is an icon in a soft round patch of the accent, the picture of a place or an action. |
 | `func Card(context *ui.Context, layout ui.Layout, content func())` | Card is Bubble's card on paper: the surface, a fine line around it and the panels' corners. |
 | `func CentredParagraph(context *ui.Context, text string, style ui.TextStyle)` | CentredParagraph is a Paragraph whose lines stand in the middle of its box. |

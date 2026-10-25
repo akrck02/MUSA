@@ -99,6 +99,20 @@ Colours, sizes and radii come from `context.Theme` (`theme.Primary`, `theme.Gap`
 by hand, so the dark theme comes for free. A piece that two packages need goes into `look`; a piece
 that any Go UI program could use belongs in Go UI itself, through a proposal there.
 
+## Phones
+
+MUSA runs on phones too, held upright. A page designed for a laptop must still fit 390 pixels:
+
+- **No fixed widths for columns or rows:** `look.AtMost(context, pixels)` is a width a phone
+  narrows, and `look.Columns` halves a grid's columns.
+- **Rows that hold words and actions** turn vertical on a phone with `look.Across(context)`, or
+  wrap with `Wrap: true`.
+- **Long sentences** go in `look.Paragraph`, which breaks into lines; `context.Text` keeps one.
+- **Sheets and modals** shrink by themselves: Go UI keeps them inside the window.
+
+`TestEveryPageFitsAPhone` (`app/phone_test.go`) opens every page of `explorePages` at 390 × 844
+and fails on anything drawn past the edge. Add a new page to that list.
+
 ## Labels: for tests and for people
 
 Every control has a label: the text of a button, or one given with `context.Describe`. Tests find

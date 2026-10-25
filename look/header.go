@@ -48,9 +48,15 @@ func SizedPageHeader(context *ui.Context, title, subtitle string, size HeaderSiz
 				Paragraph(context, subtitle, ui.TextStyle{Size: size.Subtitle, Color: theme.InkSoft})
 			}
 		})
-		if actions != nil {
-			context.Box(ui.Layout{Gap: headerGap, AlignY: ui.Center}, actions)
+		if actions == nil {
+			return
 		}
+		row := ui.Layout{Gap: headerGap, AlignY: ui.Center}
+		if Narrow(context) {
+			// under the words on a phone, and onto a second line when they do not fit one
+			row.Width, row.Wrap = ui.Grow(), true
+		}
+		context.Box(row, actions)
 	})
 }
 

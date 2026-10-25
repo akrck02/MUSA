@@ -140,7 +140,7 @@ func (screens *Screens) restockBanner(context *ui.Context) {
 		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow()}, func() {
 			context.Text(restockTitle(len(names)),
 				ui.TextStyle{Size: bannerTitleSize, Weight: draw2d.Bold})
-			context.Text(restockSummary(names), ui.TextStyle{Color: theme.InkSoft})
+			look.Paragraph(context, restockSummary(names), ui.TextStyle{Color: theme.InkSoft})
 		})
 		action := restockLinkWords(screens.query.LowStockOnly)
 		if look.Link(context, action) {
@@ -377,7 +377,7 @@ const (
 func (screens *Screens) digitalList(context *ui.Context, shown []Product) {
 	theme := context.Theme
 	look.Space(context, digitalHintSpace)
-	context.Text("Sin stock que contar: se venden tantas veces como quieras.", ui.TextStyle{Size: digitalHintSize, Color: theme.InkSoft})
+	look.Paragraph(context, "Sin stock que contar: se venden tantas veces como quieras.", ui.TextStyle{Size: digitalHintSize, Color: theme.InkSoft})
 	look.Space(context, digitalGridSpace)
 	if len(shown) == 0 {
 		action := ""

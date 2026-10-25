@@ -82,7 +82,8 @@ func (screens *Screens) drawEditor(context *ui.Context) {
 	}
 }
 
-// editorHeader is a round back button and the product's name, with Duplicar and Guardar.
+// editorHeader is a round back button and the product's name, with Duplicar and Guardar beside
+// them, or under them on a phone.
 func (screens *Screens) editorHeader(context *ui.Context) {
 	theme := context.Theme
 	edited := &screens.editor.form
@@ -99,16 +100,26 @@ func (screens *Screens) editorHeader(context *ui.Context) {
 			return
 		}
 		context.Text(title, ui.TextStyle{Size: editorTitleSize, Weight: draw2d.Bold, LineHeight: editorTitleHeight})
-		context.Spacer()
-		context.Box(ui.Layout{Gap: headerButtonGap, AlignY: ui.Center}, func() {
-			if !edited.isNew && ghostButton(context, "Duplicar") {
-				screens.duplicate()
-				return
-			}
-			if saveButton(context, "Guardar") {
-				screens.save()
-			}
-		})
+		if !look.Narrow(context) {
+			context.Spacer()
+			screens.editorButtons(context)
+		}
+	})
+	if look.Narrow(context) {
+		screens.editorButtons(context) // under the name on a phone, where both do not fit one line
+	}
+}
+
+// editorButtons are Duplicar, for a saved product, and Guardar.
+func (screens *Screens) editorButtons(context *ui.Context) {
+	context.Box(ui.Layout{Gap: headerButtonGap, AlignY: ui.Center, Padding: ui.Padding{Bottom: editorTopBottom}}, func() {
+		if !screens.editor.form.isNew && ghostButton(context, "Duplicar") {
+			screens.duplicate()
+			return
+		}
+		if saveButton(context, "Guardar") {
+			screens.save()
+		}
 	})
 }
 

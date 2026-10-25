@@ -75,7 +75,7 @@ func (screens *Screens) drawHistory(context *ui.Context) {
 	screens.historyFilters(context)
 	summary := Summarise(shown)
 	look.Space(context, filtersBottom)
-	context.Box(ui.Layout{Gap: figuresGap, AlignY: ui.End}, func() {
+	context.Box(ui.Layout{Width: ui.Grow(), Gap: figuresGap, Wrap: true, AlignY: ui.End}, func() {
 		screens.periodFigure(context, money.Format(summary.Revenue))
 		inlineFigure(context, "Coste", money.Format(summary.Cost))
 		inlineFigure(context, "Te queda", money.Format(summary.Margin()))

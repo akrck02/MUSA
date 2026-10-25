@@ -66,9 +66,9 @@ func (screens *Screens) methodDialog(context *ui.Context) {
 	theme := context.Theme
 	dialogTitle(context, "Cobrar "+money.Format(screens.basket.Total()))
 	look.Space(context, summarySpace)
-	context.Text(piecesWords(screens.basket.Count())+": "+screens.basket.Words(), ui.TextStyle{Size: summarySize, Color: theme.InkSoft})
+	look.Paragraph(context, piecesWords(screens.basket.Count())+": "+screens.basket.Words(), ui.TextStyle{Size: summarySize, Color: theme.InkSoft})
 	look.Space(context, summarySpaceOut)
-	context.Box(ui.Layout{Width: ui.Grow(), Columns: 2, Gap: methodGap}, func() {
+	context.Box(ui.Layout{Width: ui.Grow(), Columns: look.Columns(context, 2), Gap: methodGap}, func() {
 		if screens.methodCard(context, "coins", "Pagar en efectivo") {
 			screens.received.Clear()
 			screens.step = payingCash
