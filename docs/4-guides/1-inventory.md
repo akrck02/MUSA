@@ -11,7 +11,9 @@ A product is either **physical** or **digital**, and always has at least one var
 - A **digital product** has a delivery format and an optional turnaround in days. Its variants are levels or formats, such as "sketch" or "full colour".
 
 Each variant has its own price and cost. Money is stored as whole cents to avoid rounding errors.
-The margin is price minus cost, also shown as a percentage of the price.
+The margin is price minus cost, also shown as a percentage of the price. Under the price and
+the cost, the editor says what each piece earns as you type, and warns in red when the cost is
+above the price; it still lets you save, for a piece you sell at a loss on purpose.
 
 ## Rules on save
 

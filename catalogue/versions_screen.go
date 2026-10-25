@@ -92,6 +92,7 @@ func (screens *Screens) singleVersion(context *ui.Context) {
 		look.Space(context, boxGap)
 		stockBox(context, typed)
 	}
+	marginNote(context, typed)
 	screens.versionProblem(context, typed.id)
 	context.Pop()
 	context.Box(ui.Layout{Padding: ui.Padding{Top: addOtherTop, Bottom: addOtherBottom}}, func() {
@@ -252,6 +253,7 @@ func (screens *Screens) variantRow(context *ui.Context, typed *variantForm) bool
 			func() { amountField(context, "cost", &typed.cost, "3,50", versionMoneySize, draw2d.Regular) },
 			func() { removed = stockCell(context, typed) })
 	})
+	marginNote(context, typed)
 	screens.versionProblem(context, typed.id)
 	return removed
 }
@@ -340,4 +342,17 @@ func chevron(open bool) string {
 		return "chevron-up"
 	}
 	return "chevron-down"
+}
+
+// marginNote tells, as the artist types, what each piece earns, and warns in red when it loses.
+func marginNote(context *ui.Context, typed *variantForm) {
+	words, losing := marginWords(typed.price, typed.cost)
+	if words == "" {
+		return
+	}
+	colour := context.Theme.InkSoft
+	if losing {
+		colour = context.Theme.Danger
+	}
+	look.Paragraph(context, words, ui.TextStyle{Size: context.Theme.SmallTextSize, Color: colour})
 }

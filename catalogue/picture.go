@@ -17,6 +17,9 @@ func Initial(name string) string {
 			return string(unicode.ToUpper(letter))
 		}
 	}
+	if name == "" {
+		return "" // nothing to draw yet, rather than the replacement sign
+	}
 	first, _ := utf8.DecodeRuneInString(name)
 	return string(first)
 }

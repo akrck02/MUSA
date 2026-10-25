@@ -2,6 +2,7 @@ package catalogue
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/Itros97/MUSA/money"
@@ -174,4 +175,23 @@ func lowStockWords(left int) string {
 		return "Agotado"
 	}
 	return "Pocos"
+}
+
+// marginWords says what each piece earns or loses at the typed price and cost, and whether it
+// loses; it says nothing until both read as amounts.
+func marginWords(price, cost string) (words string, losing bool) {
+	priceAmount, priceRead := money.Parse(price)
+	costAmount, costRead := money.Parse(cost)
+	if !priceRead || !costRead {
+		return "", false
+	}
+	margin := money.MarginOf(priceAmount, costAmount)
+	if margin.Negative() {
+		return "Pierdes " + money.Format(-margin.Amount) + " con cada pieza: te cuesta más de lo que cobras", true
+	}
+	words = "Ganas " + money.Format(margin.Amount) + " por pieza"
+	if margin.HasPercent {
+		words += " · " + strconv.Itoa(margin.Percent) + " %"
+	}
+	return words, false
 }

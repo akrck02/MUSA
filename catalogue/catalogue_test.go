@@ -162,3 +162,28 @@ func TestADigitalProductSaysWhenItArrivesAndHowOftenItSold(test *testing.T) {
 		}
 	}
 }
+
+func TestTheEditorSaysWhatEachPieceEarnsOrLoses(test *testing.T) {
+	cases := []struct {
+		price, cost string
+		words       string
+		losing      bool
+	}{
+		{"12,50", "3,50", "Ganas 9 € por pieza · 72 %", false},
+		{"10", "12", "Pierdes 2 € con cada pieza: te cuesta más de lo que cobras", true},
+		{"", "3", "", false},
+		{"abc", "3", "", false},
+	}
+	for _, each := range cases {
+		words, losing := marginWords(each.price, each.cost)
+		if words != each.words || losing != each.losing {
+			test.Errorf("%s and %s: %q (losing %v), want %q", each.price, each.cost, words, losing, each.words)
+		}
+	}
+}
+
+func TestAProductWithNoNameHasNoInitial(test *testing.T) {
+	if initial := Initial(""); initial != "" {
+		test.Errorf("Initial of an empty name: %q, want nothing", initial)
+	}
+}

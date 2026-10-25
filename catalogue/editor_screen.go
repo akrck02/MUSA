@@ -132,7 +132,7 @@ func (screens *Screens) details(context *ui.Context) {
 		typed := &edited.variants[index]
 		context.Push(typed.id)
 		context.Text(nameOr(typed.name, "Única"), ui.TextStyle{Weight: draw2d.Bold})
-		marginWords(context, typed)
+		marginSummary(context, typed)
 		if edited.product.Kind == Physical {
 			screens.physicalFields(context, typed)
 		}
@@ -140,8 +140,8 @@ func (screens *Screens) details(context *ui.Context) {
 	}
 }
 
-// marginWords shows what each unit leaves, as the artist types the price and the cost.
-func marginWords(context *ui.Context, typed *variantForm) {
+// marginSummary shows what each unit leaves, as the artist types the price and the cost.
+func marginSummary(context *ui.Context, typed *variantForm) {
 	theme := context.Theme
 	price, priceRead := money.Parse(nameOr(typed.price, "0"))
 	cost, costRead := money.Parse(nameOr(typed.cost, "0"))
