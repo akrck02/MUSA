@@ -26,33 +26,33 @@ func digitalProduct(id, name string) Product {
 
 // testStore opens a store on a database in memory, with a clock that moves one minute per reading
 // and ids counted from one.
-func testStore(t *testing.T) *Store {
-	t.Helper()
+func testStore(test *testing.T) *Store {
+	test.Helper()
 	database, err := storage.Open(storage.InMemory)
 	if err != nil {
-		t.Fatal(err)
+		test.Fatal(err)
 	}
-	t.Cleanup(func() { database.Close() })
+	test.Cleanup(func() { database.Close() })
 	moment, counter := epoch, 0
 	clock := func() time.Time { moment = moment.Add(time.Minute); return moment }
 	ids := func() string { counter++; return fmt.Sprintf("id-%d", counter) }
 	return NewStore(database, clock, ids)
 }
 
-func mustSave(t *testing.T, store *Store, draft ProductDraft) Product {
-	t.Helper()
+func mustSave(test *testing.T, store *Store, draft ProductDraft) Product {
+	test.Helper()
 	product, problems, err := store.Save(draft)
 	if err != nil || len(problems) > 0 {
-		t.Fatalf("save: %v %v", problems, err)
+		test.Fatalf("save: %v %v", problems, err)
 	}
 	return product
 }
 
-func mustFind(t *testing.T, store *Store, id string) Product {
-	t.Helper()
+func mustFind(test *testing.T, store *Store, id string) Product {
+	test.Helper()
 	product, found, err := store.Find(id)
 	if err != nil || !found {
-		t.Fatalf("find %s: %v %v", id, found, err)
+		test.Fatalf("find %s: %v %v", id, found, err)
 	}
 	return product
 }

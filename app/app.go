@@ -94,6 +94,16 @@ func New(database *storage.Database, options Options) (*App, error) {
 	if err := program.chosenTheme(); err != nil {
 		return nil, err
 	}
+	program.buildScreens()
+	program.Open(Home)
+	return program, nil
+}
+
+// buildScreens makes each place's screens over the stores, and connects the places that lead
+// to one another: no package imports app, so app gives each one what it may open.
+func (program *App) buildScreens() {
+	stores, now := program.stores, program.stores.Now
+	products, sold, fairs := stores.Products, stores.Sales, stores.Events
 	program.catalogue = catalogue.NewScreens(products, storage.NewID)
 	program.catalogue.CountSalesWith(func() (map[string]int, error) {
 		made, err := sold.All()
@@ -119,9 +129,7 @@ func New(database *storage.Database, options Options) (*App, error) {
 		})
 	})
 	program.stand.AddProductsWith(func() { program.Open(Catalogue) })
-	program.projects = projects.NewScreens(commissions, people, products, storage.NewID, now, options.OpenLink)
-	program.Open(Home)
-	return program, nil
+	program.projects = projects.NewScreens(stores.Projects, stores.Customers, products, storage.NewID, now, program.options.OpenLink)
 }
 
 // Open moves to a place, reading its data again: other places may have changed it.
@@ -157,10 +165,12 @@ func newTheme(mode bubble.Mode) (ui.Theme, error) {
 	return pageTheme(goui.Theme(design)), nil
 }
 
-// themeSetting is the setting that keeps the theme the artist chose: themeWords[true] or [false].
-const themeSetting = "theme"
-
-var themeWords = map[bool]string{true: "dark", false: "light"}
+// The setting that keeps the theme the artist chose, and the two values it holds.
+const (
+	themeSetting = "theme"
+	darkTheme    = "dark"
+	lightTheme   = "light"
+)
 
 // Dark tells whether MUSA is drawn with its dark theme.
 func (program *App) Dark() bool { return program.dark }
@@ -169,14 +179,14 @@ func (program *App) Dark() bool { return program.dark }
 // choice for the next time MUSA opens. The theme changes even when the choice cannot be kept.
 func (program *App) SetDark(dark bool) error {
 	program.dark = dark
-	return program.stores.Database.SetSetting(themeSetting, themeWords[dark])
+	return program.stores.Database.SetSetting(themeSetting, themeName(dark))
 }
 
 // chosenTheme is the theme the artist last chose; without a choice, the one MUSA was opened with.
 func (program *App) chosenTheme() error {
 	words, found, err := program.stores.Database.Setting(themeSetting)
 	if found {
-		program.dark = words == themeWords[true]
+		program.dark = words == darkTheme
 	}
 	return err
 }
@@ -290,4 +300,12 @@ func (program *App) showFairStand(page string) {
 	if program.stand.ChooseTodaysFair() {
 		show()
 	}
+}
+
+// themeName is how the setting writes a theme.
+func themeName(dark bool) string {
+	if dark {
+		return darkTheme
+	}
+	return lightTheme
 }

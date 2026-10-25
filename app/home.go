@@ -1,8 +1,6 @@
 package app
 
 import (
-	"errors"
-	"strings"
 	"time"
 
 	ui "github.com/akrck02/go-ui"
@@ -115,10 +113,10 @@ func (program *App) askWipe(context *ui.Context) {
 
 func (program *App) fillWithDemo() {
 	err := demo.Fill(program.stores)
-	if err != nil && strings.HasPrefix(err.Error(), demo.CodeNotEmpty) {
-		err = errors.New("La base de datos ya tiene datos: vacíala primero")
-	}
 	program.tell(err, "Datos de prueba cargados")
+	if demo.CodeOf(err) == demo.CodeNotEmpty {
+		program.home.note = "La base de datos ya tiene datos: vacíala primero" // the artist's words, not the code's
+	}
 	program.Open(Home)
 }
 

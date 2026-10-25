@@ -51,8 +51,8 @@ func (screens *Screens) lifeButtons(context *ui.Context) {
 	}
 	archived := edited.product.Status == Archived
 	context.Box(ui.Layout{Width: ui.Grow(), Gap: 8}, func() {
-		if context.FlatIconButton("archive", map[bool]string{true: "Restaurar", false: "Archivar"}[archived]) {
-			screens.tell(screens.store.SetArchived(edited.product.ID, !archived), map[bool]string{true: "Restaurado", false: "Archivado"}[archived])
+		if context.FlatIconButton("archive", archiveWords(archived)) {
+			screens.tell(screens.store.SetArchived(edited.product.ID, !archived), archivedWords(archived))
 			screens.editor = nil
 			return
 		}

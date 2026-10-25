@@ -21,35 +21,35 @@ import (
 
 // openApp opens MUSA over a database in memory, filled with the demo when withDemo, in a test
 // window the size of a laptop's.
-func openApp(t *testing.T, withDemo bool) (*App, *uitest.Window) {
-	t.Helper()
+func openApp(test *testing.T, withDemo bool) (*App, *uitest.Window) {
+	test.Helper()
 	database, err := storage.Open(storage.InMemory)
 	if err != nil {
-		t.Fatal(err)
+		test.Fatal(err)
 	}
-	t.Cleanup(func() { database.Close() })
+	test.Cleanup(func() { database.Close() })
 	program, err := New(database, Options{DevelopmentTools: true, OpenLink: func(string) bool { return true }}) // as if a browser opened it
 	if err != nil {
-		t.Fatal(err)
+		test.Fatal(err)
 	}
 	if withDemo {
 		if err := demo.Fill(program.Stores()); err != nil {
-			t.Fatal(err)
+			test.Fatal(err)
 		}
 	}
-	window, err := uitest.New(program.Build, uitest.Size(1280, 1600), uitest.Test(t))
+	window, err := uitest.New(program.Build, uitest.Size(1280, 1600), uitest.Test(test))
 	if err != nil {
-		t.Fatal(err)
+		test.Fatal(err)
 	}
 	window.Frame()
 	return program, window
 }
 
-func steps(t *testing.T, window *uitest.Window, script ...func() error) {
-	t.Helper()
+func steps(test *testing.T, window *uitest.Window, script ...func() error) {
+	test.Helper()
 	for index, step := range script {
 		if err := step(); err != nil {
-			t.Fatalf("step %d: %v", index+1, err)
+			test.Fatalf("step %d: %v", index+1, err)
 		}
 	}
 }
@@ -68,11 +68,11 @@ func click(window *uitest.Window, label string) func() error {
 	return func() error { return window.Click(label) }
 }
 
-func TestCreatingAProductPutsItInTheCatalogue(t *testing.T) {
-	program, window := openApp(t, false)
+func TestCreatingAProductPutsItInTheCatalogue(test *testing.T) {
+	program, window := openApp(test, false)
 	program.Open(Catalogue)
 	window.Frame()
-	steps(t, window,
+	steps(test, window,
 		click(window, "Crear tu primer producto"),
 		click(window, "Producto físico"),
 		typeInto(window, "Nombre del producto", "Lámina de prueba"),
@@ -81,49 +81,49 @@ func TestCreatingAProductPutsItInTheCatalogue(t *testing.T) {
 	)
 	products, err := program.stores.Products.All()
 	if err != nil || len(products) != 1 {
-		t.Fatalf("%d products, %v", len(products), err)
+		test.Fatalf("%d products, %v", len(products), err)
 	}
 	if product := products[0]; product.Name != "Lámina de prueba" || product.Kind != catalogue.Physical || product.Variants[0].Price != 1500 {
-		t.Errorf("saved %+v", product)
+		test.Errorf("saved %+v", product)
 	}
 	if _, err := window.Element("Lámina de prueba"); err != nil {
-		t.Error("the new product is not in the list:", err)
+		test.Error("the new product is not in the list:", err)
 	}
 }
 
-func TestAProductWithoutANameIsNotSaved(t *testing.T) {
-	program, window := openApp(t, false)
+func TestAProductWithoutANameIsNotSaved(test *testing.T) {
+	program, window := openApp(test, false)
 	program.Open(Catalogue)
 	window.Frame()
-	steps(t, window, click(window, "Crear tu primer producto"),
+	steps(test, window, click(window, "Crear tu primer producto"),
 		click(window, "Producto digital"), click(window, "Guardar"))
 	if _, err := window.Element("Ponle un nombre"); err != nil {
-		t.Error("the editor does not say what is missing:", err)
+		test.Error("the editor does not say what is missing:", err)
 	}
 	if products, _ := program.stores.Products.All(); len(products) != 0 {
-		t.Errorf("%d products saved", len(products))
+		test.Errorf("%d products saved", len(products))
 	}
 }
 
-func TestAnOpenEventOpensItsStand(t *testing.T) {
-	program, window := openApp(t, true)
+func TestAnOpenEventOpensItsStand(test *testing.T) {
+	program, window := openApp(test, true)
 	program.Show("fair")
 	window.Frame()
-	steps(t, window, click(window, "Abrir el puesto"))
+	steps(test, window, click(window, "Abrir el puesto"))
 	if program.place != Stand {
-		t.Errorf("«Abrir el puesto» leaves the app on %v", program.place)
+		test.Errorf("«Abrir el puesto» leaves the app on %v", program.place)
 	}
 }
 
-func TestRecordingAnOrderTakesItsStockFromTheCatalogue(t *testing.T) {
-	program, window := openApp(t, true)
+func TestRecordingAnOrderTakesItsStockFromTheCatalogue(test *testing.T) {
+	program, window := openApp(test, true)
 	before, _ := program.stores.Sales.All()
 	program.Open(Sales)
 	window.Frame()
-	steps(t, window, click(window, "Nuevo pedido"), typeInto(window, "Opcional", "Nora"), click(window, "Guardar"))
+	steps(test, window, click(window, "Nuevo pedido"), typeInto(window, "Opcional", "Nora"), click(window, "Guardar"))
 	after, _ := program.stores.Sales.All()
 	if len(after) != len(before)+1 {
-		t.Fatalf("%d sales, then %d", len(before), len(after))
+		test.Fatalf("%d sales, then %d", len(before), len(after))
 	}
 	var recorded sales.Sale
 	for _, sale := range after {
@@ -132,30 +132,30 @@ func TestRecordingAnOrderTakesItsStockFromTheCatalogue(t *testing.T) {
 		}
 	}
 	if recorded.Channel != sales.OnlineShop || len(recorded.Lines) != 1 || recorded.Lines[0].ProductName == "" {
-		t.Errorf("recorded %+v", recorded)
+		test.Errorf("recorded %+v", recorded)
 	}
 }
 
-func TestAnOrderMovesAlongTheBoardAndThenToTheHistory(t *testing.T) {
-	program, window := openApp(t, true)
+func TestAnOrderMovesAlongTheBoardAndThenToTheHistory(test *testing.T) {
+	program, window := openApp(test, true)
 	program.Open(Sales)
 	window.Frame()
 	before, _ := program.stores.Sales.All()
 	onTheWay := sales.OnTheWay(before)
 	index := slices.IndexFunc(onTheWay, func(sale sales.Sale) bool { return sale.Customer != "" && sale.Status == sales.ToPrepare })
 	if index < 0 {
-		t.Fatal("the demo has no order with a customer on the way")
+		test.Fatal("the demo has no order with a customer on the way")
 	}
 	order := onTheWay[index]
-	dragOnto(t, window, whoTo(order), "column SENT")
-	dragOnto(t, window, whoTo(order), "Entregado")
+	dragOnto(test, window, whoTo(order), "column SENT")
+	dragOnto(test, window, whoTo(order), "Entregado")
 	after, found, err := program.stores.Sales.Find(order.ID)
 	if err != nil || !found || after.Status != sales.Delivered {
-		t.Fatalf("the order is %q (%v)", after.Status, err)
+		test.Fatalf("the order is %q (%v)", after.Status, err)
 	}
-	steps(t, window, click(window, "Historial de ventas"))
+	steps(test, window, click(window, "Historial de ventas"))
 	if !slices.ContainsFunc(window.Texts(), func(text string) bool { return strings.Contains(text, order.Customer) }) {
-		t.Errorf("the history does not show %s's order: %q", order.Customer, window.Texts())
+		test.Errorf("the history does not show %s's order: %q", order.Customer, window.Texts())
 	}
 }
 
@@ -172,56 +172,56 @@ func clickIn(window *uitest.Window, scope, label string) func() error {
 	}
 }
 
-func TestPayingInCashAtTheStandRecordsALocalSaleAndTakesTheStock(t *testing.T) {
-	program, window := openApp(t, true)
+func TestPayingInCashAtTheStandRecordsALocalSaleAndTakesTheStock(test *testing.T) {
+	program, window := openApp(test, true)
 	program.Show("stand")
 	window.Frame()
 	before, _ := program.stores.Sales.All()
 	items, err := stand.WholeStock{Products: program.stores.Products}.Items()
 	if err != nil || len(items) == 0 {
-		t.Fatalf("no product on the stand (%v)", err)
+		test.Fatalf("no product on the stand (%v)", err)
 	}
 	item := items[0]
-	pick(t, window, items, item)
-	steps(t, window, click(window, "Cobrar"), click(window, "Pagar en efectivo"),
+	pick(test, window, items, item)
+	steps(test, window, click(window, "Cobrar"), click(window, "Pagar en efectivo"),
 		click(window, money.Format(5000)), click(window, "Confirmar"))
 	if _, err := window.Element("Seguir vendiendo"); err != nil {
-		t.Fatal("the sale did not close:", err)
+		test.Fatal("the sale did not close:", err)
 	}
 	after, _ := program.stores.Sales.All()
 	if len(after) != len(before)+1 {
-		t.Fatalf("%d sales, then %d", len(before), len(after))
+		test.Fatalf("%d sales, then %d", len(before), len(after))
 	}
 	sold := after[0]
 	if sold.Channel != sales.InPerson || sold.Status != sales.Delivered || sold.PaidWith != sales.Cash || sold.Units() != 1 {
-		t.Errorf("recorded %+v", sold)
+		test.Errorf("recorded %+v", sold)
 	}
 	if stock, _, _ := program.stores.Products.Stock(item.VariantID); stock != item.Left-1 {
-		t.Errorf("stock %d after selling 1 of %d", stock, item.Left)
+		test.Errorf("stock %d after selling 1 of %d", stock, item.Left)
 	}
 }
 
-func TestGoingToTheStandFromTheHomePageOpensTodaysFair(t *testing.T) {
-	program, window := openApp(t, true)
+func TestGoingToTheStandFromTheHomePageOpensTodaysFair(test *testing.T) {
+	program, window := openApp(test, true)
 	program.Open(Home) // read the day again, now that the demo is in
 	window.Frame()
 	if !program.today.hasFair {
-		t.Fatal("the demo has no fair happening today")
+		test.Fatal("the demo has no fair happening today")
 	}
-	steps(t, window, click(window, "Ir al puesto"))
+	steps(test, window, click(window, "Ir al puesto"))
 	if program.place != Stand {
-		t.Fatalf("the place is %v, not the stand", program.place)
+		test.Fatalf("the place is %v, not the stand", program.place)
 	}
 	if _, err := window.Element(program.today.fair.Name); err != nil {
-		t.Error("the stand does not show the fair:", err)
+		test.Error("the stand does not show the fair:", err)
 	}
 }
 
-func TestANewProjectIsSavedWithItsCustomerAndTheirNetwork(t *testing.T) {
-	program, window := openApp(t, false)
+func TestANewProjectIsSavedWithItsCustomerAndTheirNetwork(test *testing.T) {
+	program, window := openApp(test, false)
 	program.Open(Projects)
 	window.Frame()
-	steps(t, window, click(window, "Nuevo proyecto"),
+	steps(test, window, click(window, "Nuevo proyecto"),
 		typeInto(window, "Ej.: Retrato de familia", "Retrato de Toby"),
 		typeInto(window, "Nombre", "Marta"),
 		typeInto(window, "@instagram", "@marta"),
@@ -229,58 +229,58 @@ func TestANewProjectIsSavedWithItsCustomerAndTheirNetwork(t *testing.T) {
 		click(window, "Guardar"))
 	saved, err := program.stores.Projects.All()
 	if err != nil || len(saved) != 1 || saved[0].Title != "Retrato de Toby" || saved[0].Price != 3500 || saved[0].Stage != projects.ToStart {
-		t.Fatalf("saved %+v, %v", saved, err)
+		test.Fatalf("saved %+v, %v", saved, err)
 	}
 	person, _, _ := program.stores.Customers.Find(saved[0].CustomerID)
 	if handle, found := person.Handle("instagram"); person.Name != "Marta" || !found || handle != "@marta" {
-		t.Errorf("customer %+v", person)
+		test.Errorf("customer %+v", person)
 	}
 }
 
-func TestTheArtistCanAddASocialNetwork(t *testing.T) {
-	program, window := openApp(t, false)
+func TestTheArtistCanAddASocialNetwork(test *testing.T) {
+	program, window := openApp(test, false)
 	program.Open(Projects)
 	window.Frame()
-	steps(t, window, click(window, "Nuevo proyecto"), click(window, "Editar redes"),
+	steps(test, window, click(window, "Nuevo proyecto"), click(window, "Editar redes"),
 		typeInto(window, "Nueva red", "Mastodon"),
 		typeInto(window, "https://ejemplo.com/{user}", "https://mastodon.social/@{user}"),
 		click(window, "Guardar redes"))
 	networks, err := program.stores.Customers.Networks()
 	if err != nil {
-		t.Fatal(err)
+		test.Fatal(err)
 	}
 	found := slices.ContainsFunc(networks, func(network customers.Network) bool {
 		return network.Name == "Mastodon" && network.Link("@ana") == "https://mastodon.social/@ana"
 	})
 	if !found {
-		t.Errorf("networks %+v", networks)
+		test.Errorf("networks %+v", networks)
 	}
 }
 
-func TestUndoingACashSaleAtTheStandGivesItsPiecesBack(t *testing.T) {
-	program, window := openApp(t, true)
+func TestUndoingACashSaleAtTheStandGivesItsPiecesBack(test *testing.T) {
+	program, window := openApp(test, true)
 	program.Show("stand")
 	window.Frame()
 	before, _ := program.stores.Sales.All()
 	items, err := stand.WholeStock{Products: program.stores.Products}.Items()
 	if err != nil || len(items) == 0 {
-		t.Fatalf("no product on the stand (%v)", err)
+		test.Fatalf("no product on the stand (%v)", err)
 	}
 	item := items[0]
-	pick(t, window, items, item)
-	steps(t, window, click(window, "Cobrar"),
+	pick(test, window, items, item)
+	steps(test, window, click(window, "Cobrar"),
 		click(window, "Pagar en efectivo"), click(window, "Justo"), click(window, "Confirmar"), click(window, "Deshacer el cobro"))
 	after, _ := program.stores.Sales.All()
 	if len(after) != len(before) {
-		t.Errorf("%d sales, then %d after undoing", len(before), len(after))
+		test.Errorf("%d sales, then %d after undoing", len(before), len(after))
 	}
 	if stock, _, _ := program.stores.Products.Stock(item.VariantID); stock != item.Left {
-		t.Errorf("stock %d, not the %d it had before the sale", stock, item.Left)
+		test.Errorf("stock %d, not the %d it had before the sale", stock, item.Left)
 	}
 }
 
-func TestTheHistoryShowsAnotherPeriodChosenFromItsFigure(t *testing.T) {
-	program, window := openApp(t, true)
+func TestTheHistoryShowsAnotherPeriodChosenFromItsFigure(test *testing.T) {
+	program, window := openApp(test, true)
 	program.Open(Sales)
 	program.sales.ShowHistory()
 	window.Frame()
@@ -288,99 +288,99 @@ func TestTheHistoryShowsAnotherPeriodChosenFromItsFigure(t *testing.T) {
 		return slices.ContainsFunc(window.Texts(), func(text string) bool { return strings.Contains(text, "Mercadillo de verano") })
 	}
 	if lastMonth() {
-		t.Fatal("this month's history already shows a fair from last month")
+		test.Fatal("this month's history already shows a fair from last month")
 	}
-	steps(t, window, click(window, "Periodo"), clickIn(window, "periods", "Todo"))
+	steps(test, window, click(window, "Periodo"), clickIn(window, "periods", "Todo"))
 	if !lastMonth() {
-		t.Errorf("choosing «Todo» does not show last month's fair: %q", window.Texts())
+		test.Errorf("choosing «Todo» does not show last month's fair: %q", window.Texts())
 	}
 }
 
-func TestPagesCopiedFromOutsideServicesSayTheyAreNotSyncedYet(t *testing.T) {
-	program, window := openApp(t, true)
+func TestPagesCopiedFromOutsideServicesSayTheyAreNotSyncedYet(test *testing.T) {
+	program, window := openApp(test, true)
 	for _, page := range []Place{Projects, Sales} {
 		program.Open(page)
 		window.Frame()
 		if !slices.Contains(window.Texts(), look.Unsynced) {
-			t.Errorf("page %v does not say %q: %q", page, look.Unsynced, window.Texts())
+			test.Errorf("page %v does not say %q: %q", page, look.Unsynced, window.Texts())
 		}
 	}
 }
 
-func TestTheHomePageSwitchesBetweenTheLightAndTheDarkTheme(t *testing.T) {
-	program, window := openApp(t, true)
+func TestTheHomePageSwitchesBetweenTheLightAndTheDarkTheme(test *testing.T) {
+	program, window := openApp(test, true)
 	window.Frame()
-	steps(t, window, click(window, "Modo oscuro"))
+	steps(test, window, click(window, "Modo oscuro"))
 	if !program.Dark() {
-		t.Fatal("«Modo oscuro» leaves the light theme on")
+		test.Fatal("«Modo oscuro» leaves the light theme on")
 	}
-	steps(t, window, click(window, "Modo claro"))
+	steps(test, window, click(window, "Modo claro"))
 	if program.Dark() {
-		t.Error("«Modo claro» leaves the dark theme on")
+		test.Error("«Modo claro» leaves the dark theme on")
 	}
 }
 
-func TestTheChosenThemeIsKeptForTheNextTimeMUSAOpens(t *testing.T) {
-	program, window := openApp(t, false)
+func TestTheChosenThemeIsKeptForTheNextTimeMUSAOpens(test *testing.T) {
+	program, window := openApp(test, false)
 	window.Frame()
-	steps(t, window, click(window, "Modo oscuro"))
+	steps(test, window, click(window, "Modo oscuro"))
 	reopened, err := New(program.stores.Database, Options{Dark: false})
 	if err != nil {
-		t.Fatal(err)
+		test.Fatal(err)
 	}
 	if !reopened.Dark() {
-		t.Error("MUSA opens light again after the artist chose the dark theme")
+		test.Error("MUSA opens light again after the artist chose the dark theme")
 	}
 }
 
-func TestAProductCardOpensItsEditorWhenTapped(t *testing.T) {
-	program, window := openApp(t, true)
+func TestAProductCardOpensItsEditorWhenTapped(test *testing.T) {
+	program, window := openApp(test, true)
 	program.Open(Catalogue)
 	window.Frame()
-	steps(t, window, click(window, "Luna"))
+	steps(test, window, click(window, "Luna"))
 	if !program.catalogue.Editing() {
-		t.Error("tapping the card of «Luna» does not open its editor")
+		test.Error("tapping the card of «Luna» does not open its editor")
 	}
 }
 
-func TestTheEditorsBackButtonIsNamedAndClosesIt(t *testing.T) {
-	program, window := openApp(t, true)
+func TestTheEditorsBackButtonIsNamedAndClosesIt(test *testing.T) {
+	program, window := openApp(test, true)
 	program.Open(Catalogue)
 	window.Frame()
-	steps(t, window, click(window, "Luna"), click(window, "Volver"))
+	steps(test, window, click(window, "Luna"), click(window, "Volver"))
 	if program.catalogue.Editing() {
-		t.Error("«Volver» leaves the editor open")
+		test.Error("«Volver» leaves the editor open")
 	}
 }
 
-func TestTabsAreNamedByTheirWordsWithoutTheirCount(t *testing.T) {
-	program, window := openApp(t, true)
+func TestTabsAreNamedByTheirWordsWithoutTheirCount(test *testing.T) {
+	program, window := openApp(test, true)
 	program.Open(Catalogue)
 	window.Frame()
-	steps(t, window, click(window, "Digital"))
+	steps(test, window, click(window, "Digital"))
 	if !slices.Contains(window.Texts(), "Procreate") { // the brush pack's format
-		t.Errorf("the «Digital» tab does not show the digital products: %q", window.Texts())
+		test.Errorf("the «Digital» tab does not show the digital products: %q", window.Texts())
 	}
 }
 
-func TestOpeningAProjectsEditorLeavesThePageUnderItStill(t *testing.T) {
-	program, window := openApp(t, false)
+func TestOpeningAProjectsEditorLeavesThePageUnderItStill(test *testing.T) {
+	program, window := openApp(test, false)
 	program.Open(Projects)
 	window.Frame()
 	before := program.pageName()
-	steps(t, window, click(window, "Nuevo proyecto"))
+	steps(test, window, click(window, "Nuevo proyecto"))
 	if after := program.pageName(); after != before {
-		t.Errorf("the page became %q from %q, so it would rise in again under the dialog", after, before)
+		test.Errorf("the page became %q from %q, so it would rise in again under the dialog", after, before)
 	}
 }
 
-func TestDraggingAProjectToAnotherColumnMovesIt(t *testing.T) {
-	program, window := openApp(t, true)
+func TestDraggingAProjectToAnotherColumnMovesIt(test *testing.T) {
+	program, window := openApp(test, true)
 	program.Open(Projects)
 	window.Frames(2)
 	all, err := program.stores.Projects.All()
 	if err != nil {
-		t.Fatal(err)
+		test.Fatal(err)
 	}
 	id := ""
 	for _, project := range all {
@@ -390,88 +390,88 @@ func TestDraggingAProjectToAnotherColumnMovesIt(t *testing.T) {
 	}
 	card, err := window.ElementIn(id, "Retrato de familia")
 	if err != nil {
-		t.Fatal(err)
+		test.Fatal(err)
 	}
 	centreX, centreY := card.Rect.X+card.Rect.Width/2, card.Rect.Y+card.Rect.Height/2
 	window.Drag(centreX, centreY, centreX+card.Rect.Width+40, centreY)
 	window.Frames(2)
 	all, err = program.stores.Projects.All()
 	if err != nil {
-		t.Fatal(err)
+		test.Fatal(err)
 	}
 	for _, project := range all {
 		if project.Title == "Retrato de familia" && project.Stage != projects.Drawing {
-			t.Errorf("the project is in %s after being dropped on «Dibujando»", project.Stage)
+			test.Errorf("the project is in %s after being dropped on «Dibujando»", project.Stage)
 		}
 	}
 }
 
-func TestDraggingAnOrderToTheNextColumnSendsIt(t *testing.T) {
-	program, window := openApp(t, true)
+func TestDraggingAnOrderToTheNextColumnSendsIt(test *testing.T) {
+	program, window := openApp(test, true)
 	program.Open(Sales)
 	window.Frames(2)
 	row, err := window.Element("Marcos")
 	if err != nil {
-		t.Fatal(err)
+		test.Fatal(err)
 	}
 	window.Drag(row.Rect.X, row.Rect.Y+row.Rect.Height/2, row.Rect.X+640, row.Rect.Y+row.Rect.Height/2)
 	window.Frames(2)
 	all, err := program.stores.Sales.All()
 	if err != nil {
-		t.Fatal(err)
+		test.Fatal(err)
 	}
 	for _, sale := range all {
 		if sale.Customer == "Marcos" && sale.Status != sales.Sent {
-			t.Errorf("Marcos's order is %s after being dropped on «Enviado»", sale.Status)
+			test.Errorf("Marcos's order is %s after being dropped on «Enviado»", sale.Status)
 		}
 	}
 }
 
-func TestTappingAProjectOnTheCalendarOpensItsEditor(t *testing.T) {
-	program, window := openApp(t, true)
+func TestTappingAProjectOnTheCalendarOpensItsEditor(test *testing.T) {
+	program, window := openApp(test, true)
 	program.Open(Home)
 	program.home.tab = 1
 	window.Frames(2)
-	steps(t, window, click(window, "Logo para tienda"))
+	steps(test, window, click(window, "Logo para tienda"))
 	window.Frames(2)
 	if program.place != Projects || program.pageName() == "" || window.Click("Pasar a «Entregado»") != nil {
-		t.Errorf("tapping the project on the calendar did not open its editor (place %v)", program.place)
+		test.Errorf("tapping the project on the calendar did not open its editor (place %v)", program.place)
 	}
 }
 
-func TestTappingADayOnTheCalendarShowsWhatItHolds(t *testing.T) {
-	program, window := openApp(t, true)
+func TestTappingADayOnTheCalendarShowsWhatItHolds(test *testing.T) {
+	program, window := openApp(test, true)
 	program.Open(Home)
 	program.home.tab = 1
 	window.Frames(2)
 	day := "Ver el " + calendar.LongWords(program.today.date)
 	cell, err := window.Element(day)
 	if err != nil {
-		t.Fatal(err)
+		test.Fatal(err)
 	}
 	window.ClickAt(cell.Rect.X+cell.Rect.Width-4, cell.Rect.Y+4) // beside its number, away from its entries
 	window.Frames(2)
 	if program.home.dayShown != program.today.date {
-		t.Fatalf("the day's detail is not open")
+		test.Fatalf("the day's detail is not open")
 	}
 	if _, err := window.ElementIn("day detail", "Nuevo evento"); err != nil {
-		t.Errorf("the day's detail has no «Nueva feria»: %v", err)
+		test.Errorf("the day's detail has no «Nueva feria»: %v", err)
 	}
 }
 
-func TestAProductRunningLowOpensItsPageFromHome(t *testing.T) {
-	program, window := openApp(t, true)
+func TestAProductRunningLowOpensItsPageFromHome(test *testing.T) {
+	program, window := openApp(test, true)
 	settle(window)
 	const tabletWidth, tabletHeight = 1280, 1600
 	if err := window.Resize(tabletWidth, tabletHeight); err != nil {
-		t.Fatal(err)
+		test.Fatal(err)
 	}
 	program.Open(Home)
 	settle(window)
 	row := restockRowsOf(program.today.restock)[0]
-	steps(t, window, click(window, "Abrir "+row.words))
+	steps(test, window, click(window, "Abrir "+row.words))
 	settle(window)
 	if program.place != Catalogue || !program.catalogue.Editing() {
-		t.Errorf("tapping «%s» leaves the app on %v, editing %v", row.words, program.place, program.catalogue.Editing())
+		test.Errorf("tapping «%s» leaves the app on %v, editing %v", row.words, program.place, program.catalogue.Editing())
 	}
 }

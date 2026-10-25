@@ -18,10 +18,12 @@ type Error struct {
 	Cause  error
 }
 
+// Error is the code, the detail and the cause underneath, for logs.
 func (failure *Error) Error() string {
 	return fmt.Sprintf("%s: %s: %v", failure.Code, failure.Detail, failure.Cause)
 }
 
+// Unwrap is the cause underneath, for errors.Is and errors.As.
 func (failure *Error) Unwrap() error { return failure.Cause }
 
 func openFailed(path string, cause error) error {

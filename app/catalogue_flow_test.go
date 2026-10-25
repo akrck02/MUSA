@@ -12,11 +12,11 @@ import (
 )
 
 // productNamed is the stored product with a name, and whether there is one.
-func productNamed(t *testing.T, program *App, name string) (catalogue.Product, bool) {
-	t.Helper()
+func productNamed(test *testing.T, program *App, name string) (catalogue.Product, bool) {
+	test.Helper()
 	all, err := program.stores.Products.All()
 	if err != nil {
-		t.Fatal(err)
+		test.Fatal(err)
 	}
 	for _, product := range all {
 		if product.Name == name {
@@ -34,111 +34,111 @@ func settle(window *uitest.Window) {
 }
 
 // openProductEditor opens the catalogue and the editor of a product of one version.
-func openProductEditor(t *testing.T, name string) (*App, *uitest.Window) {
-	t.Helper()
-	program, window := openApp(t, true)
+func openProductEditor(test *testing.T, name string) (*App, *uitest.Window) {
+	test.Helper()
+	program, window := openApp(test, true)
 	program.Open(Catalogue)
 	settle(window)
-	steps(t, window, click(window, name))
+	steps(test, window, click(window, name))
 	settle(window)
 	return program, window
 }
 
-func TestSearchingTheCatalogueKeepsOnlyWhatMatches(t *testing.T) {
-	program, window := openApp(t, true)
+func TestSearchingTheCatalogueKeepsOnlyWhatMatches(test *testing.T) {
+	program, window := openApp(test, true)
 	program.Open(Catalogue)
 	settle(window)
-	steps(t, window, click(window, "Buscar"))
+	steps(test, window, click(window, "Buscar"))
 	settle(window)
 	window.Type("rana")
 	settle(window)
 	if _, err := window.Element("Rana feliz"); err != nil {
-		t.Errorf("«Rana feliz» is not found by «rana»: %v", err)
+		test.Errorf("«Rana feliz» is not found by «rana»: %v", err)
 	}
 	if _, err := window.Element("Luna"); err == nil {
-		t.Errorf("«Luna» still shows when searching «rana»")
+		test.Errorf("«Luna» still shows when searching «rana»")
 	}
 }
 
-func TestTheStockSteppersChangeTheStockThatIsSaved(t *testing.T) {
-	program, window := openProductEditor(t, "Rana feliz")
-	before, _ := productNamed(t, program, "Rana feliz")
-	steps(t, window, click(window, "Añadir uno"), click(window, "Añadir uno"), click(window, "Quitar uno"), click(window, "Guardar"))
+func TestTheStockSteppersChangeTheStockThatIsSaved(test *testing.T) {
+	program, window := openProductEditor(test, "Rana feliz")
+	before, _ := productNamed(test, program, "Rana feliz")
+	steps(test, window, click(window, "Añadir uno"), click(window, "Añadir uno"), click(window, "Quitar uno"), click(window, "Guardar"))
 	settle(window)
-	after, _ := productNamed(t, program, "Rana feliz")
+	after, _ := productNamed(test, program, "Rana feliz")
 	if after.Variants[0].Stock != before.Variants[0].Stock+1 {
-		t.Errorf("stock %d after +2 −1 from %d", after.Variants[0].Stock, before.Variants[0].Stock)
+		test.Errorf("stock %d after +2 −1 from %d", after.Variants[0].Stock, before.Variants[0].Stock)
 	}
 }
 
-func TestDuplicatingAProductMakesACopy(t *testing.T) {
-	program, window := openProductEditor(t, "Rana feliz")
-	steps(t, window, click(window, "Duplicar"))
+func TestDuplicatingAProductMakesACopy(test *testing.T) {
+	program, window := openProductEditor(test, "Rana feliz")
+	steps(test, window, click(window, "Duplicar"))
 	settle(window)
-	if _, found := productNamed(t, program, "Rana feliz (copia)"); !found {
-		t.Errorf("there is no «Rana feliz (copia)» after Duplicar")
+	if _, found := productNamed(test, program, "Rana feliz (copia)"); !found {
+		test.Errorf("there is no «Rana feliz (copia)» after Duplicar")
 	}
 }
 
-func TestAnArchivedProductLeavesTheListAndComesBack(t *testing.T) {
-	program, window := openProductEditor(t, "Rana feliz")
-	steps(t, window, click(window, "Más detalles SKU, medidas, peso y aviso de stock bajo"))
+func TestAnArchivedProductLeavesTheListAndComesBack(test *testing.T) {
+	program, window := openProductEditor(test, "Rana feliz")
+	steps(test, window, click(window, "Más detalles SKU, medidas, peso y aviso de stock bajo"))
 	settle(window)
-	steps(t, window, click(window, "Archivar"))
+	steps(test, window, click(window, "Archivar"))
 	settle(window)
-	archived, _ := productNamed(t, program, "Rana feliz")
+	archived, _ := productNamed(test, program, "Rana feliz")
 	if archived.Status != catalogue.Archived {
-		t.Fatalf("the product is %v after Archivar", archived.Status)
+		test.Fatalf("the product is %v after Archivar", archived.Status)
 	}
 	if _, err := window.Element("Rana feliz"); err == nil {
-		t.Errorf("an archived product still shows in the list")
+		test.Errorf("an archived product still shows in the list")
 	}
-	steps(t, window, click(window, "Archivados"))
+	steps(test, window, click(window, "Archivados"))
 	settle(window)
-	steps(t, window, click(window, "Rana feliz"))
+	steps(test, window, click(window, "Rana feliz"))
 	settle(window)
-	steps(t, window, click(window, "Más detalles SKU, medidas, peso y aviso de stock bajo"))
+	steps(test, window, click(window, "Más detalles SKU, medidas, peso y aviso de stock bajo"))
 	settle(window)
-	steps(t, window, click(window, "Restaurar"))
+	steps(test, window, click(window, "Restaurar"))
 	settle(window)
-	if restored, _ := productNamed(t, program, "Rana feliz"); restored.Status == catalogue.Archived {
-		t.Errorf("the product is still archived after Restaurar")
-	}
-}
-
-func TestDeletingAProductAsksFirst(t *testing.T) {
-	program, window := openProductEditor(t, "Rana feliz")
-	steps(t, window, click(window, "Más detalles SKU, medidas, peso y aviso de stock bajo"))
-	settle(window)
-	steps(t, window, click(window, "Eliminar"))
-	settle(window)
-	if _, found := productNamed(t, program, "Rana feliz"); !found {
-		t.Fatalf("the product went before the question was answered")
-	}
-	steps(t, window, clickIn(window, "¿Eliminar «Rana feliz»?", "Eliminar"))
-	settle(window)
-	if _, found := productNamed(t, program, "Rana feliz"); found {
-		t.Errorf("the product is still there after confirming")
+	if restored, _ := productNamed(test, program, "Rana feliz"); restored.Status == catalogue.Archived {
+		test.Errorf("the product is still archived after Restaurar")
 	}
 }
 
-func TestATagIsAddedAndRemovedFromAProduct(t *testing.T) {
-	program, window := openProductEditor(t, "Rana feliz")
-	steps(t, window, typeInto(window, "Añade una etiqueta…", "verde"))
+func TestDeletingAProductAsksFirst(test *testing.T) {
+	program, window := openProductEditor(test, "Rana feliz")
+	steps(test, window, click(window, "Más detalles SKU, medidas, peso y aviso de stock bajo"))
+	settle(window)
+	steps(test, window, click(window, "Eliminar"))
+	settle(window)
+	if _, found := productNamed(test, program, "Rana feliz"); !found {
+		test.Fatalf("the product went before the question was answered")
+	}
+	steps(test, window, clickIn(window, "¿Eliminar «Rana feliz»?", "Eliminar"))
+	settle(window)
+	if _, found := productNamed(test, program, "Rana feliz"); found {
+		test.Errorf("the product is still there after confirming")
+	}
+}
+
+func TestATagIsAddedAndRemovedFromAProduct(test *testing.T) {
+	program, window := openProductEditor(test, "Rana feliz")
+	steps(test, window, typeInto(window, "Añade una etiqueta…", "verde"))
 	window.PressKey(input.KeyEnter)
 	settle(window)
-	steps(t, window, click(window, "Guardar"))
+	steps(test, window, click(window, "Guardar"))
 	settle(window)
-	saved, _ := productNamed(t, program, "Rana feliz")
+	saved, _ := productNamed(test, program, "Rana feliz")
 	if !hasTag(saved, "verde") {
-		t.Fatalf("the product's tags are %v, without «verde»", saved.Tags)
+		test.Fatalf("the product's tags are %v, without «verde»", saved.Tags)
 	}
-	steps(t, window, click(window, "Rana feliz"))
+	steps(test, window, click(window, "Rana feliz"))
 	settle(window)
-	steps(t, window, click(window, "Quitar verde"), click(window, "Guardar"))
+	steps(test, window, click(window, "Quitar verde"), click(window, "Guardar"))
 	settle(window)
-	if removed, _ := productNamed(t, program, "Rana feliz"); hasTag(removed, "verde") {
-		t.Errorf("«verde» is still a tag after removing it")
+	if removed, _ := productNamed(test, program, "Rana feliz"); hasTag(removed, "verde") {
+		test.Errorf("«verde» is still a tag after removing it")
 	}
 }
 
@@ -151,17 +151,17 @@ func hasTag(product catalogue.Product, name string) bool {
 	return false
 }
 
-func TestASecondVersionNeedsNamesForBoth(t *testing.T) {
-	program, window := openProductEditor(t, "Rana feliz")
-	steps(t, window, click(window, "Añadir otra versión"))
+func TestASecondVersionNeedsNamesForBoth(test *testing.T) {
+	program, window := openProductEditor(test, "Rana feliz")
+	steps(test, window, click(window, "Añadir otra versión"))
 	settle(window)
-	steps(t, window, click(window, "Guardar"))
+	steps(test, window, click(window, "Guardar"))
 	settle(window)
-	if saved, _ := productNamed(t, program, "Rana feliz"); len(saved.Variants) != 1 {
-		t.Fatalf("two versions without names were saved")
+	if saved, _ := productNamed(test, program, "Rana feliz"); len(saved.Variants) != 1 {
+		test.Fatalf("two versions without names were saved")
 	}
 	if !slices.Contains(window.Texts(), "Con varias versiones, cada una necesita nombre") {
-		t.Fatalf("the editor does not say why it did not save")
+		test.Fatalf("the editor does not say why it did not save")
 	}
 	names := window.Context().ScreenReaderNodes()
 	var fields []ui.AccessibleNode
@@ -171,84 +171,84 @@ func TestASecondVersionNeedsNamesForBoth(t *testing.T) {
 		}
 	}
 	if len(fields) != 2 {
-		t.Fatalf("%d version name fields, not 2", len(fields))
+		test.Fatalf("%d version name fields, not 2", len(fields))
 	}
 	for index, words := range []string{"Verde", "Azul"} {
 		field := fields[index].Area
 		window.ClickAt(field.X+field.Width/2, field.Y+field.Height/2)
 		window.Type(words)
 	}
-	steps(t, window, click(window, "Guardar"))
+	steps(test, window, click(window, "Guardar"))
 	settle(window)
-	if saved, _ := productNamed(t, program, "Rana feliz"); len(saved.Variants) != 2 {
-		t.Errorf("the product has %d versions after naming both", len(saved.Variants))
+	if saved, _ := productNamed(test, program, "Rana feliz"); len(saved.Variants) != 2 {
+		test.Errorf("the product has %d versions after naming both", len(saved.Variants))
 	}
 }
 
-func TestACommaAddsEachTagTypedBeforeIt(t *testing.T) {
-	_, window := openProductEditor(t, "Rana feliz")
-	steps(t, window, typeInto(window, "Añade una etiqueta…", "verde, otoño,"))
+func TestACommaAddsEachTagTypedBeforeIt(test *testing.T) {
+	_, window := openProductEditor(test, "Rana feliz")
+	steps(test, window, typeInto(window, "Añade una etiqueta…", "verde, otoño,"))
 	settle(window)
 	for _, name := range []string{"Quitar verde", "Quitar otoño"} {
 		if _, err := window.Element(name); err != nil {
-			t.Errorf("the comma did not add the tag: %v", err)
+			test.Errorf("the comma did not add the tag: %v", err)
 		}
 	}
 }
 
-func TestASuggestionAddsTheTagOfAnotherProduct(t *testing.T) {
-	_, window := openProductEditor(t, "Rana feliz")
-	steps(t, window, typeInto(window, "Añade una etiqueta…", "lám"))
+func TestASuggestionAddsTheTagOfAnotherProduct(test *testing.T) {
+	_, window := openProductEditor(test, "Rana feliz")
+	steps(test, window, typeInto(window, "Añade una etiqueta…", "lám"))
 	settle(window)
-	steps(t, window, click(window, "Lámina"))
+	steps(test, window, click(window, "Lámina"))
 	settle(window)
 	if _, err := window.Element("Quitar Lámina"); err != nil {
-		t.Errorf("the suggestion did not add its tag: %v", err)
+		test.Errorf("the suggestion did not add its tag: %v", err)
 	}
 }
 
-func TestTappingATagsNameDoesNotRemoveIt(t *testing.T) {
-	_, window := openProductEditor(t, "Rana feliz")
+func TestTappingATagsNameDoesNotRemoveIt(test *testing.T) {
+	_, window := openProductEditor(test, "Rana feliz")
 	if err := window.Click("Llavero"); err == nil {
-		t.Errorf("a tag's name can be tapped: only its × removes it")
+		test.Errorf("a tag's name can be tapped: only its × removes it")
 	}
 	if _, err := window.Element("Quitar Llavero"); err != nil {
-		t.Errorf("the tag went: %v", err)
+		test.Errorf("the tag went: %v", err)
 	}
 }
 
 // tagNamed is the stored tag with a name.
-func tagNamed(t *testing.T, program *App, name string) catalogue.Tag {
-	t.Helper()
+func tagNamed(test *testing.T, program *App, name string) catalogue.Tag {
+	test.Helper()
 	tags, err := program.stores.Products.Tags()
 	if err != nil {
-		t.Fatal(err)
+		test.Fatal(err)
 	}
 	for _, tag := range tags {
 		if tag.Name == name {
 			return tag
 		}
 	}
-	t.Fatalf("no tag called «%s»", name)
+	test.Fatalf("no tag called «%s»", name)
 	return catalogue.Tag{}
 }
 
-func TestAnIconChosenForATagIsKeptAndCanBeForgotten(t *testing.T) {
-	program, window := openApp(t, true)
+func TestAnIconChosenForATagIsKeptAndCanBeForgotten(test *testing.T) {
+	program, window := openApp(test, true)
 	program.Open(Catalogue)
 	settle(window)
-	steps(t, window, click(window, "Etiquetas"))
+	steps(test, window, click(window, "Etiquetas"))
 	settle(window)
-	steps(t, window, click(window, "Cambiar el icono de Pegatinas"))
+	steps(test, window, click(window, "Cambiar el icono de Pegatinas"))
 	settle(window)
-	steps(t, window, click(window, "Icono sparkles"))
+	steps(test, window, click(window, "Icono sparkles"))
 	settle(window)
-	if icon := tagNamed(t, program, "Pegatina").Icon(); icon != "sparkles" {
-		t.Fatalf("the tag's icon is %q after choosing «sparkles»", icon)
+	if icon := tagNamed(test, program, "Pegatina").Icon(); icon != "sparkles" {
+		test.Fatalf("the tag's icon is %q after choosing «sparkles»", icon)
 	}
-	steps(t, window, click(window, "Volver al icono automático"))
+	steps(test, window, click(window, "Volver al icono automático"))
 	settle(window)
-	if icon := tagNamed(t, program, "Pegatina").Icon(); icon != catalogue.TagIcon("Pegatina") {
-		t.Errorf("the tag's icon is %q after going back to the guessed one", icon)
+	if icon := tagNamed(test, program, "Pegatina").Icon(); icon != catalogue.TagIcon("Pegatina") {
+		test.Errorf("the tag's icon is %q after going back to the guessed one", icon)
 	}
 }

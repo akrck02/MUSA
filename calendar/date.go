@@ -3,7 +3,6 @@
 package calendar
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -27,7 +26,7 @@ func Of(moment time.Time) Date {
 func Parse(text string) (Date, error) {
 	moment, err := time.Parse(isoLayout, text)
 	if err != nil {
-		return Date{}, fmt.Errorf("%s: %q: %w", CodeInvalidDate, text, err)
+		return Date{}, invalidDate(text, err)
 	}
 	return Of(moment), nil
 }
@@ -51,9 +50,6 @@ func (date Date) Before(other Date) bool { return date.String() < other.String()
 
 // Zero tells whether the date was never set.
 func (date Date) Zero() bool { return date == Date{} }
-
-// CodeInvalidDate is the code of text that is not a stored date.
-const CodeInvalidDate = "calendar.invalid-date"
 
 // daysInWeek is how many days a week has.
 const daysInWeek = 7

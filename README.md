@@ -55,7 +55,8 @@ go test ./...             # the tests
 |---|---|
 | [Overview](docs/1-overview.md) | What MUSA does today and what it does not do. |
 | [Get started](docs/2-get-started.md) | Build, run and test it, and where the data is stored. |
-| [Architecture](docs/03-architecture.md) | One package per idea, and how they depend on each other. |
+| [Core ideas](docs/3-core-ideas.md) | The six ideas behind the code. |
+| [Contributing](docs/8-contributing/1-the-code.md) | Where everything lives, how a feature is built and tested, and how we work together. |
 | [Inventory](docs/4-guides/1-inventory.md) | Products, variants, validation rules, filters and duplication. |
 | [Events](docs/4-guides/2-events.md) | Stock taken to a fair, sales, expenses, profit and closing. |
 | [Sales](docs/4-guides/3-sales.md) | Orders, their status, the board and the sales history. |

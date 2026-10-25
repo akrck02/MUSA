@@ -13,10 +13,10 @@ func codes(problems []Problem) []Code {
 	return all
 }
 
-func TestADraftIsValidatedBeforeSaving(t *testing.T) {
+func TestADraftIsValidatedBeforeSaving(test *testing.T) {
 	valid := physicalProduct("p1", "Lámina")
 	if problems := Validate(valid); len(problems) != 0 {
-		t.Errorf("a single unnamed variant is rejected: %v", problems)
+		test.Errorf("a single unnamed variant is rejected: %v", problems)
 	}
 	cases := map[string]struct {
 		change func(*Product)
@@ -40,13 +40,13 @@ func TestADraftIsValidatedBeforeSaving(t *testing.T) {
 		product := physicalProduct("p1", "Lámina")
 		each.change(&product)
 		if got := codes(Validate(product)); !slices.Equal(got, []Code{each.want}) {
-			t.Errorf("%s: %v; want %s", name, got, each.want)
+			test.Errorf("%s: %v; want %s", name, got, each.want)
 		}
 	}
 	commission := digitalProduct("c1", "Comisión")
 	commission.TurnaroundDays = -2
 	if !slices.Contains(codes(Validate(commission)), CodeNegativeTurnaround) {
-		t.Error("a negative turnaround is accepted")
+		test.Error("a negative turnaround is accepted")
 	}
 }
 
@@ -58,7 +58,7 @@ func names(products []Product) []string {
 	return all
 }
 
-func TestTheListIsFilteredBySearchKindTagsAndStock(t *testing.T) {
+func TestTheListIsFilteredBySearchKindTagsAndStock(test *testing.T) {
 	pokemon, christmas := tag("Pokémon"), tag("Navidad")
 	print := physicalProduct("print", "Lámina Pikachu")
 	print.Tags = []Tag{pokemon, christmas}
@@ -83,12 +83,12 @@ func TestTheListIsFilteredBySearchKindTagsAndStock(t *testing.T) {
 	}
 	for name, each := range cases {
 		if got := names(Filter(all, each.query)); !slices.Equal(got, each.want) {
-			t.Errorf("%s: %v; want %v", name, got, each.want)
+			test.Errorf("%s: %v; want %v", name, got, each.want)
 		}
 	}
 }
 
-func TestTagsAreSuggestedWithoutTheChosenOnes(t *testing.T) {
+func TestTagsAreSuggestedWithoutTheChosenOnes(test *testing.T) {
 	all := []Tag{tag("Pokémon"), tag("Navidad"), tag("Gatos")}
 	suggested := func(chosen []string, typed string) []string {
 		var result []string
@@ -98,67 +98,67 @@ func TestTagsAreSuggestedWithoutTheChosenOnes(t *testing.T) {
 		return result
 	}
 	if got := suggested([]string{"pokemon"}, ""); !slices.Equal(got, []string{"Navidad", "Gatos"}) {
-		t.Errorf("with nothing typed: %v", got)
+		test.Errorf("with nothing typed: %v", got)
 	}
 	if got := suggested(nil, "poke"); !slices.Equal(got, []string{"Pokémon"}) {
-		t.Errorf("typing poke: %v", got)
+		test.Errorf("typing poke: %v", got)
 	}
 }
 
-func TestSpellingsOfOneTagAreTheSameTag(t *testing.T) {
+func TestSpellingsOfOneTagAreTheSameTag(test *testing.T) {
 	if got := Fold("Lámina NIÑO"); got != "lamina nino" {
-		t.Errorf("Fold = %q", got)
+		test.Errorf("Fold = %q", got)
 	}
 	if got := TagDisplayName("  Fan   Art "); got != "Fan Art" {
-		t.Errorf("TagDisplayName = %q", got)
+		test.Errorf("TagDisplayName = %q", got)
 	}
 	if got := DistinctTagNames([]string{"Pokémon", "pokemon ", "POKEMON", " ", ""}); !slices.Equal(got, []string{"Pokémon"}) {
-		t.Errorf("DistinctTagNames = %v", got)
+		test.Errorf("DistinctTagNames = %v", got)
 	}
 	if TagColorFor("navidad") != TagColorFor(TagKey("Navidad ")) {
-		t.Error("one tag gets two colours")
+		test.Error("one tag gets two colours")
 	}
 }
 
-func TestTagColorsSpreadOverThePalette(t *testing.T) {
+func TestTagColorsSpreadOverThePalette(test *testing.T) {
 	used := map[TagColor]bool{}
 	for _, name := range []string{"gatos", "espacio", "paisaje", "pegatinas", "hongos", "chapas", "merch", "fanzines", "comisiones"} {
 		used[TagColorFor(name)] = true
 	}
 	if len(used) < 4 {
-		t.Errorf("nine tags share %d colours", len(used))
+		test.Errorf("nine tags share %d colours", len(used))
 	}
 }
 
-func TestCountsAndCentimetresAreReadAsTyped(t *testing.T) {
+func TestCountsAndCentimetresAreReadAsTyped(test *testing.T) {
 	if count, found := ParseCount(" 12 "); !found || count != 12 {
-		t.Errorf("ParseCount(12) = %d %v", count, found)
+		test.Errorf("ParseCount(12) = %d %v", count, found)
 	}
 	for _, text := range []string{"-1", "1,5"} {
 		if _, found := ParseCount(text); found {
-			t.Errorf("ParseCount(%q) accepted", text)
+			test.Errorf("ParseCount(%q) accepted", text)
 		}
 	}
 	if millimetres, found := ParseCentimetres("29,7"); !found || millimetres != 297 {
-		t.Errorf("ParseCentimetres = %d", millimetres)
+		test.Errorf("ParseCentimetres = %d", millimetres)
 	}
 	if _, found := ParseCentimetres("29,75"); found {
-		t.Error("two decimals accepted")
+		test.Error("two decimals accepted")
 	}
 	if FormatCentimetres(297) != "29,7" || FormatCentimetres(300) != "30" {
-		t.Error("FormatCentimetres")
+		test.Error("FormatCentimetres")
 	}
 }
 
-func TestADigitalProductSaysWhenItArrivesAndHowOftenItSold(t *testing.T) {
+func TestADigitalProductSaysWhenItArrivesAndHowOftenItSold(test *testing.T) {
 	for days, want := range map[int]string{0: "Al momento", 1: "1 día", 7: "7 días"} {
 		if got := DeliveryWords(days); got != want {
-			t.Errorf("%d days: %q, not %q", days, got, want)
+			test.Errorf("%d days: %q, not %q", days, got, want)
 		}
 	}
 	for units, want := range map[int]string{0: "Sin ventas este mes", 1: "Vendido 1 vez este mes", 23: "Vendido 23 veces este mes"} {
 		if got := SoldWords(units); got != want {
-			t.Errorf("%d units: %q, not %q", units, got, want)
+			test.Errorf("%d units: %q, not %q", units, got, want)
 		}
 	}
 }

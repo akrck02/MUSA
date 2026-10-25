@@ -148,7 +148,7 @@ func (screens *Screens) periodChoices(context *ui.Context) {
 			hovered := ui.Look{Fill: theme.Sunken, Radius: theme.ControlRadius}
 			row := ui.Layout{Width: ui.Grow(), Padding: ui.PadXY(periodRowPaddingX, periodRowPaddingY)}
 			if context.Clickable(periodWords[period], row, ui.Looks{Hovered: hovered, Pressed: hovered}, func() {
-				context.Text(periodWords[period], ui.TextStyle{Weight: map[bool]draw2d.Weight{true: draw2d.Bold}[index == screens.period]})
+				context.Text(periodWords[period], ui.TextStyle{Weight: chosenWeight(index == screens.period)})
 			}) {
 				screens.period, screens.choosingPeriod = index, false
 			}
@@ -202,4 +202,12 @@ func (screens *Screens) who(sale Sale) string {
 		}
 	}
 	return whoOrdered(sale)
+}
+
+// chosenWeight is bold for the option chosen, and the normal weight for the rest.
+func chosenWeight(chosen bool) draw2d.Weight {
+	if chosen {
+		return draw2d.Bold
+	}
+	return draw2d.Regular
 }

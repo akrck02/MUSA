@@ -8,32 +8,32 @@ import (
 	"github.com/akrck02/go-ui/uitest"
 )
 
-func orderID(t *testing.T, program *App, customer string) string {
-	return saleOf(t, program, customer).ID
+func orderID(test *testing.T, program *App, customer string) string {
+	return saleOf(test, program, customer).ID
 }
 
 // saleOf is the first sale of a customer.
-func saleOf(t *testing.T, program *App, customer string) sales.Sale {
-	t.Helper()
+func saleOf(test *testing.T, program *App, customer string) sales.Sale {
+	test.Helper()
 	all, err := program.stores.Sales.All()
 	if err != nil {
-		t.Fatal(err)
+		test.Fatal(err)
 	}
 	for _, sale := range all {
 		if sale.Customer == customer {
 			return sale
 		}
 	}
-	t.Fatalf("no sale of %s", customer)
+	test.Fatalf("no sale of %s", customer)
 	return sales.Sale{}
 }
 
 // projectTitled is the stored project with a title, and whether there is one.
-func projectTitled(t *testing.T, program *App, title string) (projects.Project, bool) {
-	t.Helper()
+func projectTitled(test *testing.T, program *App, title string) (projects.Project, bool) {
+	test.Helper()
 	all, err := program.stores.Projects.All()
 	if err != nil {
-		t.Fatal(err)
+		test.Fatal(err)
 	}
 	for _, project := range all {
 		if project.Title == title {
@@ -44,107 +44,107 @@ func projectTitled(t *testing.T, program *App, title string) (projects.Project, 
 }
 
 // openProject opens the board and the editor of a project.
-func openProject(t *testing.T, title string) (*App, *uitest.Window) {
-	t.Helper()
-	program, window := openApp(t, true)
+func openProject(test *testing.T, title string) (*App, *uitest.Window) {
+	test.Helper()
+	program, window := openApp(test, true)
 	program.Open(Projects)
 	settle(window)
-	project, _ := projectTitled(t, program, title)
+	project, _ := projectTitled(test, program, title)
 	program.projects.Edit(project.ID)
 	settle(window)
 	return program, window
 }
 
-func TestSearchingProjectsKeepsOnlyWhatMatches(t *testing.T) {
-	program, window := openApp(t, true)
+func TestSearchingProjectsKeepsOnlyWhatMatches(test *testing.T) {
+	program, window := openApp(test, true)
 	program.Open(Projects)
 	settle(window)
-	steps(t, window, click(window, "Buscar"))
+	steps(test, window, click(window, "Buscar"))
 	settle(window)
 	window.Type("taller")
 	settle(window)
 	if _, err := window.Element("Logo para tienda"); err != nil {
-		t.Errorf("the project for «Taller Norte» is not found by «taller»")
+		test.Errorf("the project for «Taller Norte» is not found by «taller»")
 	}
 	if _, err := window.Element("Retrato de familia"); err == nil {
-		t.Errorf("«Retrato de familia» still shows when searching «taller»")
+		test.Errorf("«Retrato de familia» still shows when searching «taller»")
 	}
 }
 
-func TestTheEditorMovesAProjectToTheNextColumn(t *testing.T) {
-	program, window := openProject(t, "Retrato de familia")
-	steps(t, window, click(window, "Pasar a «Dibujando»"))
+func TestTheEditorMovesAProjectToTheNextColumn(test *testing.T) {
+	program, window := openProject(test, "Retrato de familia")
+	steps(test, window, click(window, "Pasar a «Dibujando»"))
 	settle(window)
-	if moved, _ := projectTitled(t, program, "Retrato de familia"); moved.Stage != projects.Drawing {
-		t.Errorf("the project is %s after «Pasar a «Dibujando»»", moved.Stage)
+	if moved, _ := projectTitled(test, program, "Retrato de familia"); moved.Stage != projects.Drawing {
+		test.Errorf("the project is %s after «Pasar a «Dibujando»»", moved.Stage)
 	}
 }
 
-func TestDeliveringAProjectRecordsItsSale(t *testing.T) {
-	program, window := openProject(t, "Logo para tienda")
-	before := salesCount(t, program)
-	steps(t, window, click(window, "Pasar a «Entregado»"))
+func TestDeliveringAProjectRecordsItsSale(test *testing.T) {
+	program, window := openProject(test, "Logo para tienda")
+	before := salesCount(test, program)
+	steps(test, window, click(window, "Pasar a «Entregado»"))
 	settle(window)
-	if after := salesCount(t, program); after != before+1 {
-		t.Errorf("delivering a project left %d sales from %d", after, before)
+	if after := salesCount(test, program); after != before+1 {
+		test.Errorf("delivering a project left %d sales from %d", after, before)
 	}
 }
 
-func TestAProjectIsDeleted(t *testing.T) {
-	program, window := openProject(t, "Retrato de familia")
-	steps(t, window, click(window, "Eliminar proyecto"))
+func TestAProjectIsDeleted(test *testing.T) {
+	program, window := openProject(test, "Retrato de familia")
+	steps(test, window, click(window, "Eliminar proyecto"))
 	settle(window)
-	if _, found := projectTitled(t, program, "Retrato de familia"); found {
-		t.Errorf("the project is still there after deleting it")
+	if _, found := projectTitled(test, program, "Retrato de familia"); found {
+		test.Errorf("the project is still there after deleting it")
 	}
 }
 
-func TestAProjectsChangesAreSaved(t *testing.T) {
-	program, window := openProject(t, "Retrato de familia")
-	steps(t, window, typeInto(window, "Email o teléfono", "lucia@example.com"), click(window, "Guardar"))
+func TestAProjectsChangesAreSaved(test *testing.T) {
+	program, window := openProject(test, "Retrato de familia")
+	steps(test, window, typeInto(window, "Email o teléfono", "lucia@example.com"), click(window, "Guardar"))
 	settle(window)
-	project, _ := projectTitled(t, program, "Retrato de familia")
+	project, _ := projectTitled(test, program, "Retrato de familia")
 	person, _, err := program.stores.Customers.Find(project.CustomerID)
 	if err != nil || person.Contact != "lucia@example.com" {
-		t.Errorf("the contact is %q after saving (%v)", person.Contact, err)
+		test.Errorf("the contact is %q after saving (%v)", person.Contact, err)
 	}
 }
 
-func TestADeliveredProjectIsDraggedBack(t *testing.T) {
-	program, window := openApp(t, true)
+func TestADeliveredProjectIsDraggedBack(test *testing.T) {
+	program, window := openApp(test, true)
 	program.Open(Projects)
 	settle(window)
-	delivered, _ := projectTitled(t, program, "Retrato de gato")
+	delivered, _ := projectTitled(test, program, "Retrato de gato")
 	card, err := window.ElementIn(delivered.ID, "Retrato de gato")
 	if err != nil {
-		t.Fatal(err)
+		test.Fatal(err)
 	}
 	centreX, centreY := card.Rect.X+card.Rect.Width/2, card.Rect.Y+card.Rect.Height/2
 	window.Drag(centreX, centreY, centreX-card.Rect.Width-40, centreY)
 	settle(window)
-	if moved, _ := projectTitled(t, program, "Retrato de gato"); moved.Stage != projects.ToReview {
-		t.Errorf("the delivered project is %s after dragging it to «Para revisar»", moved.Stage)
+	if moved, _ := projectTitled(test, program, "Retrato de gato"); moved.Stage != projects.ToReview {
+		test.Errorf("the delivered project is %s after dragging it to «Para revisar»", moved.Stage)
 	}
 }
 
-func TestTheBoardStartsCompactAndOpensUpOnRequest(t *testing.T) {
-	program, window := openApp(t, true)
+func TestTheBoardStartsCompactAndOpensUpOnRequest(test *testing.T) {
+	program, window := openApp(test, true)
 	program.Open(Projects)
 	window.Frames(2)
 	compact, err := window.Element("Retrato de familia")
 	if err != nil {
-		t.Fatal(err)
+		test.Fatal(err)
 	}
-	steps(t, window, click(window, "Vista amplia"))
+	steps(test, window, click(window, "Vista amplia"))
 	window.Frames(2)
 	spacious, err := window.Element("Retrato de familia")
 	if err != nil {
-		t.Fatal(err)
+		test.Fatal(err)
 	}
 	if compact.Rect.Height >= spacious.Rect.Height/2 {
-		t.Errorf("the board does not start compact: a card is %v tall, %v opened up", compact.Rect.Height, spacious.Rect.Height)
+		test.Errorf("the board does not start compact: a card is %v tall, %v opened up", compact.Rect.Height, spacious.Rect.Height)
 	}
 	if _, err := window.Element("Vista compacta"); err != nil {
-		t.Errorf("the spacious view offers no way back: %v", err)
+		test.Errorf("the spacious view offers no way back: %v", err)
 	}
 }

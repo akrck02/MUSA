@@ -89,6 +89,28 @@ func (screens *Screens) drawEditor(context *ui.Context) {
 			context.Text(ProblemWords(problem), ui.TextStyle{Color: theme.Danger})
 		}
 	}
+	screens.whereAndWho(context)
+	screens.lineSection(context)
+	look.Section(context, "Envío", func() {
+		context.Box(ui.Layout{Width: ui.Grow(), Columns: look.Columns(context, 2), Gap: theme.Gap}, func() {
+			look.Field(context, "Cobrado al cliente (€)", "charged", &editing.shippingCharged, "0", editing.typing["charged"])
+			look.Field(context, "Pagado por ti (€)", "cost", &editing.shippingCost, "0", editing.typing["cost"])
+		})
+	})
+	if draft, readable := editing.draft(); readable {
+		sale := screens.preview(draft)
+		look.Section(context, "Resumen", func() {
+			amountRow(context, "Total", sale.Total(), true)
+			amountRow(context, "Coste", sale.Cost(), false)
+			amountRow(context, "Margen", sale.Margin(), true)
+		})
+	}
+}
+
+// whereAndWho is the section of the channel, the day, the customer and a note.
+func (screens *Screens) whereAndWho(context *ui.Context) {
+	editing := screens.editor
+	theme := context.Theme
 	look.Section(context, "Dónde y quién", func() {
 		var channels []string
 		for _, channel := range SelectableChannels {
@@ -104,21 +126,6 @@ func (screens *Screens) drawEditor(context *ui.Context) {
 			look.Field(context, "Nota", "note", &editing.note, "Ej.: Pedido web 0007", "")
 		})
 	})
-	screens.lineSection(context)
-	look.Section(context, "Envío", func() {
-		context.Box(ui.Layout{Width: ui.Grow(), Columns: look.Columns(context, 2), Gap: theme.Gap}, func() {
-			look.Field(context, "Cobrado al cliente (€)", "charged", &editing.shippingCharged, "0", editing.typing["charged"])
-			look.Field(context, "Pagado por ti (€)", "cost", &editing.shippingCost, "0", editing.typing["cost"])
-		})
-	})
-	if draft, ok := editing.draft(); ok {
-		sale := screens.preview(draft)
-		look.Section(context, "Resumen", func() {
-			amountRow(context, "Total", sale.Total(), true)
-			amountRow(context, "Coste", sale.Cost(), false)
-			amountRow(context, "Margen", sale.Margin(), true)
-		})
-	}
 }
 
 func (screens *Screens) lineSection(context *ui.Context) {
@@ -184,9 +191,9 @@ func (screens *Screens) lineProblem(lineID string, code Code) string {
 	return ""
 }
 
-// draft reads the typed text into a draft; ok is false while a field cannot be read, and the
+// draft reads the typed text into a draft; readable is false while a field cannot be read, and the
 // editor's typing then says which.
-func (editing *orderEditor) draft() (draft Draft, ok bool) {
+func (editing *orderEditor) draft() (draft Draft, readable bool) {
 	editing.typing = map[string]string{}
 	day, found := calendar.ParseTyped(editing.day)
 	if !found {
@@ -235,8 +242,8 @@ func (screens *Screens) preview(draft Draft) Sale {
 
 func (screens *Screens) record() {
 	editing := screens.editor
-	draft, ok := editing.draft()
-	if !ok {
+	draft, readable := editing.draft()
+	if !readable {
 		return
 	}
 	day, _ := calendar.ParseTyped(editing.day) // draft read it

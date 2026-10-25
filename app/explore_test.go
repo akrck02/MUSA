@@ -38,38 +38,38 @@ func pressableLabels(window *uitest.Window) []ui.AccessibleNode {
 // troubleWords are words MUSA only shows when something went wrong underneath.
 var troubleWords = []string{"no se pudo", "storage", "sql", "error", "panic", "not found"}
 
-func TestEveryControlOnEveryPageCanBePressed(t *testing.T) {
+func TestEveryControlOnEveryPageCanBePressed(test *testing.T) {
 	if testing.Short() {
-		t.Skip("presses every control of every page, one fresh MUSA each")
+		test.Skip("presses every control of every page, one fresh MUSA each")
 	}
 	for _, page := range explorePages {
-		program, window := openApp(t, true)
+		program, window := openApp(test, true)
 		openPage(program, page)
 		window.Frames(3)
 		controls := pressableLabels(window)
 		if len(controls) == 0 {
-			t.Errorf("%s: nothing can be pressed", page)
+			test.Errorf("%s: nothing can be pressed", page)
 		}
 		for index := range controls {
-			t.Run(fmt.Sprintf("%s/%d", page, index), func(t *testing.T) { pressAndCheck(t, page, index) })
+			test.Run(fmt.Sprintf("%s/%d", page, index), func(test *testing.T) { pressAndCheck(test, page, index) })
 		}
 	}
 }
 
 // pressAndCheck opens a page in a fresh MUSA, presses its control at index, and fails when that
 // breaks or shows trouble.
-func pressAndCheck(t *testing.T, page string, index int) {
-	program, window := openApp(t, true)
+func pressAndCheck(test *testing.T, page string, index int) {
+	program, window := openApp(test, true)
 	openPage(program, page)
 	window.Frames(3)
 	controls := pressableLabels(window)
 	if index >= len(controls) {
-		t.Skipf("the page changed: %d controls now", len(controls))
+		test.Skipf("the page changed: %d controls now", len(controls))
 	}
 	control := controls[index]
 	defer func() {
 		if recovered := recover(); recovered != nil {
-			t.Fatalf("pressing %q on %s panicked: %v", control.Label, page, recovered)
+			test.Fatalf("pressing %q on %s panicked: %v", control.Label, page, recovered)
 		}
 	}()
 	window.Context().ScreenReaderAct(control.ID, ui.ReaderPress)
@@ -78,7 +78,7 @@ func pressAndCheck(t *testing.T, page string, index int) {
 		lowered := strings.ToLower(text)
 		for _, word := range troubleWords {
 			if strings.Contains(lowered, word) {
-				t.Errorf("pressing %q on %s shows %q", control.Label, page, text)
+				test.Errorf("pressing %q on %s shows %q", control.Label, page, text)
 			}
 		}
 	}

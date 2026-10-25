@@ -6,7 +6,7 @@ import (
 	ui "github.com/akrck02/go-ui"
 )
 
-func TestSomethingArrivingRisesIntoPlaceAsItShows(t *testing.T) {
+func TestSomethingArrivingRisesIntoPlaceAsItShows(test *testing.T) {
 	cases := []struct {
 		shown, fade, shift float32
 	}{
@@ -17,7 +17,7 @@ func TestSomethingArrivingRisesIntoPlaceAsItShows(t *testing.T) {
 	for _, each := range cases {
 		arriving := Arriving(ui.Look{Radius: 4}, each.shown, 20)
 		if arriving.Fade != each.fade || arriving.ShiftY != each.shift || arriving.Radius != 4 {
-			t.Errorf("shown %v: fade %v and shift %v (radius %v), not %v and %v", each.shown, arriving.Fade, arriving.ShiftY, arriving.Radius, each.fade, each.shift)
+			test.Errorf("shown %v: fade %v and shift %v (radius %v), not %v and %v", each.shown, arriving.Fade, arriving.ShiftY, arriving.Radius, each.fade, each.shift)
 		}
 	}
 }

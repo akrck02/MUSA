@@ -6,56 +6,56 @@ import (
 	"testing"
 )
 
-func TestASavedProductIsReadBackWithItsVariantsAndTags(t *testing.T) {
-	store := testStore(t)
+func TestASavedProductIsReadBackWithItsVariantsAndTags(test *testing.T) {
+	store := testStore(test)
 	draft := physicalProduct("p1", "  Lámina gato ")
 	draft.Variants = []Variant{{ID: "a4", Name: "A4", Price: 1200, Cost: 350, SKU: " LAM-A4 ", Stock: 14, MinimumStock: 4}, {ID: "a3", Name: "A3", Price: 2000, SKU: " "}}
-	mustSave(t, store, ProductDraft{Product: draft, TagNames: []string{"Gatos", "gatos", "Espacio"}})
+	mustSave(test, store, ProductDraft{Product: draft, TagNames: []string{"Gatos", "gatos", "Espacio"}})
 
-	product := mustFind(t, store, "p1")
+	product := mustFind(test, store, "p1")
 	if product.Name != "Lámina gato" || product.CreatedAt.IsZero() || len(product.Variants) != 2 {
-		t.Fatalf("read back %+v", product)
+		test.Fatalf("read back %+v", product)
 	}
 	if product.Variants[0].SKU != "LAM-A4" || product.Variants[0].MinimumStock != 4 || product.Variants[1].SKU != "" {
-		t.Errorf("variants %+v", product.Variants)
+		test.Errorf("variants %+v", product.Variants)
 	}
 	if got := []string{product.Tags[0].Name, product.Tags[1].Name}; len(product.Tags) != 2 || !slices.Equal(got, []string{"Gatos", "Espacio"}) {
-		t.Errorf("tags %+v", product.Tags)
+		test.Errorf("tags %+v", product.Tags)
 	}
 }
 
-func TestEditingKeepsTheCreationTimeAndReusesTags(t *testing.T) {
-	store := testStore(t)
-	first := mustSave(t, store, ProductDraft{Product: physicalProduct("p1", "Lámina"), TagNames: []string{"Gatos"}})
+func TestEditingKeepsTheCreationTimeAndReusesTags(test *testing.T) {
+	store := testStore(test)
+	first := mustSave(test, store, ProductDraft{Product: physicalProduct("p1", "Lámina"), TagNames: []string{"Gatos"}})
 	edited := first
 	edited.Name = "Lámina nueva"
-	second := mustSave(t, store, ProductDraft{Product: edited, TagNames: []string{"GATOS"}})
+	second := mustSave(test, store, ProductDraft{Product: edited, TagNames: []string{"GATOS"}})
 	if !second.CreatedAt.Equal(first.CreatedAt) || !second.UpdatedAt.After(first.UpdatedAt) {
-		t.Errorf("times %v %v", second.CreatedAt, second.UpdatedAt)
+		test.Errorf("times %v %v", second.CreatedAt, second.UpdatedAt)
 	}
 	tags, _ := store.Tags()
 	if len(tags) != 1 || second.Tags[0].ID != first.Tags[0].ID {
-		t.Errorf("tags %+v", tags)
+		test.Errorf("tags %+v", tags)
 	}
 }
 
-func TestASKUUsedByAnotherProductIsRejected(t *testing.T) {
-	store := testStore(t)
+func TestASKUUsedByAnotherProductIsRejected(test *testing.T) {
+	store := testStore(test)
 	owner := physicalProduct("p1", "Lámina")
 	owner.Variants[0].SKU = "LAM"
-	mustSave(t, store, ProductDraft{Product: owner})
+	mustSave(test, store, ProductDraft{Product: owner})
 	other := physicalProduct("p2", "Otra")
 	other.Variants[0].SKU = "lam"
 	_, problems, err := store.Save(ProductDraft{Product: other})
 	if err != nil || len(problems) != 1 || problems[0].Code != CodeDuplicateSKU || problems[0].OwnerName != "Lámina" {
-		t.Fatalf("problems %+v %v", problems, err)
+		test.Fatalf("problems %+v %v", problems, err)
 	}
 	if _, found, _ := store.Find("p2"); found {
-		t.Error("an invalid draft was stored")
+		test.Error("an invalid draft was stored")
 	}
 }
 
-func TestStockMovedElsewhereWhileEditingIsKept(t *testing.T) {
+func TestStockMovedElsewhereWhileEditingIsKept(test *testing.T) {
 	cases := map[string]struct{ typed, baseline, elsewhere, want int }{
 		"editor did not touch it":   {typed: 5, baseline: 5, elsewhere: -2, want: 3},
 		"editor change on top":      {typed: 8, baseline: 5, elsewhere: -2, want: 6},
@@ -63,76 +63,76 @@ func TestStockMovedElsewhereWhileEditingIsKept(t *testing.T) {
 		"never below zero":          {typed: 0, baseline: 5, elsewhere: -4, want: 0},
 	}
 	for name, each := range cases {
-		store := testStore(t)
-		saved := mustSave(t, store, ProductDraft{Product: physicalProduct("p1", "Lámina")})
+		store := testStore(test)
+		saved := mustSave(test, store, ProductDraft{Product: physicalProduct("p1", "Lámina")})
 		variantID := saved.Variants[0].ID
 		if err := store.AdjustStock(variantID, each.elsewhere); err != nil {
-			t.Fatal(err)
+			test.Fatal(err)
 		}
 		edited := saved
 		edited.Variants = []Variant{saved.Variants[0]}
 		edited.Variants[0].Stock = each.typed
-		mustSave(t, store, ProductDraft{Product: edited, StockBaseline: map[string]int{variantID: each.baseline}})
-		if got := mustFind(t, store, "p1").Variants[0].Stock; got != each.want {
-			t.Errorf("%s: stock %d; want %d", name, got, each.want)
+		mustSave(test, store, ProductDraft{Product: edited, StockBaseline: map[string]int{variantID: each.baseline}})
+		if got := mustFind(test, store, "p1").Variants[0].Stock; got != each.want {
+			test.Errorf("%s: stock %d; want %d", name, got, each.want)
 		}
 	}
 }
 
-func TestADuplicatedProductIsADraftWithNewIdsAndNoStock(t *testing.T) {
-	store := testStore(t)
+func TestADuplicatedProductIsADraftWithNewIdsAndNoStock(test *testing.T) {
+	store := testStore(test)
 	original := physicalProduct("p1", "Lámina")
 	original.Variants[0].SKU = "LAM"
-	mustSave(t, store, ProductDraft{Product: original, TagNames: []string{"Gatos"}})
+	mustSave(test, store, ProductDraft{Product: original, TagNames: []string{"Gatos"}})
 	copyID, err := store.Duplicate("p1", "Lámina (copia)")
 	if err != nil {
-		t.Fatal(err)
+		test.Fatal(err)
 	}
-	copied := mustFind(t, store, copyID)
+	copied := mustFind(test, store, copyID)
 	if copied.Status != Draft || copied.Name != "Lámina (copia)" || len(copied.Tags) != 1 {
-		t.Errorf("copy %+v", copied)
+		test.Errorf("copy %+v", copied)
 	}
 	if variant := copied.Variants[0]; variant.ID == "p1-v1" || variant.SKU != "" || variant.Stock != 0 || variant.Price != 1000 {
-		t.Errorf("variant %+v", variant)
+		test.Errorf("variant %+v", variant)
 	}
 	if _, err := store.Duplicate("missing", "x"); !hasCode(err, CodeProductNotFound) {
-		t.Errorf("duplicating a missing product: %v", err)
+		test.Errorf("duplicating a missing product: %v", err)
 	}
 }
 
-func TestArchivingDeletingAndStockChangesAreStored(t *testing.T) {
-	store := testStore(t)
-	mustSave(t, store, ProductDraft{Product: physicalProduct("p1", "Lámina")})
+func TestArchivingDeletingAndStockChangesAreStored(test *testing.T) {
+	store := testStore(test)
+	mustSave(test, store, ProductDraft{Product: physicalProduct("p1", "Lámina")})
 	store.SetArchived("p1", true)
-	if mustFind(t, store, "p1").Status != Archived {
-		t.Error("not archived")
+	if mustFind(test, store, "p1").Status != Archived {
+		test.Error("not archived")
 	}
 	store.SetArchived("p1", false)
-	if mustFind(t, store, "p1").Status != Active {
-		t.Error("not restored")
+	if mustFind(test, store, "p1").Status != Active {
+		test.Error("not restored")
 	}
 	store.AdjustStock("p1-v1", 3)
 	if stock, found, _ := store.Stock("p1-v1"); !found || stock != 8 {
-		t.Errorf("stock %d", stock)
+		test.Errorf("stock %d", stock)
 	}
 	store.Delete("p1")
 	if _, found, _ := store.Find("p1"); found {
-		t.Error("a deleted product is read")
+		test.Error("a deleted product is read")
 	}
 	if all, _ := store.All(); len(all) != 0 {
-		t.Errorf("%d products after deleting", len(all))
+		test.Errorf("%d products after deleting", len(all))
 	}
 }
 
-func TestAVariantRemovedInTheEditorLeavesTheProduct(t *testing.T) {
-	store := testStore(t)
+func TestAVariantRemovedInTheEditorLeavesTheProduct(test *testing.T) {
+	store := testStore(test)
 	product := physicalProduct("p1", "Lámina")
 	product.Variants = []Variant{{ID: "a", Name: "A4"}, {ID: "b", Name: "A3"}}
-	saved := mustSave(t, store, ProductDraft{Product: product})
+	saved := mustSave(test, store, ProductDraft{Product: product})
 	saved.Variants = saved.Variants[:1]
-	mustSave(t, store, ProductDraft{Product: saved})
-	if got := mustFind(t, store, "p1").Variants; len(got) != 1 || got[0].ID != "a" {
-		t.Errorf("variants %+v", got)
+	mustSave(test, store, ProductDraft{Product: saved})
+	if got := mustFind(test, store, "p1").Variants; len(got) != 1 || got[0].ID != "a" {
+		test.Errorf("variants %+v", got)
 	}
 }
 
@@ -141,7 +141,7 @@ func hasCode(err error, code Code) bool {
 	return errors.As(err, &failure) && failure.Code == code
 }
 
-func TestEachErrorConstructorCarriesItsOwnCode(t *testing.T) {
+func TestEachErrorConstructorCarriesItsOwnCode(test *testing.T) {
 	cases := map[Code]error{
 		CodeProductNotFound: productNotFound("x"),
 		CodeVariantNotFound: variantNotFound("x"),
@@ -149,7 +149,7 @@ func TestEachErrorConstructorCarriesItsOwnCode(t *testing.T) {
 	}
 	for code, err := range cases {
 		if !hasCode(err, code) {
-			t.Errorf("%v does not carry %s", err, code)
+			test.Errorf("%v does not carry %s", err, code)
 		}
 	}
 }

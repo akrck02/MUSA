@@ -138,11 +138,11 @@ func (screens *Screens) restockBanner(context *ui.Context) {
 			context.IconSized("triangle-alert", bannerIconSize, theme.Warning)
 		})
 		context.Box(ui.Layout{Direction: ui.Vertical, Width: ui.Grow()}, func() {
-			context.Text(fmt.Sprintf("%d %s por reponer", len(names), map[bool]string{true: "producto", false: "productos"}[len(names) == 1]),
+			context.Text(restockTitle(len(names)),
 				ui.TextStyle{Size: bannerTitleSize, Weight: draw2d.Bold})
 			context.Text(restockSummary(names), ui.TextStyle{Color: theme.InkSoft})
 		})
-		action := map[bool]string{true: "Ver todos", false: "Ver cuáles"}[screens.query.LowStockOnly]
+		action := restockLinkWords(screens.query.LowStockOnly)
 		if look.Link(context, action) {
 			screens.query.LowStockOnly = !screens.query.LowStockOnly
 		}

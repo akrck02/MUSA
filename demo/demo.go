@@ -4,7 +4,6 @@
 package demo
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/Itros97/MUSA/calendar"
@@ -29,12 +28,6 @@ type Stores struct {
 	NewID     func() string
 }
 
-// CodeNotEmpty is the code of filling a database that already has data: its SKUs would clash.
-const CodeNotEmpty = "demo.not-empty"
-
-// CodeRefused is the code of demo data a store turned down, which is a bug in the demo.
-const CodeRefused = "demo.refused"
-
 // Fill loads the demo data, but only into an empty database.
 func Fill(stores Stores) error {
 	empty, err := stores.Database.Empty()
@@ -42,7 +35,7 @@ func Fill(stores Stores) error {
 		return err
 	}
 	if !empty {
-		return fmt.Errorf("%s: the database already has products or events", CodeNotEmpty)
+		return notEmpty()
 	}
 	filler := &filler{stores: stores, variants: map[string]string{}, finalStock: map[string]int{}}
 	return filler.fill()
@@ -197,6 +190,6 @@ func (filler *filler) stop(refusedCount int, refusals any, err error) {
 		return
 	}
 	if refusedCount > 0 {
-		filler.err = fmt.Errorf("%s: %v", CodeRefused, refusals)
+		filler.err = refused(refusals)
 	}
 }

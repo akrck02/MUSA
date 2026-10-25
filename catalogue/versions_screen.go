@@ -82,7 +82,7 @@ func (screens *Screens) singleVersion(context *ui.Context) {
 	editing := screens.editor
 	physical := editing.form.product.Kind == Physical
 	typed := &editing.form.variants[0]
-	panelHeading(context, map[bool]string{true: "Precio y stock", false: "Precio"}[physical], "Una sola versión.")
+	panelHeading(context, priceHeading(physical), "Una sola versión.")
 	context.Push(typed.id)
 	context.Box(ui.Layout{Width: ui.Grow(), Gap: boxGap}, func() {
 		valueBox(context, "Precio", func() { amountField(context, "price", &typed.price, "12,50", boxValueSize, draw2d.Bold) })
@@ -193,7 +193,7 @@ func (screens *Screens) versionTable(context *ui.Context) {
 	edited := &editing.form
 	theme := context.Theme
 	physical := edited.product.Kind == Physical
-	panelHeading(context, "Versiones", map[bool]string{true: "Cada versión tiene su precio y su stock.", false: "Cada versión tiene su precio."}[physical])
+	panelHeading(context, "Versiones", versionsHint(physical))
 	heading := func(words string) func() {
 		return func() { context.Text(words, ui.TextStyle{Size: headerRowSize, Color: theme.InkSoft}) }
 	}
@@ -289,7 +289,7 @@ func stockCell(context *ui.Context, typed *variantForm) bool {
 		typed.stock = strconv.Itoa(count)
 		minimum, _ := strconv.Atoi(typed.minimum) // an unreadable minimum is told when saving
 		if (Variant{Stock: count, MinimumStock: minimum}).LowStock() {
-			context.Text(map[bool]string{true: "Agotado", false: "Pocos"}[count == 0],
+			context.Text(lowStockWords(count),
 				ui.TextStyle{Size: lowWordsSize, Weight: draw2d.Bold, Color: theme.Warning})
 		}
 		context.Spacer()
@@ -323,7 +323,7 @@ func (screens *Screens) moreDetails(context *ui.Context) {
 				hintHeight := moreSize * theme.LineHeight / moreHintSize
 				context.Text(screens.detailsSummary(), ui.TextStyle{Size: moreHintSize, Color: theme.InkSoft, LineHeight: hintHeight})
 			})
-			context.IconSized(map[bool]string{true: "chevron-up", false: "chevron-down"}[editing.detailsOpen], moreIconSize, theme.Ink)
+			context.IconSized(chevron(editing.detailsOpen), moreIconSize, theme.Ink)
 		}) {
 			editing.detailsOpen = !editing.detailsOpen
 		}
@@ -332,4 +332,12 @@ func (screens *Screens) moreDetails(context *ui.Context) {
 			screens.lifeButtons(context)
 		})
 	})
+}
+
+// chevron points up over details that are open, so tapping it folds them, and down otherwise.
+func chevron(open bool) string {
+	if open {
+		return "chevron-up"
+	}
+	return "chevron-down"
 }

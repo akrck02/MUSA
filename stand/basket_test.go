@@ -12,28 +12,28 @@ var (
 	frog = Item{VariantID: "frog", Label: "Rana", Price: 500, Left: 1}
 )
 
-func TestABasketAddsUpWhatTheCustomerTakes(t *testing.T) {
+func TestABasketAddsUpWhatTheCustomerTakes(test *testing.T) {
 	var basket Basket
 	basket.Add(cat)
 	basket.Add(cat)
 	basket.Add(frog)
 	if basket.Count() != 3 || basket.Total() != 1100 || basket.Quantity("cat") != 2 {
-		t.Errorf("count %d, total %d, cats %d", basket.Count(), basket.Total(), basket.Quantity("cat"))
+		test.Errorf("count %d, total %d, cats %d", basket.Count(), basket.Total(), basket.Quantity("cat"))
 	}
 }
 
-func TestABasketTakesNoMoreThanIsLeft(t *testing.T) {
+func TestABasketTakesNoMoreThanIsLeft(test *testing.T) {
 	var basket Basket
 	basket.Add(frog)
 	if basket.Add(frog) {
-		t.Error("took a second frog when only one was left")
+		test.Error("took a second frog when only one was left")
 	}
 	if basket.Add(Item{VariantID: "gone", Left: 0}) {
-		t.Error("took an item sold out")
+		test.Error("took an item sold out")
 	}
 }
 
-func TestRemovingTheLastOfAnItemTakesItOutOfTheBasket(t *testing.T) {
+func TestRemovingTheLastOfAnItemTakesItOutOfTheBasket(test *testing.T) {
 	var basket Basket
 	basket.Add(cat)
 	basket.Add(frog)
@@ -42,11 +42,11 @@ func TestRemovingTheLastOfAnItemTakesItOutOfTheBasket(t *testing.T) {
 	counter := 0
 	lines := basket.Lines(func() string { counter++; return fmt.Sprint(counter) })
 	if len(lines) != 1 || lines[0].VariantID != "frog" || lines[0].Quantity != 1 || lines[0].UnitPrice != 500 || lines[0].ID != "1" {
-		t.Errorf("lines %+v", lines)
+		test.Errorf("lines %+v", lines)
 	}
 	basket.Clear()
 	if basket.Count() != 0 {
-		t.Error("a cleared basket still holds something")
+		test.Error("a cleared basket still holds something")
 	}
 }
 
@@ -72,13 +72,13 @@ func TestTheChangeIsSaidInNotesAndCoins(test *testing.T) {
 	}
 }
 
-func TestTheReceiptListsEachItemWithWhatItCost(t *testing.T) {
+func TestTheReceiptListsEachItemWithWhatItCost(test *testing.T) {
 	var basket Basket
 	moon := Item{VariantID: "moon", Label: "Luna · Mate", Price: 300, Left: 5}
 	basket.Add(moon)
 	basket.Add(moon)
 	taken := basket.Taken()
 	if len(taken) != 1 || taken[0].Words != "2 × Luna · Mate" || taken[0].Amount != 600 {
-		t.Errorf("taken %+v", taken)
+		test.Errorf("taken %+v", taken)
 	}
 }

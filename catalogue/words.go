@@ -119,3 +119,59 @@ func KindWords(kind Kind, tags []string) string {
 	}
 	return tags[0] + " " + adjective
 }
+
+// archiveWords is the button that archives a product, or restores an archived one.
+func archiveWords(archived bool) string {
+	if archived {
+		return "Restaurar"
+	}
+	return "Archivar"
+}
+
+// archivedWords is the note after that button: what the product became.
+func archivedWords(wasArchived bool) string {
+	if wasArchived {
+		return "Restaurado"
+	}
+	return "Archivado"
+}
+
+// restockTitle is "1 producto por reponer", or "3 productos por reponer".
+func restockTitle(count int) string {
+	if count == 1 {
+		return "1 producto por reponer"
+	}
+	return fmt.Sprintf("%d productos por reponer", count)
+}
+
+// restockLinkWords is the link that shows only what needs restocking, or everything again.
+func restockLinkWords(onlyLowStock bool) string {
+	if onlyLowStock {
+		return "Ver todos"
+	}
+	return "Ver cuáles"
+}
+
+// priceHeading is the heading of a product with one version: physical ones have stock too.
+func priceHeading(physical bool) string {
+	if physical {
+		return "Precio y stock"
+	}
+	return "Precio"
+}
+
+// versionsHint is what each version of a product holds.
+func versionsHint(physical bool) string {
+	if physical {
+		return "Cada versión tiene su precio y su stock."
+	}
+	return "Cada versión tiene su precio."
+}
+
+// lowStockWords is the warning on a version with few left, or none.
+func lowStockWords(left int) string {
+	if left == 0 {
+		return "Agotado"
+	}
+	return "Pocos"
+}

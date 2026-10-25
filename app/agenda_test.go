@@ -10,7 +10,7 @@ import (
 	"github.com/Itros97/MUSA/sales"
 )
 
-func TestTheAgendaPutsAFairOnEachOfItsDaysAnOrderOnTheDayItCameAndAProjectWhenItIsDue(t *testing.T) {
+func TestTheAgendaPutsAFairOnEachOfItsDaysAnOrderOnTheDayItCameAndAProjectWhenItIsDue(test *testing.T) {
 	first, last := calendar.Date{Year: 2026, Month: 5, Day: 1}, calendar.Date{Year: 2026, Month: 5, Day: 2}
 	plan := agenda{
 		fairs:    []events.Event{{Name: "Market", StartDate: first, EndDate: last}},
@@ -19,13 +19,13 @@ func TestTheAgendaPutsAFairOnEachOfItsDaysAnOrderOnTheDayItCameAndAProjectWhenIt
 		zone:     time.UTC,
 	}
 	if entries := plan.on(first); len(entries) != 1 || !entries[0].fair {
-		t.Errorf("first day: %+v", entries)
+		test.Errorf("first day: %+v", entries)
 	}
 	if entries := plan.on(last); len(entries) != 3 || entries[1].words != "Enviar a Ana" || entries[2].words != "Portrait" {
-		t.Errorf("last day: %+v", entries)
+		test.Errorf("last day: %+v", entries)
 	}
 	if entries := plan.on(last.AddDays(1)); len(entries) != 0 {
-		t.Errorf("the day after: %+v", entries)
+		test.Errorf("the day after: %+v", entries)
 	}
 }
 

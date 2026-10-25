@@ -2,7 +2,6 @@ package demo
 
 import (
 	"slices"
-	"strings"
 	"testing"
 	"time"
 
@@ -14,13 +13,13 @@ import (
 	"github.com/Itros97/MUSA/storage"
 )
 
-func openStores(t *testing.T) Stores {
-	t.Helper()
+func openStores(test *testing.T) Stores {
+	test.Helper()
 	database, err := storage.Open(storage.InMemory)
 	if err != nil {
-		t.Fatal(err)
+		test.Fatal(err)
 	}
-	t.Cleanup(func() { database.Close() })
+	test.Cleanup(func() { database.Close() })
 	now := func() time.Time { return time.Date(2026, 4, 18, 11, 0, 0, 0, time.Local) }
 	products := catalogue.NewStore(database, now, storage.NewID)
 	sold := sales.NewStore(database, products, now, storage.NewID)
@@ -30,10 +29,10 @@ func openStores(t *testing.T) Stores {
 		Projects: projects.NewStore(database, products, people, now, storage.NewID), Now: now, NewID: storage.NewID}
 }
 
-func TestDemoDataFillsEveryModule(t *testing.T) {
-	stores := openStores(t)
+func TestDemoDataFillsEveryModule(test *testing.T) {
+	stores := openStores(test)
 	if err := Fill(stores); err != nil {
-		t.Fatal(err)
+		test.Fatal(err)
 	}
 	products, _ := stores.Products.All()
 	fairs, _ := stores.Events.All()
@@ -42,29 +41,29 @@ func TestDemoDataFillsEveryModule(t *testing.T) {
 	// Products: twenty-one physical and three digital. Fairs: one closed, one today, two to come.
 	// Sales: three at last month's fair, two today, eight orders, and the delivered project's.
 	if len(products) != 21+3 || len(fairs) != 4 || len(orders) != 3+2+8+1 || len(commissions) != 5 {
-		t.Errorf("%d products, %d fairs, %d sales, %d projects", len(products), len(fairs), len(orders), len(commissions))
+		test.Errorf("%d products, %d fairs, %d sales, %d projects", len(products), len(fairs), len(orders), len(commissions))
 	}
 	if !slices.ContainsFunc(fairs, func(fair events.Event) bool { return fair.Status == events.Closed }) {
-		t.Error("last month's fair is not closed")
+		test.Error("last month's fair is not closed")
 	}
 	lowStock := catalogue.Filter(products, catalogue.Query{LowStockOnly: true})
 	if len(lowStock) == 0 {
-		t.Error("the demo has no low stock to show")
+		test.Error("the demo has no low stock to show")
 	}
 }
 
-func TestTheDemoNeverFillsADatabaseWithData(t *testing.T) {
-	stores := openStores(t)
+func TestTheDemoNeverFillsADatabaseWithData(test *testing.T) {
+	stores := openStores(test)
 	if err := Fill(stores); err != nil {
-		t.Fatal(err)
+		test.Fatal(err)
 	}
-	if err := Fill(stores); err == nil || !strings.HasPrefix(err.Error(), CodeNotEmpty) {
-		t.Errorf("filling twice: %v", err)
+	if err := Fill(stores); CodeOf(err) != CodeNotEmpty {
+		test.Errorf("filling twice: %v", err)
 	}
 	if err := stores.Database.Wipe(); err != nil {
-		t.Fatal(err)
+		test.Fatal(err)
 	}
 	if empty, _ := stores.Database.Empty(); !empty {
-		t.Error("wiping leaves data")
+		test.Error("wiping leaves data")
 	}
 }

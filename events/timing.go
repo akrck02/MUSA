@@ -41,11 +41,11 @@ func WhenWords(event Event, today calendar.Date) string {
 	case Happening:
 		return "En curso"
 	case Upcoming:
-		if days := DaysUntil(event, today); days == 1 {
+		days := DaysUntil(event, today)
+		if days == 1 {
 			return "Mañana"
-		} else {
-			return fmt.Sprintf("Dentro de %d días", days)
 		}
+		return fmt.Sprintf("Dentro de %d días", days)
 	default:
 		return statusWords[event.Status]
 	}
