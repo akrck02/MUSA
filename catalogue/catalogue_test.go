@@ -181,9 +181,3 @@ func TestTheEditorSaysWhatEachPieceEarnsOrLoses(test *testing.T) {
 		}
 	}
 }
-
-func TestAProductWithNoNameHasNoInitial(test *testing.T) {
-	if initial := Initial(""); initial != "" {
-		test.Errorf("Initial of an empty name: %q, want nothing", initial)
-	}
-}

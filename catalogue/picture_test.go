@@ -6,7 +6,7 @@ import (
 )
 
 func TestAPicturesLetterSkipsQuotes(test *testing.T) {
-	for name, want := range map[string]string{"Lámina «Gato»": "G", "Luna": "L", "«luna»": "L", "3D": "3", "": "�"} {
+	for name, want := range map[string]string{"Lámina «Gato»": "G", "Luna": "L", "«luna»": "L", "3D": "3", "": ""} {
 		if got := Initial(name); got != want {
 			test.Errorf("Initial(%q) = %q, want %q", name, got, want)
 		}
