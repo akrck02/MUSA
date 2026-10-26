@@ -1,6 +1,6 @@
 # 5. What MUSA should hand to Go UI and Go Renderer
 
-> Status: proposed · Author's approval: proposal ☐ plan ☐ · Lives in: `go-renderer` (`draw2d`, the
+> Status: approved in part · Author's approval: proposal ◐ plan ☐ · Lives in: `go-renderer` (`draw2d`, the
 > painters), `go-ui` (controls, motion, `uitest`), MUSA's `look` and every screen package
 > Depends on: proposals 1 to 4 (MUSA as it is on `feature/go-ui`)
 
@@ -75,6 +75,18 @@ maps that keep them.
 | R17 | Problems and refusals share one shape across packages: a code and the words for it (`catalogue.Problem`, `events.Refusal`, `projects.Code`, `sales.Problem` today) | test per package: `each code has its words`, as now, on one type |
 | R18 | `look` holds only MUSA's design: the Bubble 4 sizes of headers, cards, pills, figures and the tab sizes of the author's mock-ups | `look` has no `Paint` methods and no motion code |
 | R19 | `map[bool]string{…}[condition]` gives way to a plain `if`, which a newcomer reads without stopping | `grep "map\[bool\]"` finds nothing |
+
+### The author's answers (2026-10-26)
+
+| Requirements | Answer |
+|---|---|
+| R1–R3 (Go Renderer) | Approved |
+| R4 (a control is read by its words) | Approved |
+| R6, R7 (notes and confirmations) | Approved; the colour of a destructive button comes from the theme and can be changed, red by default |
+| R9 (the sliding pill) | Approved, with its motion configurable: duration and easing from the theme, and a way to turn it off |
+| R12 (width classes) | Approved |
+| R13, R14 (`uitest`) | Approved; the test viewer also gains a replay at the host's speed (done in Go UI, `4288f2c`) |
+| R5, R8, R10, R11, R15 | Not answered yet |
 
 ## Found while testing
 
