@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/akrck02/bubble"
+	"github.com/akrck02/bubble/goui"
 	"github.com/akrck02/go-renderer/draw2d"
 	ui "github.com/akrck02/go-ui"
 
@@ -35,6 +37,8 @@ type Screens struct {
 	// openStand opens the stand of an event, which this package cannot reach: the app gives it.
 	openStand func(Event)
 	prepare   func(Event) // opens the choice of what to take to an event
+	// design is the Bubble theme in use, for Bubble's own controls; the app gives it.
+	design func() bubble.Theme
 
 	note        string
 	noteWarning bool
@@ -44,6 +48,21 @@ type Screens struct {
 // NewScreens draws the fairs kept in store, taking stock from products.
 func NewScreens(store *Store, products *catalogue.Store, newID func() string, now func() time.Time) *Screens {
 	return &Screens{store: store, products: products, newID: newID, now: now}
+}
+
+// UseDesign draws Bubble's own controls (the tonal buttons of a stock line) with the theme design
+// gives, the one the rest of the app is drawn with.
+func (screens *Screens) UseDesign(design func() bubble.Theme) {
+	screens.design = design
+}
+
+// tonalButton is Bubble's tonal button, for an action repeated on each row; before the app gives a
+// design, a plain button.
+func (screens *Screens) tonalButton(context *ui.Context, label string) bool {
+	if screens.design == nil {
+		return context.Button(label)
+	}
+	return goui.TonalButton(context, screens.design(), label)
 }
 
 // Reload reads the fairs again, and the open fair's detail.

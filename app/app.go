@@ -51,7 +51,8 @@ type Options struct {
 // App is everything MUSA remembers between frames.
 type App struct {
 	stores  demo.Stores
-	themes  [2]ui.Theme // the light theme and the dark one
+	themes  [2]ui.Theme     // the light theme and the dark one
+	designs [2]bubble.Theme // the Bubble themes they come from, for Bubble's own controls
 	dark    bool
 	options Options
 	place   Place
@@ -67,11 +68,11 @@ type App struct {
 
 // New opens MUSA over an open database.
 func New(database *storage.Database, options Options) (*App, error) {
-	light, err := newTheme(bubble.ModeLight)
+	lightDesign, err := newDesign(bubble.ModeLight)
 	if err != nil {
 		return nil, err
 	}
-	dark, err := newTheme(bubble.ModeDark)
+	darkDesign, err := newDesign(bubble.ModeDark)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +88,8 @@ func New(database *storage.Database, options Options) (*App, error) {
 	program := &App{
 		stores: demo.Stores{Database: database, Products: products, Sales: sold, Events: fairs, Customers: people,
 			Projects: commissions, Now: now, NewID: storage.NewID},
-		themes:  [2]ui.Theme{light, dark},
+		themes:  [2]ui.Theme{pageTheme(goui.Theme(lightDesign)), pageTheme(goui.Theme(darkDesign))},
+		designs: [2]bubble.Theme{lightDesign, darkDesign},
 		dark:    options.Dark,
 		options: options,
 	}
@@ -111,6 +113,7 @@ func (program *App) buildScreens() {
 		return sales.UnitsSince(made, calendar.Date{Year: today.Year, Month: today.Month, Day: 1}.At(0, now().Location())), err
 	})
 	program.fairs = events.NewScreens(fairs, products, storage.NewID, now)
+	program.fairs.UseDesign(program.design)
 	program.sales = sales.NewScreens(sold, products, storage.NewID, now)
 	program.sales.NameEvents(func(id string) string {
 		event, _, _ := fairs.Find(id) // a fair that cannot be read is named by its channel instead
@@ -152,17 +155,21 @@ func (program *App) Open(place Place) {
 	}
 }
 
-// newTheme is Bubble's paper theme in a mode, on MUSA's accent and with the design's text.
-func newTheme(mode bubble.Mode) (ui.Theme, error) {
+// newDesign is Bubble's paper theme in a mode, on MUSA's accent.
+func newDesign(mode bubble.Mode) (bubble.Theme, error) {
 	accent, err := bubble.ParseColor(Accent)
 	if err != nil {
-		return ui.Theme{}, err
+		return bubble.Theme{}, err
 	}
-	design, err := bubble.NewTheme(bubble.Options{Style: bubble.StylePaper, Mode: mode, Density: bubble.DensityComfortable, Accent: accent})
-	if err != nil {
-		return ui.Theme{}, err
+	return bubble.NewTheme(bubble.Options{Style: bubble.StylePaper, Mode: mode, Density: bubble.DensityComfortable, Accent: accent})
+}
+
+// design is the Bubble theme MUSA is drawn with now, light or dark.
+func (program *App) design() bubble.Theme {
+	if program.dark {
+		return program.designs[1]
 	}
-	return pageTheme(goui.Theme(design)), nil
+	return program.designs[0]
 }
 
 // The setting that keeps the theme the artist chose, and the two values it holds.

@@ -28,7 +28,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: akrck02/bubble
-          ref: b4c18caa0af42b7f9fceb81817c72f4d83fb476d # feature/v4
+          ref: 58a38f47f25fa5f1d823fc967052790fccccdcbd # feature/v4
           path: bubble
       - uses: actions/setup-go@v5
         with:

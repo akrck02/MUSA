@@ -222,10 +222,10 @@ func (screens *Screens) stockRow(context *ui.Context, line StockLine, index int,
 		context.Box(ui.Layout{Width: ui.Grow()}, func() { context.Text(name, ui.TextStyle{}) })
 	}
 	if screens.chosenLine == line.VariantID && open {
-		if context.Button("Llevar más") {
+		if screens.tonalButton(context, "Llevar más") {
 			screens.sheet = sheet{kind: takeSheet, quantity: "1", choices: screens.stockChoices(), choice: screens.choiceOf(line.VariantID)}
 		}
-		if context.Button("Devolver") {
+		if screens.tonalButton(context, "Devolver") {
 			screens.sheet = sheet{kind: returnSheet, variantID: line.VariantID, quantity: strconv.Itoa(line.Remaining())}
 		}
 		return

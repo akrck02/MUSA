@@ -6,6 +6,8 @@ import (
 	"github.com/Itros97/MUSA/events"
 	"github.com/Itros97/MUSA/sales"
 	"github.com/Itros97/MUSA/stand"
+	"github.com/akrck02/bubble/goui"
+	"github.com/akrck02/go-renderer/draw2d"
 	"github.com/akrck02/go-ui/uitest"
 )
 
@@ -208,4 +210,35 @@ func TestANarrowWindowStacksTheEventsCardsInOneColumn(test *testing.T) {
 	if tops[0] >= tops[1] || tops[1] >= tops[2] {
 		test.Errorf("the cards are not one under another, in order: tops %v", tops)
 	}
+}
+
+func TestTheActionsOfAStockLineAreTonal(test *testing.T) {
+	program, window, name := openFair(test)
+	fair, _ := fairNamed(test, program, name)
+	line := fair.Stock[0]
+	steps(test, window, click(window, sales.ItemLabel(line.ProductName, line.VariantName)))
+	settle(window)
+	tonal := goui.TonalLook(program.design())
+	for _, label := range []string{"Llevar más", "Devolver"} {
+		button, err := window.Element(label)
+		if err != nil {
+			test.Fatal(err)
+		}
+		if !filledAt(window, button.Rect, tonal.Fill) {
+			test.Errorf("«%s» is not drawn on the accent's tint", label)
+		}
+	}
+}
+
+// filledAt tells whether the frame drew a rectangle of this fill under the middle of the area.
+func filledAt(window *uitest.Window, area draw2d.Rectangle, fill draw2d.Color) bool {
+	x, y := area.X+area.Width/2, area.Y+area.Height/2
+	for _, command := range window.DrawList().Commands {
+		under := command.Area
+		inside := x >= under.X && x <= under.X+under.Width && y >= under.Y && y <= under.Y+under.Height
+		if command.Kind == draw2d.RectangleKind && command.Fill == fill && inside {
+			return true
+		}
+	}
+	return false
 }
