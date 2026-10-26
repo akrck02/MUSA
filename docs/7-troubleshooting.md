@@ -63,8 +63,8 @@ database in memory.
 
 ### The window stretches while resizing it, on a Mac
 
-Known, and being worked on in Go Renderer's Metal backend. The picture is right again as soon as
-the mouse is let go.
+Go Renderer now draws at every new size, so the picture follows the mouse. If it still stretches,
+your Go Renderer checkout is older than the commit pinned in `.github/workflows/test.yaml`.
 
 ## Testing
 

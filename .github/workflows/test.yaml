@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: akrck02/go-renderer
-          ref: e529f421f7c6bd10426fc34dcdea02ce2a3120d2 # feature/system-fonts
+          ref: e0e99a531c550706ccdc7cb4d3384d09ba7cc453 # feature/system-fonts
           path: go-renderer
       - uses: actions/checkout@v4
         with:
